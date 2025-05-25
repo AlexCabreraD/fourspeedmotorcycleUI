@@ -2,35 +2,19 @@ const { config } = require("dotenv");
 config({ path: ".env.local" });
 
 /**
- * Quick test for a specific WPS API endpoint
+ * Flexible WPS API endpoint tester
  * Usage:
- *   node scripts/quick-endpoint-test.js [endpoint] [size=10] [include=product,category]
+ *   node scripts/quick-endpoint-test.js [endpoint] key=value ...
+ * Example:
+ *   node scripts/quick-endpoint-test.js items page[size]=5 include=product filter[brand_id]=135 sort[desc]=list_price
  */
 
 async function testSpecificEndpoint() {
   const args = process.argv.slice(2);
   const endpoint = args[0] || "vehiclemakes";
 
-  let pageSize = "1";
-  let includes = null;
-
-  // Parse optional args
-  args.slice(1).forEach((arg) => {
-    if (arg.startsWith("size=")) {
-      pageSize = arg.split("=")[1];
-    } else if (arg.startsWith("include=")) {
-      includes = arg.split("=")[1];
-    }
-  });
-
-  console.log(`🔍 Testing WPS API endpoint: /${endpoint}`);
-  console.log(`• page[size]=${pageSize}`);
-  if (includes) console.log(`• include=${includes}`);
-  console.log("");
-
   const apiUrl = process.env.WPS_API_URL || process.env.NEXT_PUBLIC_WPS_API_URL;
-  const apiToken =
-      process.env.WPS_API_TOKEN || process.env.NEXT_PUBLIC_WPS_API_TOKEN;
+  const apiToken = process.env.WPS_API_TOKEN || process.env.NEXT_PUBLIC_WPS_API_TOKEN;
 
   if (!apiUrl || !apiToken) {
     console.error("❌ Missing WPS API configuration");
@@ -38,15 +22,17 @@ async function testSpecificEndpoint() {
     process.exit(1);
   }
 
-  // Construct query string
-  const queryParams = [`page[size]=${pageSize}`];
-  if (includes) queryParams.push(`include=${includes}`);
+  // Build query parameters dynamically
+  const queryParams = args.slice(1); // skip endpoint
   const queryString = queryParams.join("&");
 
-  try {
-    const url = `${apiUrl}/${endpoint}?${queryString}`;
-    console.log(`📡 Fetching: ${url}`);
+  const url = `${apiUrl}/${endpoint}${queryParams.length ? "?" + queryString : ""}`;
 
+  console.log(`🔍 Testing WPS API endpoint: /${endpoint}`);
+  console.log(`📡 Fetching: ${url}`);
+  console.log("");
+
+  try {
     const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${apiToken}`,
@@ -67,7 +53,7 @@ async function testSpecificEndpoint() {
     console.log(JSON.stringify(data, null, 2));
     console.log("=".repeat(50));
 
-    // Quick analysis
+    // Basic analysis
     console.log("\n🔍 QUICK ANALYSIS:");
 
     let imageUrls = [];
@@ -127,13 +113,12 @@ async function testSpecificEndpoint() {
   }
 }
 
-// Show usage if no args
 if (process.argv.length === 2) {
-  console.log("Usage: node scripts/quick-endpoint-test.js [endpoint] [size=10] [include=a,b]");
+  console.log("Usage: node scripts/quick-endpoint-test.js [endpoint] key=value ...");
   console.log("\nExamples:");
   console.log("  node scripts/quick-endpoint-test.js vehiclemakes");
-  console.log("  node scripts/quick-endpoint-test.js images size=5");
-  console.log("  node scripts/quick-endpoint-test.js items size=5 include=product");
+  console.log("  node scripts/quick-endpoint-test.js items page[size]=5 include=product");
+  console.log("  node scripts/quick-endpoint-test.js items filter[brand_id]=135 sort[desc]=list_price");
   process.exit(0);
 }
 
