@@ -2,6 +2,7 @@
 
 // src/components/home/DealsSection.tsx
 import React from 'react';
+import { Clock, Flame, ArrowRight, ShoppingCart, CheckCircle } from 'lucide-react';
 
 interface DealItem {
     id: string;
@@ -102,17 +103,18 @@ function CountdownTimer({ endDate }: { endDate: string }) {
 
     return (
         <div className="flex items-center space-x-2 text-sm">
-            <span className="text-red-600 font-medium">Ends in:</span>
+            <Clock className="w-4 h-4 text-red-400" />
+            <span className="text-red-400 font-medium">Ends in:</span>
             <div className="flex space-x-1">
-        <span className="bg-red-100 text-red-800 px-2 py-1 rounded font-mono text-xs">
-          {timeLeft.days}d
-        </span>
-                <span className="bg-red-100 text-red-800 px-2 py-1 rounded font-mono text-xs">
-          {timeLeft.hours}h
-        </span>
-                <span className="bg-red-100 text-red-800 px-2 py-1 rounded font-mono text-xs">
-          {timeLeft.minutes}m
-        </span>
+                <span className="bg-red-500/20 backdrop-blur-sm text-red-300 px-2 py-1 rounded border border-red-500/30 font-mono text-xs">
+                    {timeLeft.days}d
+                </span>
+                <span className="bg-red-500/20 backdrop-blur-sm text-red-300 px-2 py-1 rounded border border-red-500/30 font-mono text-xs">
+                    {timeLeft.hours}h
+                </span>
+                <span className="bg-red-500/20 backdrop-blur-sm text-red-300 px-2 py-1 rounded border border-red-500/30 font-mono text-xs">
+                    {timeLeft.minutes}m
+                </span>
             </div>
         </div>
     );
@@ -120,10 +122,10 @@ function CountdownTimer({ endDate }: { endDate: string }) {
 
 function getDealBadge(dealType: string) {
     const badges = {
-        clearance: { text: 'Clearance', color: 'bg-red-500' },
-        seasonal: { text: 'Seasonal Sale', color: 'bg-orange-500' },
-        flash: { text: 'Flash Deal', color: 'bg-purple-500' },
-        bulk: { text: 'Bulk Discount', color: 'bg-green-500' }
+        clearance: { text: 'Clearance', color: 'from-red-500/80 to-red-600', icon: '🔥' },
+        seasonal: { text: 'Seasonal Sale', color: 'from-orange-500/80 to-orange-600', icon: '🌟' },
+        flash: { text: 'Flash Deal', color: 'from-purple-500/80 to-purple-600', icon: '⚡' },
+        bulk: { text: 'Bulk Discount', color: 'from-green-500/80 to-green-600', icon: '📦' }
     };
 
     return badges[dealType as keyof typeof badges] || badges.clearance;
@@ -131,91 +133,100 @@ function getDealBadge(dealType: string) {
 
 export default function DealsSection() {
     return (
-        <section className="py-16 lg:py-24 bg-gradient-to-br from-red-50 via-white to-orange-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-16 lg:py-24 bg-gradient-to-br from-black via-gray-900 to-red-900/20 relative overflow-hidden">
+            {/* Background Effects */}
+            <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-20 left-10 w-4 h-4 bg-red-400 rounded-full animate-pulse"></div>
+                <div className="absolute top-40 right-20 w-3 h-3 bg-yellow-400 rounded-full animate-bounce"></div>
+                <div className="absolute bottom-40 left-20 w-2 h-2 bg-red-400 rounded-full animate-ping"></div>
+                <div className="absolute bottom-60 right-40 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+            </div>
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
                 {/* Section Header */}
                 <div className="text-center mb-16">
-                    <div className="inline-flex items-center space-x-2 bg-red-100 text-red-800 px-4 py-2 rounded-full text-sm font-semibold mb-4">
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clipRule="evenodd" />
-                        </svg>
-                        <span>Hot Deals & Special Offers</span>
+                    <div className="inline-flex items-center space-x-3 bg-red-500/20 border border-red-500/30 backdrop-blur-sm px-6 py-3 rounded-full mb-6">
+                        <Flame className="w-5 h-5 text-red-400" />
+                        <span className="text-sm font-bold text-red-300 uppercase tracking-wide">Hot Deals & Special Offers</span>
                     </div>
-                    <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-                        Limited Time Deals
+                    <h2 className="text-4xl lg:text-6xl font-bold mb-6">
+                        <span className="text-white">Limited Time </span>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-500 to-yellow-500 animate-pulse">
+                            Deals
+                        </span>
                     </h2>
-                    <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                    <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
                         Don't miss out on these incredible savings! Limited quantities and time-sensitive offers.
                     </p>
                 </div>
 
                 {/* Deals Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                    {dealItems.map((item) => {
+                    {dealItems.map((item, index) => {
                         const badge = getDealBadge(item.dealType);
                         const savingsAmount = item.originalPrice - item.salePrice;
 
                         return (
                             <div
                                 key={item.id}
-                                className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden border border-gray-200"
+                                className="group bg-white/10 backdrop-blur-md border border-white/20 hover:border-red-500/50 hover:bg-white/20 rounded-3xl cursor-pointer overflow-hidden transition-all duration-500 transform hover:-translate-y-2 hover:shadow-2xl"
+                                style={{ animationDelay: `${index * 200}ms` }}
                             >
                                 <div className="flex flex-col lg:flex-row">
                                     {/* Product Image */}
-                                    <div className="lg:w-1/3 aspect-square lg:aspect-auto bg-gradient-to-br from-gray-100 to-gray-200 relative">
+                                    <div className="lg:w-1/3 aspect-square lg:aspect-auto bg-gradient-to-br from-gray-700/50 to-gray-800/50 relative overflow-hidden">
                                         {/* Deal Badge */}
                                         <div className="absolute top-4 left-4 z-10">
-                      <span className={`${badge.color} text-white text-xs font-bold px-3 py-1 rounded-full`}>
-                        {badge.text}
-                      </span>
+                                            <span className={`bg-gradient-to-r ${badge.color} backdrop-blur-sm text-white text-sm font-bold px-3 py-2 rounded-full border border-white/20 flex items-center space-x-1`}>
+                                                <span>{badge.icon}</span>
+                                                <span>{badge.text}</span>
+                                            </span>
                                         </div>
 
                                         {/* Discount Badge */}
                                         <div className="absolute top-4 right-4 z-10">
-                                            <div className="bg-red-500 text-white rounded-full w-16 h-16 flex items-center justify-center">
+                                            <div className="bg-red-500/90 backdrop-blur-sm text-white rounded-2xl w-20 h-20 flex items-center justify-center border border-red-400/50">
                                                 <div className="text-center">
-                                                    <div className="text-lg font-bold">-{item.discount}%</div>
+                                                    <div className="text-xl font-bold">-{item.discount}%</div>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Placeholder for product image */}
                                         <div className="w-full h-full flex items-center justify-center">
-                                            <div className="w-24 h-24 bg-white/60 rounded-lg flex items-center justify-center">
-                                                <div className="w-12 h-12 bg-gray-400/50 rounded"></div>
+                                            <div className="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                                                <div className="w-12 h-12 bg-white/40 rounded-lg"></div>
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Product Details */}
-                                    <div className="lg:w-2/3 p-6">
+                                    <div className="lg:w-2/3 p-8">
                                         {/* Brand & Category */}
-                                        <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide">
-                        {item.brand}
-                      </span>
-                                            <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {item.category}
-                      </span>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <span className="text-sm font-semibold text-yellow-400 uppercase tracking-wide">
+                                                {item.brand}
+                                            </span>
+                                            <span className="text-sm text-gray-400 bg-white/10 px-3 py-1 rounded-full">
+                                                {item.category}
+                                            </span>
                                         </div>
 
                                         {/* Product Name */}
-                                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                                        <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-yellow-400 transition-colors">
                                             {item.name}
                                         </h3>
 
                                         {/* SKU */}
-                                        <p className="text-sm text-gray-500 mb-3">SKU: {item.sku}</p>
+                                        <p className="text-sm text-gray-400 mb-4">SKU: {item.sku}</p>
 
                                         {/* Features */}
                                         {item.features && (
-                                            <div className="mb-4">
-                                                <ul className="text-sm text-gray-600 space-y-1">
-                                                    {item.features.map((feature, index) => (
-                                                        <li key={index} className="flex items-center">
-                                                            <svg className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                                            </svg>
+                                            <div className="mb-6">
+                                                <ul className="text-sm text-gray-300 space-y-2">
+                                                    {item.features.map((feature, featureIndex) => (
+                                                        <li key={featureIndex} className="flex items-center">
+                                                            <CheckCircle className="w-4 h-4 text-green-400 mr-2 flex-shrink-0" />
                                                             {feature}
                                                         </li>
                                                     ))}
@@ -224,28 +235,28 @@ export default function DealsSection() {
                                         )}
 
                                         {/* Pricing */}
-                                        <div className="mb-4">
-                                            <div className="flex items-center space-x-3 mb-2">
-                        <span className="text-2xl font-bold text-red-600">
-                          ${item.salePrice.toFixed(2)}
-                        </span>
-                                                <span className="text-lg text-gray-500 line-through">
-                          ${item.originalPrice.toFixed(2)}
-                        </span>
+                                        <div className="mb-6">
+                                            <div className="flex items-center space-x-4 mb-2">
+                                                <span className="text-3xl font-bold text-red-400">
+                                                    ${item.salePrice.toFixed(2)}
+                                                </span>
+                                                <span className="text-xl text-gray-500 line-through">
+                                                    ${item.originalPrice.toFixed(2)}
+                                                </span>
                                             </div>
-                                            <p className="text-green-600 font-semibold">
+                                            <p className="text-green-400 font-semibold text-lg">
                                                 You save ${savingsAmount.toFixed(2)}
                                             </p>
                                         </div>
 
                                         {/* Stock & Timer */}
-                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
                                             <div className="flex items-center space-x-2">
-                                                <span className="text-green-600 font-medium text-sm">In Stock</span>
+                                                <span className="text-green-400 font-medium text-sm">✓ In Stock</span>
                                                 {item.stockCount && item.stockCount <= 10 && (
-                                                    <span className="text-orange-600 text-sm">
-                            Only {item.stockCount} left!
-                          </span>
+                                                    <span className="text-orange-400 text-sm bg-orange-500/20 px-2 py-1 rounded-full">
+                                                        Only {item.stockCount} left!
+                                                    </span>
                                                 )}
                                             </div>
                                             {item.dealEnds && (
@@ -254,10 +265,8 @@ export default function DealsSection() {
                                         </div>
 
                                         {/* Add to Cart Button */}
-                                        <button className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-lg font-semibold transition-colors flex items-center justify-center space-x-2">
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.8 9M7 13l-1.8 9m0 0h9.6" />
-                                            </svg>
+                                        <button className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-4 px-8 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl flex items-center justify-center space-x-3">
+                                            <ShoppingCart className="w-6 h-6" />
                                             <span>Add to Cart - Save ${savingsAmount.toFixed(2)}</span>
                                         </button>
                                     </div>
@@ -269,11 +278,9 @@ export default function DealsSection() {
 
                 {/* View All Deals Button */}
                 <div className="text-center">
-                    <button className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold transition-colors inline-flex items-center">
+                    <button className="group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-10 py-5 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl inline-flex items-center">
                         View All Deals & Clearance
-                        <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                        </svg>
+                        <ArrowRight className="w-6 h-6 ml-3 group-hover:translate-x-1 transition-transform" />
                     </button>
                 </div>
             </div>

@@ -1,5 +1,6 @@
 // src/components/home/PopularItemsSection.tsx
 import React from 'react';
+import { Star, ShoppingCart, Eye, Heart } from 'lucide-react';
 
 interface PopularItem {
     id: string;
@@ -120,16 +121,12 @@ function StarRating({ rating }: { rating: number }) {
     return (
         <div className="flex items-center space-x-1">
             {[1, 2, 3, 4, 5].map((star) => (
-                <svg
+                <Star
                     key={star}
                     className={`w-4 h-4 ${
-                        star <= rating ? 'text-yellow-400' : 'text-gray-300'
+                        star <= rating ? 'text-yellow-400 fill-current' : 'text-gray-600'
                     }`}
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
+                />
             ))}
         </div>
     );
@@ -137,124 +134,146 @@ function StarRating({ rating }: { rating: number }) {
 
 export default function PopularItemsSection() {
     return (
-        <section className="py-16 lg:py-24 bg-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section className="py-16 lg:py-24 bg-gradient-to-br from-gray-800 via-gray-900 to-black relative overflow-hidden">
+            {/* Background Effects */}
+            <div className="absolute inset-0 opacity-10">
+                <div className="absolute top-32 left-16 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+                <div className="absolute top-48 right-24 w-2 h-2 bg-white rounded-full animate-bounce"></div>
+                <div className="absolute bottom-32 left-32 w-1 h-1 bg-yellow-400 rounded-full animate-ping"></div>
+                <div className="absolute bottom-48 right-16 w-2 h-2 bg-white rounded-full animate-pulse"></div>
+            </div>
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
                 {/* Section Header */}
                 <div className="text-center mb-16">
-                    <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-                        Popular Items
+                    <div className="inline-flex items-center space-x-2 bg-yellow-500/20 border border-yellow-500/30 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
+                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                        <span className="text-sm font-medium text-yellow-300">Customer Favorites</span>
+                    </div>
+                    <h2 className="text-4xl lg:text-6xl font-bold mb-6">
+                        <span className="text-white">Popular </span>
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500">
+                            Items
+                        </span>
                     </h2>
-                    <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                    <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
                         Discover our most sought-after parts and accessories, trusted by riders worldwide.
                     </p>
                 </div>
 
                 {/* Items Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
-                    {popularItems.map((item) => (
+                    {popularItems.map((item, index) => (
                         <div
                             key={item.id}
-                            className="bg-white rounded-xl border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all duration-300 group cursor-pointer overflow-hidden"
+                            className="group bg-white/10 backdrop-blur-md border border-white/20 hover:border-white/30 hover:bg-white/20 rounded-2xl cursor-pointer overflow-hidden transition-all duration-500 transform hover:-translate-y-2 hover:shadow-2xl"
+                            style={{ animationDelay: `${index * 100}ms` }}
                         >
                             {/* Product Image */}
-                            <div className="aspect-square bg-gray-50 relative overflow-hidden">
+                            <div className="aspect-square bg-gradient-to-br from-gray-700/50 to-gray-800/50 relative overflow-hidden">
                                 {/* Badges */}
                                 <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
                                     {item.isBestSeller && (
-                                        <span className="bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
-                      Best Seller
-                    </span>
+                                        <span className="bg-red-500/90 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded-full border border-red-400/50">
+                                            Best Seller
+                                        </span>
                                     )}
                                     {item.isNew && (
-                                        <span className="bg-green-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
-                      New
-                    </span>
+                                        <span className="bg-green-500/90 backdrop-blur-sm text-white text-xs font-semibold px-2 py-1 rounded-full border border-green-400/50">
+                                            New
+                                        </span>
                                     )}
                                     {item.originalPrice && (
-                                        <span className="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
-                      Sale
-                    </span>
+                                        <span className="bg-yellow-500/90 backdrop-blur-sm text-black text-xs font-bold px-2 py-1 rounded-full border border-yellow-400/50">
+                                            Sale
+                                        </span>
                                     )}
                                 </div>
 
                                 {/* Placeholder for product image */}
-                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-                                    <div className="w-24 h-24 bg-white/60 rounded-lg flex items-center justify-center">
-                                        <div className="w-12 h-12 bg-gray-400/50 rounded"></div>
+                                <div className="w-full h-full flex items-center justify-center">
+                                    <div className="w-24 h-24 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+                                        <div className="w-12 h-12 bg-white/40 rounded-lg"></div>
                                     </div>
                                 </div>
 
                                 {/* Quick Action Overlay */}
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                    <button className="bg-white text-gray-900 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-                                        Quick View
-                                    </button>
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+                                    <div className="flex space-x-3">
+                                        <button className="bg-white/20 backdrop-blur-sm text-white p-3 rounded-xl border border-white/30 hover:bg-white/30 transition-colors">
+                                            <Eye className="w-5 h-5" />
+                                        </button>
+                                        <button className="bg-white/20 backdrop-blur-sm text-white p-3 rounded-xl border border-white/30 hover:bg-white/30 transition-colors">
+                                            <Heart className="w-5 h-5" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
                             {/* Product Info */}
-                            <div className="p-4">
+                            <div className="p-6">
                                 {/* Brand & Category */}
-                                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
-                    {item.brand}
-                  </span>
-                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                    {item.category}
-                  </span>
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="text-xs font-semibold text-yellow-400 uppercase tracking-wide">
+                                        {item.brand}
+                                    </span>
+                                    <span className="text-xs text-gray-400 bg-white/10 px-2 py-1 rounded-full">
+                                        {item.category}
+                                    </span>
                                 </div>
 
                                 {/* Product Name */}
-                                <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                                <h3 className="font-semibold text-white mb-2 line-clamp-2 group-hover:text-yellow-400 transition-colors leading-tight">
                                     {item.name}
                                 </h3>
 
                                 {/* SKU */}
-                                <p className="text-sm text-gray-500 mb-3">SKU: {item.sku}</p>
+                                <p className="text-sm text-gray-400 mb-3">SKU: {item.sku}</p>
 
                                 {/* Rating */}
-                                <div className="flex items-center space-x-2 mb-3">
+                                <div className="flex items-center space-x-2 mb-4">
                                     <StarRating rating={item.rating} />
-                                    <span className="text-sm text-gray-600">
-                    ({item.reviewCount})
-                  </span>
+                                    <span className="text-sm text-gray-400">
+                                        ({item.reviewCount})
+                                    </span>
                                 </div>
 
                                 {/* Price */}
-                                <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center space-x-2">
-                    <span className="text-lg font-bold text-gray-900">
-                      ${item.price.toFixed(2)}
-                    </span>
+                                        <span className="text-lg font-bold text-white">
+                                            ${item.price.toFixed(2)}
+                                        </span>
                                         {item.originalPrice && (
                                             <span className="text-sm text-gray-500 line-through">
-                        ${item.originalPrice.toFixed(2)}
-                      </span>
+                                                ${item.originalPrice.toFixed(2)}
+                                            </span>
                                         )}
                                     </div>
                                     {item.originalPrice && (
-                                        <span className="text-sm font-semibold text-green-600">
-                      Save ${(item.originalPrice - item.price).toFixed(2)}
-                    </span>
+                                        <span className="text-sm font-semibold text-green-400">
+                                            Save ${(item.originalPrice - item.price).toFixed(2)}
+                                        </span>
                                     )}
                                 </div>
 
                                 {/* Stock Status & Add to Cart */}
-                                <div className="flex items-center justify-between">
-                  <span className={`text-sm font-medium ${
-                      item.inStock ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {item.inStock ? 'In Stock' : 'Out of Stock'}
-                  </span>
+                                <div className="flex flex-col space-y-3">
+                                    <span className={`text-sm font-medium ${
+                                        item.inStock ? 'text-green-400' : 'text-red-400'
+                                    }`}>
+                                        {item.inStock ? '✓ In Stock' : '✗ Out of Stock'}
+                                    </span>
                                     <button
                                         disabled={!item.inStock}
-                                        className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                                        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center space-x-2 ${
                                             item.inStock
-                                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                                ? 'bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-black hover:scale-105 hover:shadow-lg'
+                                                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                                         }`}
                                     >
-                                        Add to Cart
+                                        <ShoppingCart className="w-4 h-4" />
+                                        <span>Add to Cart</span>
                                     </button>
                                 </div>
                             </div>
@@ -264,9 +283,9 @@ export default function PopularItemsSection() {
 
                 {/* View All Button */}
                 <div className="text-center">
-                    <button className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-4 rounded-lg font-semibold transition-colors inline-flex items-center">
+                    <button className="group bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-black px-10 py-5 rounded-2xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl inline-flex items-center">
                         View All Popular Items
-                        <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-6 h-6 ml-3 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                         </svg>
                     </button>
