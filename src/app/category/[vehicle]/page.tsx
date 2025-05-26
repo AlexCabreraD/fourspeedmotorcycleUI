@@ -1,0 +1,527 @@
+// src/app/category/[vehicle]/page.tsx
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ChevronRight, Filter, Grid, List, ArrowLeft, Loader2 } from 'lucide-react';
+
+interface Product {
+    id: number;
+    name: string;
+    description?: string;
+    images?: Array<{
+        id: number;
+        domain: string;
+        path: string;
+        filename: string;
+    }>;
+    items?: Array<{
+        id: number;
+        list_price: string;
+        status: string;
+        sku: string;
+    }>;
+    brand?: {
+        id: number;
+        name: string;
+    };
+}
+
+interface Brand {
+    id: number;
+    name: string;
+}
+
+export default function VehicleCategoryPage() {
+    const params = useParams();
+    const router = useRouter();
+    const vehicle = params.vehicle as string;
+
+    const [products, setProducts] = useState<Product[]>([]);
+    const [brands, setBrands] = useState<Brand[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const [nextCursor, setNextCursor] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    const [showFilters, setShowFilters] = useState(false);
+
+    // Filter states
+    const [selectedBrands, setSelectedBrands] = useState<number[]>([]);
+    const [priceRange, setPriceRange] = useState<{ min: string; max: string }>({ min: '', max: '' });
+    const [sortBy, setSortBy] = useState('name');
+
+    // Vehicle configuration
+    const vehicleConfig = {
+        street: {
+            name: 'Street/Road',
+            description: 'Parts for motorcycles, sport bikes, and cruisers',
+            catalogFlag: 'street_catalog',
+            categories: [
+                'Engine & Performance', 'Drivetrain & Motion', 'Controls & Handling',
+                'Body & Protection', 'Electrical & Electronics', 'Apparel & Safety'
+            ]
+        },
+        offroad: {
+            name: 'Off-Road/Dirt',
+            description: 'Parts for dirt bikes, motocross, and enduro',
+            catalogFlag: 'offroad_catalog',
+            categories: [
+                'Engine & Performance', 'Drivetrain & Motion', 'Controls & Handling',
+                'Body & Protection', 'Electrical & Electronics', 'Apparel & Safety'
+            ]
+        },
+        atv: {
+            name: 'ATV/UTV',
+            description: 'Parts for ATVs, side-by-sides, and quads',
+            catalogFlag: 'atv_catalog',
+            categories: [
+                'Engine & Performance', 'Drivetrain & Motion', 'Controls & Handling',
+                'Body & Protection', 'Electrical & Electronics', 'Winch & Plow'
+            ]
+        },
+        snow: {
+            name: 'Snowmobile',
+            description: 'Parts for sleds and snow machines',
+            catalogFlag: 'snow_catalog',
+            categories: [
+                'Engine & Performance', 'Drivetrain & Motion', 'Track & Suspension',
+                'Body & Protection', 'Electrical & Electronics', 'Apparel & Safety'
+            ]
+        },
+        watercraft: {
+            name: 'Watercraft',
+            description: 'Parts for jet skis and PWCs',
+            catalogFlag: 'watercraft_catalog',
+            categories: [
+                'Engine & Performance', 'Drivetrain & Motion', 'Hull & Body',
+                'Electrical & Electronics', 'Safety & Accessories'
+            ]
+        },
+        bicycle: {
+            name: 'Bicycle',
+            description: 'Parts for BMX, mountain, and road bikes',
+            catalogFlag: 'bicycle_catalog',
+            categories: [
+                'Frames & Forks', 'Drivetrain', 'Wheels & Tires',
+                'Brakes & Controls', 'Accessories', 'Apparel & Safety'
+            ]
+        }
+    };
+
+    const currentVehicle = vehicleConfig[vehicle as keyof typeof vehicleConfig];
+
+    useEffect(() => {
+        if (!currentVehicle) {
+            router.push('/');
+            return;
+        }
+        loadInitialData();
+        loadBrands();
+    }, [vehicle]);
+
+    useEffect(() => {
+        // Reset and reload when filters change
+        setProducts([]);
+        setNextCursor(null);
+        setHasMore(true);
+        loadProducts(true);
+    }, [selectedBrands, priceRange, sortBy]);
+
+    const loadInitialData = async () => {
+        setLoading(true);
+        await loadProducts(true);
+        setLoading(false);
+    };
+
+    const loadBrands = async () => {
+        try {
+            const response = await fetch('/api/brands?page[size]=100');
+            if (response.ok) {
+                const data = await response.json();
+                setBrands(data.data || []);
+            }
+        } catch (error) {
+            console.error('Error loading brands:', error);
+        }
+    };
+
+    const loadProducts = async (reset = false) => {
+        if (!currentVehicle) return;
+
+        try {
+            if (reset) {
+                setLoadingMore(true);
+            } else {
+                setLoadingMore(true);
+            }
+
+            const params = new URLSearchParams({
+                vehicle: vehicle,
+                'page[size]': '20',
+                include: 'items,images,brands',
+                sort: sortBy
+            });
+
+            if (!reset && nextCursor) {
+                params.append('cursor', nextCursor);
+            }
+
+            if (selectedBrands.length > 0) {
+                params.append('brands', selectedBrands.join(','));
+            }
+
+            if (priceRange.min) {
+                params.append('price_min', priceRange.min);
+            }
+
+            if (priceRange.max) {
+                params.append('price_max', priceRange.max);
+            }
+
+            const response = await fetch(`/api/products/by-vehicle?${params.toString()}`);
+
+            if (response.ok) {
+                const data = await response.json();
+
+                if (reset) {
+                    setProducts(data.data || []);
+                } else {
+                    setProducts(prev => [...prev, ...(data.data || [])]);
+                }
+
+                setNextCursor(data.meta?.cursor?.next || null);
+                setHasMore(!!data.meta?.cursor?.next);
+            }
+        } catch (error) {
+            console.error('Error loading products:', error);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+
+    const loadMore = useCallback(() => {
+        if (!loadingMore && hasMore && nextCursor) {
+            loadProducts(false);
+        }
+    }, [loadingMore, hasMore, nextCursor]);
+
+    // Infinite scroll effect
+    useEffect(() => {
+        const handleScroll = () => {
+            if (
+                window.innerHeight + document.documentElement.scrollTop >=
+                document.documentElement.offsetHeight - 1000
+            ) {
+                loadMore();
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [loadMore]);
+
+    const buildImageUrl = (image: any, style = '500_max') => {
+        if (!image?.domain || !image?.path || !image?.filename) return '/api/placeholder/300/300';
+        return `https://${image.domain}${image.path}${style}/${image.filename}`;
+    };
+
+    const formatPrice = (price: string) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD'
+        }).format(parseFloat(price));
+    };
+
+    const getPriceRange = (items: any[]) => {
+        if (!items || items.length === 0) return 'Price on request';
+        const prices = items.map(item => parseFloat(item.list_price)).filter(p => !isNaN(p));
+        if (prices.length === 0) return 'Price on request';
+        const min = Math.min(...prices);
+        const max = Math.max(...prices);
+        return min === max ? formatPrice(min.toString()) : `${formatPrice(min.toString())} - ${formatPrice(max.toString())}`;
+    };
+
+    const handleBrandToggle = (brandId: number) => {
+        setSelectedBrands(prev =>
+            prev.includes(brandId)
+                ? prev.filter(id => id !== brandId)
+                : [...prev, brandId]
+        );
+    };
+
+    const clearFilters = () => {
+        setSelectedBrands([]);
+        setPriceRange({ min: '', max: '' });
+        setSortBy('name');
+    };
+
+    if (!currentVehicle) {
+        return null;
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-50">
+            {/* Header */}
+            <header className="bg-white shadow-sm sticky top-0 z-40">
+                <div className="container mx-auto px-4 py-4">
+                    <div className="flex items-center justify-between">
+                        <Link href="/" className="text-2xl font-bold text-orange-500">
+                            4SpeedMotorcycle
+                        </Link>
+                        <nav className="hidden md:flex space-x-6">
+                            <Link href="/brands" className="text-gray-600 hover:text-orange-500">Brands</Link>
+                            <Link href="/cart" className="text-gray-600 hover:text-orange-500">Cart</Link>
+                        </nav>
+                    </div>
+                </div>
+            </header>
+
+            {/* Breadcrumb */}
+            <div className="bg-white border-b">
+                <div className="container mx-auto px-4 py-3">
+                    <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        <Link href="/" className="hover:text-orange-500">Home</Link>
+                        <ChevronRight className="w-4 h-4" />
+                        <span className="text-gray-900 font-medium">{currentVehicle.name}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Page Header */}
+            <div className="bg-gradient-to-r from-gray-900 to-gray-700 text-white py-12">
+                <div className="container mx-auto px-4">
+                    <div className="flex items-center mb-4">
+                        <button
+                            onClick={() => router.back()}
+                            className="mr-4 p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        >
+                            <ArrowLeft className="w-6 h-6" />
+                        </button>
+                        <div>
+                            <h1 className="text-4xl font-bold mb-2">{currentVehicle.name}</h1>
+                            <p className="text-xl text-gray-300">{currentVehicle.description}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Category Links */}
+            <div className="bg-white py-6">
+                <div className="container mx-auto px-4">
+                    <h2 className="text-lg font-semibold mb-4">Shop by Category</h2>
+                    <div className="flex flex-wrap gap-3">
+                        {currentVehicle.categories.map((category) => (
+                            <Link
+                                key={category}
+                                href={`/category/${vehicle}/${category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-700 hover:text-gray-900 transition-colors"
+                            >
+                                {category}
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            <div className="container mx-auto px-4 py-8">
+                <div className="flex gap-8">
+                    {/* Sidebar Filters */}
+                    <div className={`${showFilters ? 'block' : 'hidden'} lg:block w-full lg:w-80 bg-white rounded-lg shadow p-6`}>
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-semibold">Filters</h3>
+                            <button
+                                onClick={clearFilters}
+                                className="text-sm text-orange-500 hover:text-orange-600"
+                            >
+                                Clear All
+                            </button>
+                        </div>
+
+                        {/* Sort */}
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium mb-2">Sort By</label>
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                            >
+                                <option value="name">Name A-Z</option>
+                                <option value="name_desc">Name Z-A</option>
+                                <option value="price_low">Price Low to High</option>
+                                <option value="price_high">Price High to Low</option>
+                                <option value="newest">Newest First</option>
+                            </select>
+                        </div>
+
+                        {/* Price Range */}
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium mb-2">Price Range</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="number"
+                                    placeholder="Min"
+                                    value={priceRange.min}
+                                    onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
+                                    className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Max"
+                                    value={priceRange.max}
+                                    onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
+                                    className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:outline-none"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Brands */}
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium mb-2">Brands</label>
+                            <div className="max-h-64 overflow-y-auto space-y-2">
+                                {brands.slice(0, 20).map((brand) => (
+                                    <label key={brand.id} className="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedBrands.includes(brand.id)}
+                                            onChange={() => handleBrandToggle(brand.id)}
+                                            className="mr-2 w-4 h-4 text-orange-500 rounded focus:ring-orange-500"
+                                        />
+                                        <span className="text-sm text-gray-700">{brand.name}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="flex-1">
+                        {/* Toolbar */}
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center space-x-4">
+                                <button
+                                    onClick={() => setShowFilters(!showFilters)}
+                                    className="lg:hidden flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                                >
+                                    <Filter className="w-5 h-5 mr-2" />
+                                    Filters
+                                </button>
+                                <span className="text-gray-600">
+                  {loading ? 'Loading...' : `${products.length} products`}
+                </span>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                                <button
+                                    onClick={() => setViewMode('grid')}
+                                    className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-orange-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    <Grid className="w-5 h-5" />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('list')}
+                                    className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-orange-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    <List className="w-5 h-5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Products Grid/List */}
+                        {loading ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {[...Array(12)].map((_, i) => (
+                                    <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
+                                        <div className="bg-gray-300 aspect-square rounded mb-4"></div>
+                                        <div className="bg-gray-300 h-4 rounded mb-2"></div>
+                                        <div className="bg-gray-300 h-4 rounded w-2/3"></div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <>
+                                <div className={
+                                    viewMode === 'grid'
+                                        ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+                                        : 'space-y-4'
+                                }>
+                                    {products.map((product) => (
+                                        <Link
+                                            key={product.id}
+                                            href={`/product/${product.id}`}
+                                            className={`group bg-white rounded-lg shadow hover:shadow-lg transition-all ${
+                                                viewMode === 'list' ? 'flex p-4' : 'block'
+                                            }`}
+                                        >
+                                            <div className={`${
+                                                viewMode === 'list'
+                                                    ? 'w-32 h-32 flex-shrink-0 mr-4'
+                                                    : 'aspect-square'
+                                            } bg-gray-100 rounded overflow-hidden`}>
+                                                <img
+                                                    src={buildImageUrl(product.images?.[0])}
+                                                    alt={product.name}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                />
+                                            </div>
+                                            <div className={viewMode === 'list' ? 'flex-1' : 'p-4'}>
+                                                <h3 className="font-semibold text-gray-900 mb-2 group-hover:text-orange-500 line-clamp-2">
+                                                    {product.name}
+                                                </h3>
+                                                {product.brand && (
+                                                    <p className="text-sm text-gray-500 mb-2">{product.brand.name}</p>
+                                                )}
+                                                <p className="text-orange-600 font-bold mb-2">
+                                                    {getPriceRange(product.items || [])}
+                                                </p>
+                                                {viewMode === 'list' && product.description && (
+                                                    <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+                                                )}
+                                                {product.items && product.items.length > 1 && (
+                                                    <p className="text-xs text-gray-500">
+                                                        {product.items.length} variants available
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+
+                                {/* Loading More Indicator */}
+                                {loadingMore && (
+                                    <div className="flex justify-center py-8">
+                                        <div className="flex items-center space-x-2 text-gray-600">
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            <span>Loading more products...</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* No More Results */}
+                                {!hasMore && products.length > 0 && (
+                                    <div className="text-center py-8 text-gray-500">
+                                        <p>You've seen all products in this category</p>
+                                    </div>
+                                )}
+
+                                {/* No Results */}
+                                {!loading && products.length === 0 && (
+                                    <div className="text-center py-12">
+                                        <p className="text-gray-500 mb-4">No products found matching your criteria</p>
+                                        <button
+                                            onClick={clearFilters}
+                                            className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
+                                        >
+                                            Clear Filters
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
