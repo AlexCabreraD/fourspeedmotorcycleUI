@@ -73,23 +73,38 @@ export class WPSApiService {
     // PRODUCT SERVICES
 
     async getEnhancedProducts(params?: any): Promise<EnhancedProduct[]> {
-        const response = await this.client.getProducts({
-            include: 'items,images,brands',
-            'page[size]': 20,
-            ...params
-        });
+        try {
+            console.log('Service: getEnhancedProducts called with params:', params);
 
-        return response.data.map(product => this.enhanceProduct(product));
+            const requestParams = {
+                include: 'items,images,brands',
+                'page[size]': 20,
+                ...params
+            };
+
+            console.log('Making API call with params:', requestParams);
+            const response = await this.client.getProducts(requestParams);
+
+            console.log('API response received:', response);
+            return response.data.map(product => this.enhanceProduct(product));
+        } catch (error) {
+            console.error('Error in getEnhancedProducts:', error);
+            throw error;
+        }
     }
 
     async getEnhancedProduct(id: number | string): Promise<EnhancedProduct | null> {
         try {
+            console.log('Service: getEnhancedProduct called with id:', id);
+
             const response = await this.client.getProduct(id, {
                 include: 'items,images,features,brands'
             });
 
             return this.enhanceProduct(response.data);
         } catch (error: unknown) {
+            console.error('Error in getEnhancedProduct:', error);
+
             if (error instanceof Error && error.name === 'WPSNotFoundError') {
                 return null;
             }
@@ -129,57 +144,73 @@ export class WPSApiService {
         pageSize?: number;
         cursor?: string;
     }): Promise<SearchResult> {
-        const params: any = {
-            'page[size]': filters?.pageSize || 12,
-            include: 'items,images,brands'
-        };
+        try {
+            console.log('Service: searchProducts called with query:', query, 'filters:', filters);
 
-        if (filters?.cursor) {
-            params['page[cursor]'] = filters.cursor;
-        }
+            const params: any = {
+                'page[size]': filters?.pageSize || 12,
+                include: 'items,images,brands'
+            };
 
-        // Search products by name
-        const productResponse = await this.client.searchProducts(query, params);
-
-        // Search items by SKU if query looks like a part number
-        let itemResponse: any = { data: [] };
-        if (/^[a-zA-Z0-9-]+$/.test(query) && query.length >= 3) {
-            try {
-                itemResponse = await this.client.searchItemsBySku(query, {
-                    include: 'product,images',
-                    'page[size]': 10
-                });
-            } catch (error) {
-                // SKU search failed, continue with just product search
+            if (filters?.cursor) {
+                params['page[cursor]'] = filters.cursor;
             }
+
+            console.log('Calling searchProducts with params:', params);
+
+            // Search products by name
+            const productResponse = await this.client.searchProducts(query, params);
+
+            // Search items by SKU if query looks like a part number
+            let itemResponse: any = { data: [] };
+            if (/^[a-zA-Z0-9-]+$/.test(query) && query.length >= 3) {
+                try {
+                    itemResponse = await this.client.searchItemsBySku(query, {
+                        include: 'product,images',
+                        'page[size]': 10
+                    });
+                } catch (error) {
+                    console.warn('SKU search failed, continuing with product search only:', error);
+                }
+            }
+
+            const enhancedProducts = productResponse.data.map(product => this.enhanceProduct(product));
+            const enhancedItems = itemResponse.data.map((item: WPSItem) => this.enhanceItem(item));
+
+            return {
+                query,
+                products: enhancedProducts,
+                items: enhancedItems,
+                totalResults: enhancedProducts.length + enhancedItems.length,
+                hasMore: !!productResponse.meta?.cursor?.next,
+                nextCursor: productResponse.meta?.cursor?.next || undefined
+            };
+        } catch (error) {
+            console.error('Error in searchProducts:', error);
+            throw error;
         }
-
-        const enhancedProducts = productResponse.data.map(product => this.enhanceProduct(product));
-        const enhancedItems = itemResponse.data.map((item: WPSItem) => this.enhanceItem(item));
-
-        return {
-            query,
-            products: enhancedProducts,
-            items: enhancedItems,
-            totalResults: enhancedProducts.length + enhancedItems.length,
-            hasMore: !!productResponse.meta?.cursor?.next,
-            nextCursor: productResponse.meta?.cursor?.next || undefined
-        };
     }
 
     // CATEGORY SERVICES
 
     async getCategories(): Promise<CategoryWithProducts[]> {
-        const response = await this.client.getTaxonomyterms({
-            'page[size]': 100,
-            'sort[asc]': 'name'
-        });
+        try {
+            console.log('Service: getCategories called');
 
-        return response.data.map(category => ({
-            ...category,
-            products: [],
-            productCount: 0
-        }));
+            const response = await this.client.getTaxonomyterms({
+                'page[size]': 100,
+                'sort[asc]': 'name'
+            });
+
+            return response.data.map(category => ({
+                ...category,
+                products: [],
+                productCount: 0
+            }));
+        } catch (error) {
+            console.error('Error in getCategories:', error);
+            throw error;
+        }
     }
 
     async getCategoryTree(): Promise<CategoryWithProducts[]> {
@@ -402,17 +433,31 @@ export class WPSApiService {
     }
 }
 
-// Singleton instance for app-wide use
-export const wpsApiService = new WPSApiService();
+// Lazy singleton initialization
+let _wpsApiService: WPSApiService | null = null;
+
+export function getWPSApiService(): WPSApiService {
+    if (!_wpsApiService) {
+        _wpsApiService = new WPSApiService();
+    }
+    return _wpsApiService;
+}
+
+// Keep the old export for backward compatibility, but make it lazy
+export const wpsApiService = {
+    get instance() {
+        return getWPSApiService();
+    }
+};
 
 // React hooks for easy component integration
 export function useWPSService() {
-    return wpsApiService;
+    return getWPSApiService();
 }
 
 // Specialized hooks
 export function useProductData() {
-    const service = useWPSService();
+    const service = getWPSApiService();
 
     return {
         async loadProduct(id: number | string) {
@@ -430,7 +475,7 @@ export function useProductData() {
 }
 
 export function useInventoryData() {
-    const service = useWPSService();
+    const service = getWPSApiService();
 
     return {
         async checkStock(itemId: number) {
@@ -440,7 +485,7 @@ export function useInventoryData() {
 }
 
 export function useCartData() {
-    const service = useWPSService();
+    const service = getWPSApiService();
 
     return {
         async createCart(customerInfo?: any) {
@@ -461,5 +506,9 @@ export function useCartData() {
     };
 }
 
-// Export everything for convenience
-export default wpsApiService;
+// Export default using the lazy getter
+export default {
+    get instance() {
+        return getWPSApiService();
+    }
+};

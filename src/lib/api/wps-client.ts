@@ -30,6 +30,7 @@ interface QueryParams {
     'filter[list_price][gt]'?: number;
     'filter[name][pre]'?: string;
     'filter[updated_at][gt]'?: string;
+    'filter[item_id]'?: number;
     'fields[items]'?: string;
     'fields[products]'?: string;
     'fields[images]'?: string;
@@ -234,7 +235,12 @@ export class WPSApiClient {
         params?: QueryParams,
         options: RequestInit = {}
     ): Promise<ApiResponse<T>> {
-        const url = new URL(endpoint, this.config.baseUrl);
+        // Ensure endpoint doesn't start with slash (baseUrl should handle that)
+        const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+
+        // Construct full URL - ensure baseUrl ends with /
+        const baseUrl = this.config.baseUrl.endsWith('/') ? this.config.baseUrl : `${this.config.baseUrl}/`;
+        const url = new URL(cleanEndpoint, baseUrl);
 
         // Add query parameters
         if (params) {
@@ -507,9 +513,24 @@ export class WPSApiClient {
 
 // Factory function for easy instantiation
 export function createWPSClient(config?: Partial<WPSConfig>): WPSApiClient {
+    const baseUrl = config?.baseUrl ||
+        process.env.NEXT_PUBLIC_WPS_API_URL ||
+        process.env.WPS_API_URL ||
+        '';
+
+    const token = config?.token ||
+        process.env.NEXT_PUBLIC_WPS_API_TOKEN ||
+        process.env.WPS_API_TOKEN ||
+        '';
+
+    // Only throw error if neither baseUrl nor token are provided
+    if (!baseUrl && !token && !config?.baseUrl && !config?.token) {
+        console.warn('WPS API configuration not found. Please provide baseUrl and token manually.');
+    }
+
     const defaultConfig: WPSConfig = {
-        baseUrl: process.env.NEXT_PUBLIC_WPS_API_URL || process.env.WPS_API_URL || '',
-        token: process.env.NEXT_PUBLIC_WPS_API_TOKEN || process.env.WPS_API_TOKEN || '',
+        baseUrl,
+        token,
     };
 
     return new WPSApiClient({ ...defaultConfig, ...config });
