@@ -1,4 +1,4 @@
-// lib/api/services.ts
+// lib/api/services.ts - FIXED VERSION
 // Service layer for common business logic and data transformations
 
 import {
@@ -13,7 +13,7 @@ import {
     ImageUtils
 } from './wps-client';
 
-// Enhanced interfaces for our application
+// Enhanced interfaces for our application (keeping the same)
 export interface EnhancedProduct extends WPSProduct {
     primaryImage?: WPSImage;
     imageUrls?: {
@@ -62,7 +62,7 @@ export interface SearchResult {
     nextCursor?: string;
 }
 
-// Main API Service Class
+// Main API Service Class - FIXED
 export class WPSApiService {
     private client: WPSApiClient;
 
@@ -70,23 +70,55 @@ export class WPSApiService {
         this.client = client || createWPSClient();
     }
 
-    // PRODUCT SERVICES
+    // PRODUCT SERVICES - FIXED
 
     async getEnhancedProducts(params?: any): Promise<EnhancedProduct[]> {
         try {
             console.log('Service: getEnhancedProducts called with params:', params);
 
-            const requestParams = {
-                include: 'items,images,brands',
-                'page[size]': 20,
+            // FIXED: Use only supported includes for products endpoint
+            // Based on the error, 'brands' is not supported, so we'll use items,images only
+            const requestParams: any = {
+                include: 'items,images',
                 ...params
             };
 
-            console.log('Making API call with params:', requestParams);
+            // Override include if it was passed in params to avoid conflicts
+            if (params?.include) {
+                // Filter out unsupported includes
+                const allowedIncludes = ['items', 'images', 'features'];
+                const requestedIncludes = params.include.split(',').map((s: string) => s.trim());
+                const validIncludes = requestedIncludes.filter((inc: string) => allowedIncludes.includes(inc));
+                requestParams.include = validIncludes.join(',');
+            }
+
+            // Convert page[size] format if needed
+            if (params && typeof params['page[size]'] !== 'undefined') {
+                requestParams['page[size]'] = params['page[size]'];
+                delete requestParams.pageSize; // Remove any conflicting params
+            } else if (params && params.pageSize) {
+                requestParams['page[size]'] = params.pageSize;
+                delete requestParams.pageSize;
+            } else if (!requestParams['page[size]']) {
+                requestParams['page[size]'] = 20; // Default page size
+            }
+
+            console.log('Making API call with cleaned params:', requestParams);
             const response = await this.client.getProducts(requestParams);
 
-            console.log('API response received:', response);
-            return response.data.map(product => this.enhanceProduct(product));
+            console.log('API response received, enhancing products...');
+
+            // If we need brand data and it wasn't included, we'll need to fetch it separately
+            // For now, let's enhance without brand data and add a note about this limitation
+            const enhancedProducts = response.data.map(product => this.enhanceProduct(product));
+
+            // Optionally: fetch brand data separately if needed
+            // This would require additional API calls but provides complete data
+            if (params?.includeBrands && enhancedProducts.length > 0) {
+                await this.addBrandDataToProducts(enhancedProducts);
+            }
+
+            return enhancedProducts;
         } catch (error) {
             console.error('Error in getEnhancedProducts:', error);
             throw error;
@@ -97,11 +129,28 @@ export class WPSApiService {
         try {
             console.log('Service: getEnhancedProduct called with id:', id);
 
+            // FIXED: Use only supported includes for products endpoint
             const response = await this.client.getProduct(id, {
-                include: 'items,images,features,brands'
+                include: 'items,images,features'  // Removed 'brands' as it's not supported
             });
 
-            return this.enhanceProduct(response.data);
+            console.log('Product data received, enhancing...');
+            const enhancedProduct = this.enhanceProduct(response.data);
+
+            // If we need brand data, fetch it separately using the brand_id from items
+            if (response.data.items && response.data.items.length > 0) {
+                const brandId = response.data.items[0].brand_id;
+                if (brandId) {
+                    try {
+                        const brandResponse = await this.client.getBrand(brandId);
+                        enhancedProduct.brand = brandResponse.data;
+                    } catch (brandError) {
+                        console.warn('Could not fetch brand data:', brandError);
+                    }
+                }
+            }
+
+            return enhancedProduct;
         } catch (error: unknown) {
             console.error('Error in getEnhancedProduct:', error);
 
@@ -121,12 +170,15 @@ export class WPSApiService {
         // Get category info
         const categoryResponse = await this.client.getTaxonomyterm(categoryId);
 
-        // Get products in category
-        const productsResponse = await this.client.getTaxonomytermProducts(categoryId, {
-            include: 'items,images,brands',
+        // FIXED: Use only supported includes for products endpoint
+        const requestParams: any = {
+            include: 'items,images',  // Removed 'brands' as it's not supported
             'page[size]': 20,
             ...params
-        });
+        };
+
+        // Get products in category
+        const productsResponse = await this.client.getTaxonomytermProducts(categoryId, requestParams);
 
         return {
             products: productsResponse.data.map(product => this.enhanceProduct(product)),
@@ -147,13 +199,36 @@ export class WPSApiService {
         try {
             console.log('Service: searchProducts called with query:', query, 'filters:', filters);
 
+            // FIXED: Use only supported includes for products endpoint
             const params: any = {
-                'page[size]': filters?.pageSize || 12,
-                include: 'items,images,brands'
+                include: 'items,images'  // Removed 'brands' as it's not supported
             };
 
+            // Handle page size
+            if (filters?.pageSize) {
+                params['page[size]'] = filters.pageSize;
+            } else {
+                params['page[size]'] = 12; // Default
+            }
+
+            // Handle cursor
             if (filters?.cursor) {
                 params['page[cursor]'] = filters.cursor;
+            }
+
+            // Handle brand filter
+            if (filters?.brandIds && filters.brandIds.length > 0) {
+                // For multiple brands, you might need to make multiple requests
+                // or use a different filter format based on API capabilities
+                params['filter[brand_id]'] = filters.brandIds[0]; // Taking first brand for now
+            }
+
+            // Handle price filters
+            if (filters?.priceMin !== undefined) {
+                params['filter[list_price][gt]'] = filters.priceMin;
+            }
+            if (filters?.priceMax !== undefined) {
+                params['filter[list_price][lt]'] = filters.priceMax;
             }
 
             console.log('Calling searchProducts with params:', params);
@@ -165,10 +240,11 @@ export class WPSApiService {
             let itemResponse: any = { data: [] };
             if (/^[a-zA-Z0-9-]+$/.test(query) && query.length >= 3) {
                 try {
-                    itemResponse = await this.client.searchItemsBySku(query, {
+                    const itemParams = {
                         include: 'product,images',
                         'page[size]': 10
-                    });
+                    };
+                    itemResponse = await this.client.searchItemsBySku(query, itemParams);
                 } catch (error) {
                     console.warn('SKU search failed, continuing with product search only:', error);
                 }
@@ -191,17 +267,20 @@ export class WPSApiService {
         }
     }
 
-    // CATEGORY SERVICES
+    // CATEGORY SERVICES - FIXED
 
     async getCategories(): Promise<CategoryWithProducts[]> {
         try {
             console.log('Service: getCategories called');
 
-            const response = await this.client.getTaxonomyterms({
+            const params = {
                 'page[size]': 100,
                 'sort[asc]': 'name'
-            });
+            };
 
+            const response = await this.client.getTaxonomyterms(params);
+
+            console.log('Categories received:', response.data.length);
             return response.data.map(category => ({
                 ...category,
                 products: [],
@@ -217,8 +296,6 @@ export class WPSApiService {
         const categories = await this.getCategories();
 
         // Build tree structure based on parent_id and depth
-        const rootCategories = categories.filter(cat => cat.parent_id === null);
-
         const buildTree = (parentId: number | null, depth: number = 0): CategoryWithProducts[] => {
             return categories
                 .filter(cat => cat.parent_id === parentId)
@@ -235,11 +312,11 @@ export class WPSApiService {
     // BRAND SERVICES
 
     async getBrands(): Promise<WPSBrand[]> {
-        const response = await this.client.getBrands({
+        const params = {
             'page[size]': 100,
             'sort[asc]': 'name'
-        });
-
+        };
+        const response = await this.client.getBrands(params);
         return response.data;
     }
 
@@ -344,6 +421,56 @@ export class WPSApiService {
 
     // UTILITY METHODS
 
+    // Helper method to add brand data to products when needed
+    private async addBrandDataToProducts(products: EnhancedProduct[]): Promise<void> {
+        try {
+            // Get unique brand IDs from all products
+            const brandIds = new Set<number>();
+            products.forEach(product => {
+                if (product.items && product.items.length > 0) {
+                    product.items.forEach(item => {
+                        if (item.brand_id) {
+                            brandIds.add(item.brand_id);
+                        }
+                    });
+                }
+            });
+
+            // Fetch brand data for all unique brand IDs
+            const brandPromises = Array.from(brandIds).map(async (brandId) => {
+                try {
+                    const brandResponse = await this.client.getBrand(brandId);
+                    return { id: brandId, data: brandResponse.data };
+                } catch (error) {
+                    console.warn(`Could not fetch brand ${brandId}:`, error);
+                    return null;
+                }
+            });
+
+            const brandResults = await Promise.all(brandPromises);
+            const brandsMap = new Map<number, WPSBrand>();
+
+            brandResults.forEach(result => {
+                if (result) {
+                    brandsMap.set(result.id, result.data);
+                }
+            });
+
+            // Add brand data to products
+            products.forEach(product => {
+                if (product.items && product.items.length > 0) {
+                    const firstItem = product.items[0];
+                    if (firstItem.brand_id && brandsMap.has(firstItem.brand_id)) {
+                        product.brand = brandsMap.get(firstItem.brand_id);
+                    }
+                }
+            });
+        } catch (error) {
+            console.warn('Error adding brand data to products:', error);
+            // Don't throw - brand data is enhancement, not critical
+        }
+    }
+
     private enhanceProduct(product: WPSProduct): EnhancedProduct {
         const enhanced: EnhancedProduct = { ...product };
 
@@ -376,6 +503,11 @@ export class WPSApiService {
             // Rough inventory check (you'd want to actually check inventory for accuracy)
             enhanced.inStock = product.items.some(item => item.status === 'STK');
             enhanced.totalInventory = 0; // Would need separate inventory calls
+        }
+
+        // Set brand from included data
+        if (product.brand) {
+            enhanced.brand = product.brand;
         }
 
         return enhanced;

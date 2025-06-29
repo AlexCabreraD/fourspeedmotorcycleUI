@@ -328,7 +328,6 @@ export default function ApiTestPage() {
                         console.log('Testing getEnhancedProducts service...');
                         try {
                             // Try with minimal parameters first
-                            //FAIL
                             result = await getWPSApiService().getEnhancedProducts({ 'page[size]': 3 });
                         } catch (error: any) {
                             console.error('getEnhancedProducts failed, trying direct client call:', error);
