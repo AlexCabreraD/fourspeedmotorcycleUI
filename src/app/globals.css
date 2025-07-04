@@ -1,12 +1,214 @@
-@import "tailwindcss";
+/* Import industrial-style fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@400;500;600;700&display=swap');
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #f8fafc; /* slate-50 */
+    --foreground: #0f172a; /* slate-900 */
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+    scroll-behavior: smooth;
+  }
+
+  /* Scrollbar styling for webkit browsers */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Button styles */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium transition-all duration-200 border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500 shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-steel-100 text-steel-900 hover:bg-steel-200 focus:ring-steel-500 border-steel-300;
+  }
+
+  .btn-accent {
+    @apply bg-accent-600 text-white hover:bg-accent-700 focus:ring-accent-500 shadow-sm;
+  }
+
+  .btn-outline {
+    @apply bg-transparent text-primary-600 border-primary-600 hover:bg-primary-50 focus:ring-primary-500;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-white border border-neutral-200 rounded-lg shadow-card;
+  }
+
+  .card-hover {
+    @apply hover:shadow-card-hover transition-shadow duration-200;
+  }
+
+  .card-industrial {
+    @apply bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 shadow-industrial;
+  }
+
+  /* Form styles */
+  .form-input {
+    @apply block w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm placeholder-neutral-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-neutral-700 mb-1;
+  }
+
+  /* Product grid */
+  .product-grid {
+    @apply grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+
+  /* Industrial section styling */
+  .section-industrial {
+    @apply bg-gradient-to-b from-slate-50 to-white border-b border-slate-200;
+  }
+
+  .section-dark {
+    @apply bg-gradient-to-b from-slate-800 to-slate-900 text-white;
+  }
+
+  /* Typography */
+  .heading-display {
+    @apply font-display font-bold text-slate-900 leading-tight;
+  }
+
+  .heading-section {
+    @apply font-display font-semibold text-slate-900 leading-tight;
+  }
+
+  .text-body {
+    @apply text-slate-600 leading-relaxed;
+  }
+
+  /* Navigation */
+  .nav-link {
+    @apply text-slate-600 hover:text-slate-900 px-3 py-2 text-sm font-medium transition-colors duration-200;
+  }
+
+  .nav-link-active {
+    @apply text-primary-600 border-b-2 border-primary-600;
+  }
+
+  /* Badge styles */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply bg-primary-100 text-primary-800;
+  }
+
+  .badge-accent {
+    @apply bg-accent-100 text-accent-800;
+  }
+
+  .badge-success {
+    @apply bg-green-100 text-green-800;
+  }
+
+  .badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+
+  /* Price styling */
+  .price {
+    @apply font-bold text-slate-900;
+  }
+
+  .price-large {
+    @apply text-2xl font-bold text-primary-600;
+  }
+
+  .price-small {
+    @apply text-sm font-medium text-slate-600;
+  }
+
+  .price-strike {
+    @apply text-slate-400 line-through;
+  }
+
+  /* Loading states */
+  .loading-skeleton {
+    @apply animate-pulse bg-slate-200 rounded;
+  }
+
+  /* Focus states for accessibility */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  }
+}
+
+@layer utilities {
+  /* Text decoration utilities */
+  .text-shadow {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  .text-shadow-lg {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Background patterns */
+  .bg-industrial {
+    background-image: 
+      linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%),
+      url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23cbd5e1' fill-opacity='0.05'%3E%3Cpath d='m0 40 40-40v40z'/%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  /* Scrollbar hiding */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Aspect ratio utilities for product images */
+  .aspect-product {
+    aspect-ratio: 4 / 3;
+  }
+
+  .aspect-hero {
+    aspect-ratio: 21 / 9;
+  }
 }

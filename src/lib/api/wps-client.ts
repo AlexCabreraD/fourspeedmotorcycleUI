@@ -23,6 +23,138 @@ interface QueryParams {
     [key: string]: any;
 }
 
+// Advanced interfaces for additional API entities
+export interface WPSVehicle {
+    id: number;
+    make: string;
+    model: string;
+    year: number;
+    engine?: string;
+    displacement?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface WPSVehicleMake {
+    id: number;
+    name: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface WPSVehicleModel {
+    id: number;
+    make_id: number;
+    name: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface WPSAttribute {
+    id: number;
+    name: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface WPSCountry {
+    id: number;
+    code: string;
+    name: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface WPSWarehouse {
+    id: number;
+    db2_key: string;
+    name: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface WPSResource {
+    id: number;
+    name: string;
+    type: string;
+    reference: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface WPSTag {
+    id: number;
+    name: string;
+    slug: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface WPSVocabulary {
+    id: number;
+    name: string;
+    description: string;
+    created_at: string;
+    updated_at: string;
+}
+
+// Enhanced filtering and query interfaces
+export interface FilterOptions {
+    name?: {
+        pre?: string;
+        suf?: string;
+        con?: string;
+        eq?: string;
+    };
+    sku?: {
+        pre?: string;
+        suf?: string;
+        con?: string;
+        eq?: string;
+    };
+    brand_id?: number | number[];
+    product_type?: string;
+    list_price?: {
+        gt?: number;
+        lt?: number;
+        gte?: number;
+        lte?: number;
+        eq?: number;
+    };
+    status?: string;
+    drop_ship_eligible?: boolean;
+    has_map_policy?: boolean;
+    created_at?: {
+        gt?: string;
+        lt?: string;
+        gte?: string;
+        lte?: string;
+    };
+    updated_at?: {
+        gt?: string;
+        lt?: string;
+        gte?: string;
+        lte?: string;
+    };
+}
+
+export interface SortOptions {
+    field: string;
+    direction: 'asc' | 'desc';
+}
+
+export interface PaginationOptions {
+    size?: number;
+    cursor?: string;
+}
+
+export interface AdvancedQueryOptions {
+    filters?: FilterOptions;
+    sort?: SortOptions | SortOptions[];
+    pagination?: PaginationOptions;
+    include?: string[];
+}
+
 // Core entity interfaces (keeping the same)
 export interface WPSItem {
     id: number;
@@ -57,6 +189,10 @@ export interface WPSItem {
     prop_65_detail: string | null;
     drop_ship_fee: string;
     drop_ship_eligible: boolean;
+    images?: {
+        data: WPSImage[];
+    };
+    brand?: WPSBrand;
 }
 
 export interface WPSProduct {
@@ -73,7 +209,9 @@ export interface WPSProduct {
     created_at: string;
     updated_at: string;
     items?: WPSItem[];
-    images?: WPSImage[];
+    images?: {
+        data: WPSImage[];
+    };
     features?: WPSFeature[];
     brand?: WPSBrand;
 }
@@ -150,9 +288,246 @@ export interface WPSCart {
 
 export interface WPSOrder {
     order_number: string;
+    status?: string;
+    total?: number;
+    created_at?: string;
+    updated_at?: string;
 }
 
-// Image utility functions (keeping the same)
+export interface WPSPricing {
+    list_price: string;
+    dealer_price: string;
+    mapp_price?: string;
+    cost?: string;
+    effective_date?: string;
+}
+
+export interface WPSFitment {
+    id: number;
+    item_id: number;
+    vehicle_id: number;
+    position?: string;
+    notes?: string;
+    created_at: string;
+    updated_at: string;
+}
+
+// Advanced query builder utility
+export class QueryBuilder {
+    private filters: Record<string, any> = {};
+    private sorts: SortOptions[] = [];
+    private includes: string[] = [];
+    private pagination: PaginationOptions = {};
+
+    // Filter methods
+    addFilter(field: string, operator: string, value: any): QueryBuilder {
+        if (operator === 'eq') {
+            this.filters[`filter[${field}]`] = value;
+        } else {
+            this.filters[`filter[${field}][${operator}]`] = value;
+        }
+        return this;
+    }
+
+    filterByName(query: string, operator: 'pre' | 'suf' | 'con' | 'eq' = 'pre'): QueryBuilder {
+        return this.addFilter('name', operator, query);
+    }
+
+    filterBySku(sku: string, operator: 'pre' | 'suf' | 'con' | 'eq' = 'pre'): QueryBuilder {
+        return this.addFilter('sku', operator, sku);
+    }
+
+    filterByBrand(brandId: number | number[]): QueryBuilder {
+        return this.addFilter('brand_id', 'eq', Array.isArray(brandId) ? brandId.join(',') : brandId);
+    }
+
+    filterByProductType(productType: string): QueryBuilder {
+        return this.addFilter('product_type', 'eq', productType);
+    }
+
+    filterByPriceRange(min?: number, max?: number): QueryBuilder {
+        if (min !== undefined) {
+            this.addFilter('list_price', 'gte', min);
+        }
+        if (max !== undefined) {
+            this.addFilter('list_price', 'lte', max);
+        }
+        return this;
+    }
+
+    filterByStatus(status: string): QueryBuilder {
+        return this.addFilter('status', 'eq', status);
+    }
+
+    filterByDropShipEligible(eligible: boolean = true): QueryBuilder {
+        return this.addFilter('drop_ship_eligible', 'eq', eligible);
+    }
+
+    filterByDateRange(field: 'created_at' | 'updated_at', from?: string, to?: string): QueryBuilder {
+        if (from) {
+            this.addFilter(field, 'gte', from);
+        }
+        if (to) {
+            this.addFilter(field, 'lte', to);
+        }
+        return this;
+    }
+
+    // Sort methods
+    sortBy(field: string, direction: 'asc' | 'desc' = 'asc'): QueryBuilder {
+        this.sorts.push({ field, direction });
+        return this;
+    }
+
+    sortByName(direction: 'asc' | 'desc' = 'asc'): QueryBuilder {
+        return this.sortBy('name', direction);
+    }
+
+    sortByPrice(direction: 'asc' | 'desc' = 'asc'): QueryBuilder {
+        return this.sortBy('list_price', direction);
+    }
+
+    sortByDate(field: 'created_at' | 'updated_at' = 'created_at', direction: 'asc' | 'desc' = 'desc'): QueryBuilder {
+        return this.sortBy(field, direction);
+    }
+
+    // Include methods
+    include(relations: string | string[]): QueryBuilder {
+        const relationsArray = Array.isArray(relations) ? relations : [relations];
+        this.includes.push(...relationsArray);
+        return this;
+    }
+
+    includeImages(): QueryBuilder {
+        return this.include('images');
+    }
+
+    includeBrand(): QueryBuilder {
+        return this.include('brand');
+    }
+
+    includeInventory(): QueryBuilder {
+        return this.include('inventory');
+    }
+
+    includeItems(): QueryBuilder {
+        return this.include('items');
+    }
+
+    includeProduct(): QueryBuilder {
+        return this.include('product');
+    }
+
+    // Pagination methods
+    pageSize(size: number): QueryBuilder {
+        this.pagination.size = size;
+        return this;
+    }
+
+    cursor(cursor: string): QueryBuilder {
+        this.pagination.cursor = cursor;
+        return this;
+    }
+
+    // Build final query parameters
+    build(): QueryParams {
+        const params: QueryParams = { ...this.filters };
+
+        // Add sorting
+        this.sorts.forEach(sort => {
+            params[`sort[${sort.direction}]`] = sort.field;
+        });
+
+        // Add includes
+        if (this.includes.length > 0) {
+            params.include = [...new Set(this.includes)].join(',');
+        }
+
+        // Add pagination
+        if (this.pagination.size) {
+            params['page[size]'] = this.pagination.size;
+        }
+        if (this.pagination.cursor) {
+            params['page[cursor]'] = this.pagination.cursor;
+        }
+
+        return params;
+    }
+
+    // Reset builder
+    reset(): QueryBuilder {
+        this.filters = {};
+        this.sorts = [];
+        this.includes = [];
+        this.pagination = {};
+        return this;
+    }
+
+    // Clone builder
+    clone(): QueryBuilder {
+        const newBuilder = new QueryBuilder();
+        newBuilder.filters = { ...this.filters };
+        newBuilder.sorts = [...this.sorts];
+        newBuilder.includes = [...this.includes];
+        newBuilder.pagination = { ...this.pagination };
+        return newBuilder;
+    }
+}
+
+// Cache utility for API responses
+export class ApiCache {
+    private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+    private defaultTTL = 5 * 60 * 1000; // 5 minutes
+
+    set<T>(key: string, data: T, ttl: number = this.defaultTTL): void {
+        this.cache.set(key, {
+            data,
+            timestamp: Date.now(),
+            ttl
+        });
+    }
+
+    get<T>(key: string): T | null {
+        const item = this.cache.get(key);
+        if (!item) return null;
+
+        if (Date.now() - item.timestamp > item.ttl) {
+            this.cache.delete(key);
+            return null;
+        }
+
+        return item.data as T;
+    }
+
+    has(key: string): boolean {
+        return this.get(key) !== null;
+    }
+
+    delete(key: string): boolean {
+        return this.cache.delete(key);
+    }
+
+    clear(): void {
+        this.cache.clear();
+    }
+
+    size(): number {
+        return this.cache.size;
+    }
+
+    // Generate cache key from endpoint and params
+    static generateKey(endpoint: string, params?: QueryParams): string {
+        const sortedParams = params ? Object.keys(params)
+            .sort()
+            .reduce((obj, key) => {
+                obj[key] = params[key];
+                return obj;
+            }, {} as QueryParams) : {};
+        return `${endpoint}:${JSON.stringify(sortedParams)}`;
+    }
+}
+
+// Enhanced Image utility functions
 export class ImageUtils {
     private static readonly IMAGE_STYLES = ['200_max', '500_max', '1000_max', 'full'] as const;
 
@@ -167,6 +542,77 @@ export class ImageUtils {
 
     static getAvailableStyles() {
         return [...ImageUtils.IMAGE_STYLES];
+    }
+
+    // Helper to get first image from WPS item/product
+    static getFirstImage(item: WPSItem | WPSProduct): WPSImage | null {
+        if (item.images && item.images.data && item.images.data.length > 0) {
+            return item.images.data[0];
+        }
+        return null;
+    }
+
+    // Helper to get all images from WPS item/product
+    static getAllImages(item: WPSItem | WPSProduct): WPSImage[] {
+        if (item.images && item.images.data) {
+            return item.images.data;
+        }
+        return [];
+    }
+
+    // Helper to get image URL for WPS item/product
+    static getItemImageUrl(
+        item: WPSItem | WPSProduct, 
+        style: typeof ImageUtils.IMAGE_STYLES[number] = '500_max',
+        fallback: string = '/placeholder-product.svg'
+    ): string {
+        const image = ImageUtils.getFirstImage(item);
+        if (image) {
+            try {
+                return ImageUtils.buildImageUrl(image, style);
+            } catch (error) {
+                console.warn('Failed to build image URL:', error);
+                return fallback;
+            }
+        }
+        return fallback;
+    }
+
+    // Helper to get multiple image URLs for gallery
+    static getItemImageUrls(
+        item: WPSItem | WPSProduct, 
+        style: typeof ImageUtils.IMAGE_STYLES[number] = '500_max'
+    ): string[] {
+        const images = ImageUtils.getAllImages(item);
+        return images.map(image => {
+            try {
+                return ImageUtils.buildImageUrl(image, style);
+            } catch (error) {
+                console.warn('Failed to build image URL:', error);
+                return '/placeholder-product.svg';
+            }
+        }).filter(Boolean);
+    }
+
+    // Helper to check if item has images
+    static hasImages(item: WPSItem | WPSProduct): boolean {
+        return !!(item.images && item.images.data && item.images.data.length > 0);
+    }
+
+    // Helper to get optimized image for different contexts
+    static getOptimizedImageUrl(
+        item: WPSItem | WPSProduct,
+        context: 'thumbnail' | 'card' | 'detail' | 'full' = 'card',
+        fallback: string = '/placeholder-product.svg'
+    ): string {
+        const styleMap = {
+            thumbnail: '200_max' as const,
+            card: '500_max' as const,
+            detail: '1000_max' as const,
+            full: 'full' as const
+        };
+        
+        return ImageUtils.getItemImageUrl(item, styleMap[context], fallback);
     }
 }
 
@@ -200,8 +646,10 @@ export class WPSNotFoundError extends WPSApiError {
 export class WPSApiClient {
     private config: WPSConfig;
     private defaultTimeout = 30000; // 30 seconds
+    private cache: ApiCache;
+    private enableCaching: boolean;
 
-    constructor(config: WPSConfig) {
+    constructor(config: WPSConfig & { enableCaching?: boolean }) {
         if (!config.baseUrl || !config.token) {
             throw new Error('WPS API baseUrl and token are required');
         }
@@ -210,6 +658,8 @@ export class WPSApiClient {
             ...config,
             timeout: config.timeout || this.defaultTimeout
         };
+        this.enableCaching = config.enableCaching ?? true;
+        this.cache = new ApiCache();
     }
 
     private async makeRequest<T>(
@@ -505,6 +955,176 @@ export class WPSApiClient {
         return this.getItems(cleanParams);
     }
 
+    // Enhanced API methods with caching support
+    async getCachedOrFetch<T>(
+        endpoint: string,
+        params?: QueryParams,
+        ttl?: number
+    ): Promise<ApiResponse<T>> {
+        if (!this.enableCaching) {
+            return this.get<T>(endpoint, params);
+        }
+
+        const cacheKey = ApiCache.generateKey(endpoint, params);
+        const cached = this.cache.get<ApiResponse<T>>(cacheKey);
+        
+        if (cached) {
+            return cached;
+        }
+
+        const result = await this.get<T>(endpoint, params);
+        this.cache.set(cacheKey, result, ttl);
+        return result;
+    }
+
+    // Query Builder integration
+    createQuery(): QueryBuilder {
+        return new QueryBuilder();
+    }
+
+    async executeQuery<T>(endpoint: string, query: QueryBuilder): Promise<ApiResponse<T>> {
+        return this.getCachedOrFetch<T>(endpoint, query.build());
+    }
+
+    // Additional API endpoints
+    
+    // Vehicle API
+    async getVehicles(params?: QueryParams): Promise<ApiResponse<WPSVehicle[]>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSVehicle[]>('vehicles', cleanParams);
+    }
+
+    async getVehicle(id: number, params?: QueryParams): Promise<ApiResponse<WPSVehicle>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSVehicle>(`vehicles/${id}`, cleanParams);
+    }
+
+    async getVehicleMakes(params?: QueryParams): Promise<ApiResponse<WPSVehicleMake[]>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSVehicleMake[]>('vehiclemakes', cleanParams);
+    }
+
+    async getVehicleModels(params?: QueryParams): Promise<ApiResponse<WPSVehicleModel[]>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSVehicleModel[]>('vehiclemodels', cleanParams);
+    }
+
+    // Attributes API
+    async getAttributes(params?: QueryParams): Promise<ApiResponse<WPSAttribute[]>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSAttribute[]>('attributes', cleanParams);
+    }
+
+    async getAttribute(id: number, params?: QueryParams): Promise<ApiResponse<WPSAttribute>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSAttribute>(`attributes/${id}`, cleanParams);
+    }
+
+    // Countries API
+    async getCountries(params?: QueryParams): Promise<ApiResponse<WPSCountry[]>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSCountry[]>('countries', cleanParams);
+    }
+
+    async getCountry(id: number, params?: QueryParams): Promise<ApiResponse<WPSCountry>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSCountry>(`countries/${id}`, cleanParams);
+    }
+
+    // Warehouses API
+    async getWarehouses(params?: QueryParams): Promise<ApiResponse<WPSWarehouse[]>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSWarehouse[]>('warehouses', cleanParams);
+    }
+
+    async getWarehouse(id: number, params?: QueryParams): Promise<ApiResponse<WPSWarehouse>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSWarehouse>(`warehouses/${id}`, cleanParams);
+    }
+
+    // Resources API
+    async getResources(params?: QueryParams): Promise<ApiResponse<WPSResource[]>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSResource[]>('resources', cleanParams);
+    }
+
+    async getResource(id: number, params?: QueryParams): Promise<ApiResponse<WPSResource>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSResource>(`resources/${id}`, cleanParams);
+    }
+
+    // Tags API
+    async getTags(params?: QueryParams): Promise<ApiResponse<WPSTag[]>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSTag[]>('tags', cleanParams);
+    }
+
+    async getTag(id: number, params?: QueryParams): Promise<ApiResponse<WPSTag>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSTag>(`tags/${id}`, cleanParams);
+    }
+
+    // Vocabularies API
+    async getVocabularies(params?: QueryParams): Promise<ApiResponse<WPSVocabulary[]>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSVocabulary[]>('vocabularies', cleanParams);
+    }
+
+    async getVocabulary(id: number, params?: QueryParams): Promise<ApiResponse<WPSVocabulary>> {
+        const cleanParams = this.cleanParams(params);
+        return this.getCachedOrFetch<WPSVocabulary>(`vocabularies/${id}`, cleanParams);
+    }
+
+    // Enhanced search methods
+    async advancedSearch(query: QueryBuilder): Promise<ApiResponse<WPSItem[]>> {
+        return this.executeQuery<WPSItem[]>('items', query);
+    }
+
+    async searchProductsAdvanced(query: QueryBuilder): Promise<ApiResponse<WPSProduct[]>> {
+        return this.executeQuery<WPSProduct[]>('products', query);
+    }
+
+    // Batch operations
+    async getMultipleItems(ids: number[], params?: QueryParams): Promise<ApiResponse<WPSItem[]>> {
+        const query = this.createQuery()
+            .addFilter('id', 'eq', ids.join(','))
+            .pageSize(ids.length);
+        
+        if (params?.include) {
+            query.include(params.include);
+        }
+        
+        return this.executeQuery<WPSItem[]>('items', query);
+    }
+
+    async getMultipleProducts(ids: number[], params?: QueryParams): Promise<ApiResponse<WPSProduct[]>> {
+        const query = this.createQuery()
+            .addFilter('id', 'eq', ids.join(','))
+            .pageSize(ids.length);
+        
+        if (params?.include) {
+            query.include(params.include);
+        }
+        
+        return this.executeQuery<WPSProduct[]>('products', query);
+    }
+
+    // Cache management
+    clearCache(): void {
+        this.cache.clear();
+    }
+
+    getCacheSize(): number {
+        return this.cache.size();
+    }
+
+    setCachingEnabled(enabled: boolean): void {
+        this.enableCaching = enabled;
+        if (!enabled) {
+            this.clearCache();
+        }
+    }
+
     // FIXED: Parameter cleaning method
     private cleanParams(params?: QueryParams): QueryParams | undefined {
         if (!params) return undefined;
@@ -591,7 +1211,7 @@ export class WPSApiClient {
 }
 
 // Factory function for easy instantiation
-export function createWPSClient(config?: Partial<WPSConfig>): WPSApiClient {
+export function createWPSClient(config?: Partial<WPSConfig & { enableCaching?: boolean }>): WPSApiClient {
     const baseUrl = config?.baseUrl ||
         process.env.NEXT_PUBLIC_WPS_API_URL ||
         process.env.WPS_API_URL ||

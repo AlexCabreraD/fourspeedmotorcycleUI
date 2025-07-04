@@ -4,27 +4,31 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:kill": "node -e \"require('child_process').exec('pkill -f \\\"next.*dev\\\" || taskkill /F /IM node.exe /FI \\\"WINDOWTITLE eq *next*\\\"', () => console.log('Killed existing dev servers'))\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "wps:endpoint": "node scripts/quick-endpoint-test.js"
   },
   "dependencies": {
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/line-clamp": "^0.4.4",
+    "autoprefixer": "^10.4.21",
     "dotenv": "^16.5.0",
     "lucide-react": "^0.511.0",
     "next": "15.3.2",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tailwindcss": "^3.4.17",
+    "zustand": "^4.5.7"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
-    "tailwindcss": "^4",
     "typescript": "^5"
   }
 }

@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)",
+      "Bash(rg:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(mkdir:*)",
+      "Bash(touch:*)",
+      "Bash(rm:*)",
+      "Bash(npx next build:*)",
+      "Bash(pkill:*)",
+      "WebFetch(domain:www.wps-inc.com)",
+      "Bash(lsof:*)",
+      "Bash(npx tsc:*)",
+      "Bash(chmod:*)",
+      "Bash(true)",
+      "Bash(npm run dev:*)"
+    ],
+    "deny": []
+  }
+}

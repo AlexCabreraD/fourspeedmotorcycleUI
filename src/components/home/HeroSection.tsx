@@ -1,194 +1,195 @@
-// src/components/home/HeroSection.tsx
-"use client"
+'use client'
 
-import React, { useState } from 'react';
-import { Search, Play, ArrowRight, Star, Shield, Truck, Headphones } from 'lucide-react';
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+
+const heroSlides = [
+  {
+    id: 1,
+    title: "Premium Motorcycle Parts",
+    subtitle: "Performance & Style Combined",
+    description: "Discover our extensive collection of high-quality motorcycle parts from the industry's leading brands.",
+    cta: "Shop Parts",
+    ctaLink: "/categories",
+    background: "bg-gradient-to-r from-steel-900 via-steel-800 to-primary-900",
+    image: "/api/placeholder/hero-bike-1.jpg"
+  },
+  {
+    id: 2,
+    title: "New Arrivals",
+    subtitle: "Latest Gear & Accessories",
+    description: "Check out the newest additions to our inventory. Fresh parts, gear, and accessories just arrived.",
+    cta: "View New Arrivals",
+    ctaLink: "/new-arrivals",
+    background: "bg-gradient-to-r from-primary-900 via-primary-800 to-accent-900",
+    image: "/api/placeholder/hero-parts.jpg"
+  },
+  {
+    id: 3,
+    title: "Winter Sale",
+    subtitle: "Up to 40% Off Select Items",
+    description: "Don't miss out on our biggest sale of the year. Limited time offers on premium motorcycle parts.",
+    cta: "Shop Sale",
+    ctaLink: "/sale",
+    background: "bg-gradient-to-r from-accent-900 via-accent-800 to-primary-900",
+    image: "/api/placeholder/hero-sale.jpg"
+  }
+]
 
 export default function HeroSection() {
-    const [searchQuery, setSearchQuery] = useState('');
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true)
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        console.log('Searching for:', searchQuery);
-        // Handle search functionality
-    };
+  // Auto-advance slides
+  useEffect(() => {
+    if (!isAutoPlaying) return
 
-    return (
-        <section className="relative min-h-screen overflow-hidden">
-            {/* Background Image with Parallax Effect */}
-            <div
-                className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-fixed transform scale-105"
-                style={{
-                    backgroundImage: 'url(https://cdn.wpsstatic.com/images/1000_max/6dde-59cd72ea6f409.jpg)'
-                }}
-            ></div>
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
+    }, 5000)
 
-            {/* Animated Background Overlay */}
-            <div className="absolute inset-0">
-                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/40"></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+    return () => clearInterval(timer)
+  }, [isAutoPlaying])
 
-                {/* Animated particles/elements */}
-                <div className="absolute top-20 left-10 w-2 h-2 bg-yellow-400/30 rounded-full animate-pulse"></div>
-                <div className="absolute top-40 right-20 w-3 h-3 bg-blue-400/20 rounded-full animate-bounce"></div>
-                <div className="absolute bottom-40 left-20 w-1 h-1 bg-white/20 rounded-full animate-ping"></div>
-            </div>
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
+    setIsAutoPlaying(false)
+  }
 
-            {/* Hero Content */}
-            <div className="relative flex items-center min-h-screen pt-20">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32 w-full">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                        {/* Left Content */}
-                        <div className="text-white space-y-8">
-                            {/* Badge */}
-                            <div className="inline-flex items-center space-x-2 bg-yellow-500/20 border border-yellow-500/30 backdrop-blur-sm px-4 py-2 rounded-full">
-                                <Star className="w-4 h-4 text-yellow-400" />
-                                <span className="text-sm font-medium text-yellow-300">Trusted by 50,000+ Riders</span>
-                            </div>
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)
+    setIsAutoPlaying(false)
+  }
 
-                            {/* Main Heading */}
-                            <div>
-                                <h1 className="text-5xl lg:text-7xl font-bold leading-tight mb-6">
-                                    Premium Parts for
-                                    <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 animate-pulse">
-                                        Every Adventure
-                                    </span>
-                                </h1>
-                                <p className="text-xl lg:text-2xl text-gray-200 leading-relaxed">
-                                    Discover thousands of high-quality motorcycle, ATV, and powersports parts from trusted brands.
-                                    Get the performance and reliability your ride deserves.
-                                </p>
-                            </div>
+  const goToSlide = (index: number) => {
+    setCurrentSlide(index)
+    setIsAutoPlaying(false)
+  }
 
-                            {/* Search Bar */}
-                            <form onSubmit={handleSearch} className="relative max-w-lg">
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="Search parts by name, SKU, or brand..."
-                                        className="w-full px-6 py-4 pr-24 rounded-xl bg-white/95 backdrop-blur-sm border-0 text-gray-900 placeholder-gray-600 focus:outline-none focus:ring-4 focus:ring-yellow-500/50 text-lg shadow-lg"
-                                    />
-                                    <button
-                                        type="submit"
-                                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-yellow-500 hover:bg-yellow-600 text-black px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:scale-105"
-                                    >
-                                        <Search className="w-5 h-5" />
-                                    </button>
-                                </div>
+  const currentSlideData = heroSlides[currentSlide]
 
-                                {/* Popular searches */}
-                                <div className="mt-3 flex flex-wrap gap-2">
-                                    <span className="text-sm text-gray-300">Popular:</span>
-                                    {['Suspension', 'Brake Pads', 'LED Lights', 'Exhaust'].map((term) => (
-                                        <button
-                                            key={term}
-                                            onClick={() => setSearchQuery(term)}
-                                            className="text-sm text-yellow-300 hover:text-yellow-200 underline transition-colors"
-                                        >
-                                            {term}
-                                        </button>
-                                    ))}
-                                </div>
-                            </form>
+  return (
+    <section className="relative h-[70vh] min-h-[500px] overflow-hidden">
+      {/* Background with overlay */}
+      <div className={`absolute inset-0 ${currentSlideData.background} transition-all duration-1000`}>
+        <div className="absolute inset-0 bg-black bg-opacity-40" />
+        
+        {/* Background pattern */}
+        <div className="absolute inset-0 bg-industrial opacity-10" />
+      </div>
 
-                            {/* CTA Buttons */}
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <button className="group bg-yellow-500 hover:bg-yellow-600 text-black px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center justify-center">
-                                    Browse Categories
-                                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                                </button>
-                                <button className="group border-2 border-white/50 text-white hover:bg-white hover:text-black px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 hover:scale-105 backdrop-blur-sm flex items-center justify-center">
-                                    <Play className="w-5 h-5 mr-2" />
-                                    Watch Demo
-                                </button>
-                            </div>
-                        </div>
+      {/* Content */}
+      <div className="relative h-full flex items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            
+            {/* Text Content */}
+            <div className="text-white space-y-6">
+              <div className="space-y-4">
+                <p className="text-primary-300 font-medium text-lg tracking-wide">
+                  {currentSlideData.subtitle}
+                </p>
+                <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
+                  {currentSlideData.title}
+                </h1>
+                <p className="text-xl text-steel-200 max-w-lg leading-relaxed">
+                  {currentSlideData.description}
+                </p>
+              </div>
 
-                        {/* Right Content - Feature Cards */}
-                        <div className="hidden lg:block space-y-6">
-                            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 transform hover:scale-105 transition-all duration-300">
-                                <div className="flex items-center space-x-4 mb-4">
-                                    <div className="bg-yellow-500/20 p-3 rounded-xl">
-                                        <Shield className="w-6 h-6 text-yellow-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-white font-semibold text-lg">Quality Guaranteed</h3>
-                                        <p className="text-gray-300 text-sm">Premium parts from trusted brands</p>
-                                    </div>
-                                </div>
-                            </div>
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <Link
+                  href={currentSlideData.ctaLink}
+                  className="btn btn-accent btn-lg inline-flex items-center justify-center"
+                >
+                  {currentSlideData.cta}
+                </Link>
+                <Link
+                  href="/search"
+                  className="btn btn-outline btn-lg inline-flex items-center justify-center text-white border-white hover:bg-white hover:text-steel-900"
+                >
+                  <Search className="mr-2 h-5 w-5" />
+                  Find Parts
+                </Link>
+              </div>
 
-                            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 transform hover:scale-105 transition-all duration-300">
-                                <div className="flex items-center space-x-4 mb-4">
-                                    <div className="bg-blue-500/20 p-3 rounded-xl">
-                                        <Truck className="w-6 h-6 text-blue-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-white font-semibold text-lg">Fast Shipping</h3>
-                                        <p className="text-gray-300 text-sm">Same-day shipping on most orders</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 transform hover:scale-105 transition-all duration-300">
-                                <div className="flex items-center space-x-4 mb-4">
-                                    <div className="bg-green-500/20 p-3 rounded-xl">
-                                        <Headphones className="w-6 h-6 text-green-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-white font-semibold text-lg">Expert Support</h3>
-                                        <p className="text-gray-300 text-sm">Get help from powersports experts</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+              {/* Quick Stats */}
+              <div className="flex flex-wrap gap-8 pt-8 border-t border-white border-opacity-20">
+                <div>
+                  <div className="text-2xl font-bold text-primary-300">50K+</div>
+                  <div className="text-sm text-steel-300">Happy Customers</div>
                 </div>
+                <div>
+                  <div className="text-2xl font-bold text-primary-300">100K+</div>
+                  <div className="text-sm text-steel-300">Parts in Stock</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-primary-300">25+</div>
+                  <div className="text-sm text-steel-300">Years Experience</div>
+                </div>
+              </div>
             </div>
 
-            {/* Trust Indicators */}
-            <div className="absolute bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm border-t border-white/10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
-                        <div className="group cursor-pointer">
-                            <div className="text-3xl lg:text-4xl font-bold mb-2 text-yellow-400 group-hover:scale-110 transition-transform">
-                                50,000+
-                            </div>
-                            <div className="text-sm uppercase tracking-wide text-gray-300">Quality Parts</div>
-                        </div>
-                        <div className="group cursor-pointer">
-                            <div className="text-3xl lg:text-4xl font-bold mb-2 text-yellow-400 group-hover:scale-110 transition-transform">
-                                500+
-                            </div>
-                            <div className="text-sm uppercase tracking-wide text-gray-300">Trusted Brands</div>
-                        </div>
-                        <div className="group cursor-pointer">
-                            <div className="text-3xl lg:text-4xl font-bold mb-2 text-yellow-400 group-hover:scale-110 transition-transform">
-                                24hr
-                            </div>
-                            <div className="text-sm uppercase tracking-wide text-gray-300">Fast Shipping</div>
-                        </div>
-                        <div className="group cursor-pointer">
-                            <div className="text-3xl lg:text-4xl font-bold mb-2 text-yellow-400 group-hover:scale-110 transition-transform">
-                                Expert
-                            </div>
-                            <div className="text-sm uppercase tracking-wide text-gray-300">Support Team</div>
-                        </div>
+            {/* Visual Element / Secondary Content */}
+            <div className="hidden lg:block">
+              <div className="relative">
+                {/* Decorative elements */}
+                <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary-500 rounded-full opacity-20" />
+                <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-accent-500 rounded-full opacity-20" />
+                
+                {/* Main visual */}
+                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-8 border border-white border-opacity-20">
+                  <div className="text-center space-y-4">
+                    <h3 className="text-2xl font-bold text-white">
+                      Free Shipping
+                    </h3>
+                    <p className="text-steel-200">
+                      On all orders over $99
+                    </p>
+                    <div className="text-4xl font-bold text-primary-300">
+                      $99+
                     </div>
+                  </div>
                 </div>
+              </div>
             </div>
+          </div>
+        </div>
+      </div>
 
-            {/* Scroll Indicator */}
-            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
-                <div className="flex flex-col items-center space-y-2">
-                    <span className="text-sm text-gray-300">Scroll to explore</span>
-                    <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
-                        <div className="w-1 h-3 bg-white/50 rounded-full mt-2 animate-pulse"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    );
+      {/* Navigation Controls */}
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
+        <div className="flex space-x-2">
+          {heroSlides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToSlide(index)}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                index === currentSlide 
+                  ? 'bg-primary-400 w-8' 
+                  : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Arrow Navigation */}
+      <button
+        onClick={prevSlide}
+        className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black bg-opacity-30 hover:bg-opacity-50 rounded-full flex items-center justify-center text-white transition-all duration-300"
+      >
+        <ChevronLeft className="h-6 w-6" />
+      </button>
+      
+      <button
+        onClick={nextSlide}
+        className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-black bg-opacity-30 hover:bg-opacity-50 rounded-full flex items-center justify-center text-white transition-all duration-300"
+      >
+        <ChevronRight className="h-6 w-6" />
+      </button>
+    </section>
+  )
 }

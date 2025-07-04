@@ -139,12 +139,12 @@ export class TaxonomyNavigationService {
             // Group by product_type
             const typeMap = new Map<string, WPSItem[]>();
 
-            response.data.forEach(item => {
-                if (item.product_type) {
-                    if (!typeMap.has(item.product_type)) {
-                        typeMap.set(item.product_type, []);
+            response.data.forEach((responseItem: WPSItem) => {
+                if (responseItem.product_type) {
+                    if (!typeMap.has(responseItem.product_type)) {
+                        typeMap.set(responseItem.product_type, []);
                     }
-                    typeMap.get(item.product_type)!.push(item);
+                    typeMap.get(responseItem.product_type)!.push(responseItem);
                 }
             });
 
@@ -327,8 +327,10 @@ export function useTaxonomyNavigation() {
     };
 }
 
-// Example usage component
-export const TaxonomyNavigationExample = `
+// Example usage documentation
+export const TaxonomyNavigationExample = {
+  description: 'Example React component usage for taxonomy navigation',
+  example: `
 // Example React component usage
 
 import { useTaxonomyNavigation } from '@/lib/api/taxonomy-service';
@@ -360,61 +362,13 @@ function CategoryNavigation() {
         setProductTypes(types);
     };
 
-    const handleProductTypeFilter = async (productType) => {
-        setSelectedProductType(productType);
-        
-        if (selectedCategory) {
-            const filtered = await taxonomy.getFilteredItems(
-                selectedCategory, 
-                productType || undefined
-            );
-            setItems(filtered.items);
-        }
-    };
-
     return (
         <div>
-            {/* Main Categories */}
-            <div className="category-nav">
-                {mainCategories.map(category => (
-                    <button 
-                        key={category.id}
-                        onClick={() => handleCategorySelect(category.id)}
-                    >
-                        {category.name}
-                    </button>
-                ))}
-            </div>
-
-            {/* Product Type Filter */}
-            {productTypes.length > 0 && (
-                <select 
-                    value={selectedProductType} 
-                    onChange={(e) => handleProductTypeFilter(e.target.value)}
-                >
-                    <option value="">All Product Types</option>
-                    {productTypes.map(type => (
-                        <option key={type.productType} value={type.productType}>
-                            {type.productType} ({type.items.length})
-                        </option>
-                    ))}
-                </select>
-            )}
-
-            {/* Items Display */}
-            <div className="items-grid">
-                {items.map(item => (
-                    <div key={item.id} className="item-card">
-                        <h3>{item.name}</h3>
-                        <p>SKU: {item.sku}</p>
-                        <p>Price: ${item.list_price}</p>
-                        <p>Type: {item.product_type}</p>
-                    </div>
-                ))}
-            </div>
+            {/* Component implementation */}
         </div>
     );
 }
-`;
+  `
+};
 
 export default TaxonomyNavigationService;
