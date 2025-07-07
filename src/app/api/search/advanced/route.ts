@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       maxPrice, 
       inStock, 
       dropShipEligible,
-      pageSize = 20,
+      pageSize = 21,
       cursor
     } = body
 

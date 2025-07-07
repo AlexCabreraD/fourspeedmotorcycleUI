@@ -4,11 +4,10 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Filter, Grid, List, SlidersHorizontal } from 'lucide-react'
 import ProductCard from '@/components/products/ProductCard'
-import ProductFiltersEnhanced from '@/components/products/ProductFiltersEnhanced'
+import CustomCategoryFilters from '@/components/products/CustomCategoryFilters'
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import { WPSItem } from '@/lib/api/wps-client'
 import { WPS_CATEGORIES, FALLBACK_CATEGORIES, Category } from '@/lib/constants/categories'
-import { getSmartProductTypesForCategory } from '@/lib/constants/filter-schemas'
 
 interface CategoryPageProps {
   slug: string
@@ -20,7 +19,7 @@ interface CategoryData extends Category {
 }
 
 interface BreadcrumbItem {
-  id: number
+  id: string | number
   name: string
   slug: string
 }
@@ -34,43 +33,6 @@ const SORT_OPTIONS = [
   { value: 'updated_desc', label: 'Recently Updated' }
 ]
 
-// Helper function to filter items by category for fallback categories
-function filterItemsByCategory(items: any[], categorySlug: string): any[] {
-  // Get smart product types for this category
-  const smartTypes = getSmartProductTypesForCategory(categorySlug)
-  
-  // First filter by product type if we have smart types
-  if (smartTypes.length > 0) {
-    const filteredByType = items.filter(item => 
-      item.product_type && smartTypes.includes(item.product_type)
-    )
-    
-    if (filteredByType.length >= 10) {
-      return filteredByType.slice(0, 20)
-    }
-  }
-  
-  // Fallback to name-based filtering if not enough product type matches
-  const searchTerms: Record<string, string[]> = {
-    'bicycle': ['bicycle', 'bike', 'cycle'],
-    'atv': ['atv', 'quad', 'four wheeler'],
-    'apparel': ['helmet', 'jacket', 'glove', 'boot', 'gear', 'clothing', 'protective'],
-    'offroad': ['dirt', 'offroad', 'motocross', 'mx', 'enduro'],
-    'street': ['street', 'road', 'sport', 'touring', 'cruiser'],
-    'snow': ['snow', 'snowmobile', 'ski'],
-    'watercraft': ['jet ski', 'watercraft', 'pwc', 'sea doo']
-  }
-
-  const terms = searchTerms[categorySlug] || []
-  if (terms.length === 0) return items.slice(0, 20)
-
-  const filtered = items.filter(item => {
-    const searchText = `${item.name} ${item.product_type || ''} ${item.brand?.name || ''}`.toLowerCase()
-    return terms.some(term => searchText.includes(term.toLowerCase()))
-  })
-  
-  return filtered.slice(0, 20)
-}
 
 export default function CategoryPage({ slug, searchParams }: CategoryPageProps) {
   const [category, setCategory] = useState<CategoryData | null>(null)
@@ -109,6 +71,11 @@ export default function CategoryPage({ slug, searchParams }: CategoryPageProps) 
         }
       }
     })
+    
+    // Set "in stock only" as default if not explicitly set
+    if (!filters.hasOwnProperty('in_stock')) {
+      filters.in_stock = ['true']
+    }
     
     return filters
   }, [searchParams])
@@ -188,71 +155,37 @@ export default function CategoryPage({ slug, searchParams }: CategoryPageProps) 
       setNextCursor(null)
       
       try {
-        const isWPSCategory = WPS_CATEGORIES.find(cat => cat.id === category.id)
+        // Use our new custom category API for all categories
+        const params = new URLSearchParams()
+        params.set('page', '21')
+        params.set('sort', sortBy)
         
-        if (isWPSCategory) {
-          const params = new URLSearchParams()
-          params.set('page', '20')
-          params.set('sort', sortBy)
-          
-          // Add all filters to params
-          Object.entries(extractedFilters).forEach(([key, value]) => {
-            if (Array.isArray(value)) {
-              if (value.length > 0) {
-                params.set(key, value.join(','))
-              }
-            } else if (value) {
-              params.set(key, value)
+        // Add all filters to params
+        Object.entries(extractedFilters).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            if (value.length > 0) {
+              params.set(key, value.join(','))
             }
-          })
-
-          // Always use the taxonomy-based API endpoint
-          const apiEndpoint = `/api/categories/${category.id}/items`
-          const response = await fetch(`${apiEndpoint}?${params.toString()}`)
-          const data = await response.json()
-          
-          if (data.success && data.data) {
-            // Reset products for new search/filter (first page)
-            setProducts(data.data)
-            setTotalLoaded(data.data.length)
-            setHasMore(!!data.meta?.cursor?.next)
-            setNextCursor(data.meta?.cursor?.next || null)
+          } else if (value) {
+            params.set(key, value)
           }
-        } else {
-          // Fallback for non-WPS categories
-          const params = new URLSearchParams()
-          params.set('page', '20')
-          params.set('sort', sortBy)
-          
-          // Add all filters to params for fallback categories too
-          Object.entries(extractedFilters).forEach(([key, value]) => {
-            if (Array.isArray(value)) {
-              if (value.length > 0) {
-                params.set(key, value.join(','))
-              }
-            } else if (value) {
-              params.set(key, value)
-            }
-          })
+        })
 
-          const response = await fetch(`/api/products?${params.toString()}`)
-          const data = await response.json()
-          
-          if (data.success && data.data) {
-            const allItems: any[] = []
-            data.data.forEach((product: any) => {
-              if (product.items && product.items.data) {
-                allItems.push(...product.items.data)
-              }
-            })
-            
-            const filteredItems = filterItemsByCategory(allItems, category.slug)
-            
-            setProducts(filteredItems)
-            setTotalLoaded(filteredItems.length)
-            setHasMore(false)
-            setNextCursor(null)
-          }
+        // Use the new custom category API endpoint
+        const apiEndpoint = `/api/custom-categories/${category.slug}/items`
+        const response = await fetch(`${apiEndpoint}?${params.toString()}`)
+        const data = await response.json()
+        
+        if (data.success && data.data) {
+          // Reset products for new search/filter (first page)
+          // Filter out duplicates by ID
+          const uniqueProducts = data.data.filter((product: WPSItem, index: number, self: WPSItem[]) => 
+            index === self.findIndex(p => p.id === product.id)
+          )
+          setProducts(uniqueProducts)
+          setTotalLoaded(uniqueProducts.length)
+          setHasMore(!!data.has_more)
+          setNextCursor(data.meta?.cursor?.next || null)
         }
       } catch (error) {
         console.error('Failed to fetch products:', error)
@@ -299,37 +232,40 @@ export default function CategoryPage({ slug, searchParams }: CategoryPageProps) 
     setLoadingMore(true)
     
     try {
-      const isWPSCategory = WPS_CATEGORIES.find(cat => cat.id === category.id)
+      // Use our new custom category API for load more
+      const params = new URLSearchParams()
+      params.set('cursor', nextCursor)
+      params.set('page', '21')
+      params.set('sort', sortBy)
       
-      if (isWPSCategory) {
-        const params = new URLSearchParams()
-        params.set('cursor', nextCursor)
-        params.set('page', '20')
-        params.set('sort', sortBy)
-        
-        // Add all filters to params for load more
-        Object.entries(extractedFilters).forEach(([key, value]) => {
-          if (Array.isArray(value)) {
-            if (value.length > 0) {
-              params.set(key, value.join(','))
-            }
-          } else if (value) {
-            params.set(key, value)
+      // Add all filters to params for load more
+      Object.entries(extractedFilters).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          if (value.length > 0) {
+            params.set(key, value.join(','))
           }
-        })
-
-        // Always use the taxonomy-based API endpoint
-        const apiEndpoint = `/api/categories/${category.id}/items`
-        const response = await fetch(`${apiEndpoint}?${params.toString()}`)
-        const data = await response.json()
-        
-        if (data.success && data.data) {
-          // Append new products to existing ones
-          setProducts(prev => [...prev, ...data.data])
-          setTotalLoaded(prev => prev + data.data.length)
-          setHasMore(!!data.meta?.cursor?.next)
-          setNextCursor(data.meta?.cursor?.next || null)
+        } else if (value) {
+          params.set(key, value)
         }
+      })
+
+      // Use the new custom category API endpoint
+      const apiEndpoint = `/api/custom-categories/${category.slug}/items`
+      const response = await fetch(`${apiEndpoint}?${params.toString()}`)
+      const data = await response.json()
+      
+      if (data.success && data.data) {
+        // Append new products to existing ones, filtering out duplicates
+        let newUniqueCount = 0
+        setProducts(prev => {
+          const existingIds = new Set(prev.map(p => p.id))
+          const newUniqueProducts = data.data.filter((product: WPSItem) => !existingIds.has(product.id))
+          newUniqueCount = newUniqueProducts.length
+          return [...prev, ...newUniqueProducts]
+        })
+        setTotalLoaded(prev => prev + newUniqueCount)
+        setHasMore(!!data.has_more)
+        setNextCursor(data.meta?.cursor?.next || null)
       }
     } catch (error) {
       console.error('Failed to load more products:', error)
@@ -458,8 +394,7 @@ export default function CategoryPage({ slug, searchParams }: CategoryPageProps) 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Filters Sidebar */}
           <div className={`md:block ${showFilters ? 'block' : 'hidden'}`}>
-            <ProductFiltersEnhanced
-              categoryId={category.id}
+            <CustomCategoryFilters
               categorySlug={category.slug}
               selectedFilters={extractedFilters}
               onFilterChange={handleFilterChange}
@@ -514,7 +449,7 @@ export default function CategoryPage({ slug, searchParams }: CategoryPageProps) 
                         </>
                       )}
                     </button>
-                    <p className="text-sm text-steel-600 mt-2">
+                    <p className="text-sm text-steel-600 mt-2 mb-8">
                       {hasMore ? 
                         `Loaded ${products.length} products • More available` :
                         `All ${products.length} products loaded`

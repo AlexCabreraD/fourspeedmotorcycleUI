@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         description: product.description || `Buy ${product.name} at 4Speed Motorcycle. High-quality motorcycle parts and accessories.`,
         keywords: [
           product.name,
-          selectedItem?.brand?.name,
+          selectedItem?.brand?.data?.name,
           'motorcycle parts',
           'motorcycle accessories',
           '4speed motorcycle'

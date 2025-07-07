@@ -4,36 +4,29 @@ import { createWPSClient } from '@/lib/api/wps-client'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
+    const client = createWPSClient()
     
-    // Create client with caching enabled
-    const client = createWPSClient({ enableCaching: true })
+    // Extract query parameters
+    const params: Record<string, any> = {}
     
-    // Use query builder for more flexible querying
-    const query = client.createQuery()
+    // Pagination
+    if (searchParams.get('page')) params['page[size]'] = searchParams.get('page')
+    if (searchParams.get('cursor')) params['page[cursor]'] = searchParams.get('cursor')
     
-    // Extract and apply parameters
-    const limit = searchParams.get('limit')
-    const cursor = searchParams.get('cursor')
-    const search = searchParams.get('search')
-    
-    if (limit) {
-      query.pageSize(parseInt(limit))
-    } else {
-      query.pageSize(100) // Default page size
+    // Search filter
+    if (searchParams.get('search')) {
+      params['filter[name][con]'] = searchParams.get('search')
     }
     
-    if (cursor) {
-      query.cursor(cursor)
+    // Default page size for getting all brands
+    if (!params['page[size]']) {
+      params['page[size]'] = 1000
     }
     
-    if (search) {
-      query.filterByName(search, 'con') // Contains search for brand names
-    }
+    // Sort by name
+    params['sort[asc]'] = 'name'
     
-    // Sort by name for consistent ordering
-    query.sortByName('asc')
-    
-    const response = await client.executeQuery('brands', query)
+    const response = await client.getBrands(params)
     
     return NextResponse.json({
       success: true,

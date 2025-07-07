@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Includes - only use supported includes for products endpoint
-    const includes = ['items.images', 'images'] // Products can include their items with images, and product images
+    const includes = ['items', 'images'] // Products can include their items and product images
     params.include = includes.join(',')
 
     // Default page size
@@ -71,12 +71,52 @@ export async function GET(request: NextRequest) {
       params['page[size]'] = 20
     }
 
-    const response = await client.getProducts(params)
+    // For products page, it's better to get items directly with images
+    // This approach gives us better control over image data
+    const itemsParams = { ...params }
+    itemsParams.include = 'images,product'
+    
+    const [itemsResponse, brandsResponse] = await Promise.all([
+      client.getItems(itemsParams),
+      client.getBrands({ 'page[size]': 1000 })
+    ])
+
+    // Create brand lookup map
+    const brandMap: Record<number, { id: number; name: string }> = {}
+    if (brandsResponse.data) {
+      brandsResponse.data.forEach((brand: { id: number; name: string }) => {
+        brandMap[brand.id] = brand
+      })
+    }
+
+    // Enhance items with brand data
+    const enhancedItems = itemsResponse.data.map(item => ({
+      ...item,
+      brand: item.brand_id && brandMap[item.brand_id] ? { data: brandMap[item.brand_id] } : undefined
+    }))
+
+    // Group items by product to mimic the original structure
+    const productsMap = new Map()
+    enhancedItems.forEach(item => {
+      if (item.product) {
+        const productId = item.product.id || item.product_id
+        if (!productsMap.has(productId)) {
+          productsMap.set(productId, {
+            ...item.product,
+            id: productId,
+            items: { data: [] }
+          })
+        }
+        productsMap.get(productId).items.data.push(item)
+      }
+    })
+
+    const enhancedProducts = Array.from(productsMap.values())
     
     return NextResponse.json({
       success: true,
-      data: response.data,
-      meta: response.meta,
+      data: enhancedProducts,
+      meta: itemsResponse.meta,
       params: params // For debugging
     })
 

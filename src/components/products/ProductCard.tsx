@@ -91,16 +91,16 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
           <div className="flex-1 p-6 flex flex-col justify-between">
             <div>
               {/* Brand */}
-              {product.brand && (
+              {product.brand?.data && (
                 <p className="text-sm text-steel-500 uppercase tracking-wide mb-1">
-                  {product.brand.name}
+                  {product.brand.data.name}
                 </p>
               )}
 
               {/* Product Name */}
               <h3 className="text-lg font-semibold text-steel-900 mb-2">
                 <Link
-                  href={`/product/${product.id}`}
+                  href={`/product/${product.product_id}`}
                   className="hover:text-primary-600 transition-colors"
                 >
                   {product.name}
@@ -248,16 +248,16 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
       {/* Product Info */}
       <div className="p-4">
         {/* Brand */}
-        {product.brand && (
+        {product.brand?.data && (
           <p className="text-xs text-steel-500 uppercase tracking-wide mb-1">
-            {product.brand.name}
+            {product.brand.data.name}
           </p>
         )}
 
         {/* Product Name */}
         <h3 className="text-sm font-medium text-steel-900 mb-2 line-clamp-2 h-10">
           <Link
-            href={`/product/${product.id}`}
+            href={`/product/${product.product_id}`}
             className="hover:text-primary-600 transition-colors"
           >
             {product.name}
@@ -316,7 +316,7 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
       <QuickView 
         isOpen={showQuickView}
         onClose={() => setShowQuickView(false)}
-        productId={product.id}
+        productId={product.product_id}
       />
     </div>
   )

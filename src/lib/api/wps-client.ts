@@ -192,7 +192,9 @@ export interface WPSItem {
     images?: {
         data: WPSImage[];
     };
-    brand?: WPSBrand;
+    brand?: {
+        data: WPSBrand;
+    };
 }
 
 export interface WPSProduct {
@@ -213,7 +215,9 @@ export interface WPSProduct {
         data: WPSImage[];
     };
     features?: WPSFeature[];
-    brand?: WPSBrand;
+    brand?: {
+        data: WPSBrand;
+    };
 }
 
 export interface WPSImage {
@@ -537,7 +541,8 @@ export class ImageUtils {
         }
 
         const protocol = image.domain.startsWith('http') ? '' : 'https://';
-        return `${protocol}${image.domain}${image.path}${style}/${image.filename}`;
+        // The WPS CDN doesn't support dynamic sizing, use the original image
+        return `${protocol}${image.domain}${image.path}${image.filename}`;
     }
 
     static getAvailableStyles() {

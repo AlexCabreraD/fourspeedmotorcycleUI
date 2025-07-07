@@ -218,9 +218,9 @@ export default function QuickView({ isOpen, onClose, productId }: QuickViewProps
               {/* Product Info */}
               <div className="space-y-6">
                 {/* Brand */}
-                {product.brand && (
+                {product.brand?.data && (
                   <div className="text-sm text-primary-600 font-medium uppercase tracking-wide">
-                    {product.brand.name}
+                    {product.brand.data.name}
                   </div>
                 )}
 
