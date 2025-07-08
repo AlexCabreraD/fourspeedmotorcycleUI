@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { Grid, List, Search, Package, Filter, X, ChevronLeft, ChevronRight, ArrowUp } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart'
@@ -108,63 +108,109 @@ export default function ProductsPage() {
   const [allProducts, setAllProducts] = useState<WPSItem[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [loadingFilters, setLoadingFilters] = useState(false)
+  const [searching, setSearching] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState('name_asc')
   const [searchTerm, setSearchTerm] = useState('')
   const [searchType, setSearchType] = useState<'name' | 'sku'>('name')
   const [selectedBrands, setSelectedBrands] = useState<string[]>([])
   const [selectedItemTypes, setSelectedItemTypes] = useState<string[]>([])
-  const [showInStockOnly, setShowInStockOnly] = useState(false)
+  const [showInStockOnly, setShowInStockOnly] = useState(true)
   const [showFilters, setShowFilters] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [hasMore, setHasMore] = useState(true)
   const [showScrollToTop, setShowScrollToTop] = useState(false)
+  const [searchResults, setSearchResults] = useState<WPSItem[]>([])
+  const [isSearchActive, setIsSearchActive] = useState(false)
+  const [brandSearchTerm, setBrandSearchTerm] = useState('')
+  const [itemTypeSearchTerm, setItemTypeSearchTerm] = useState('')
   const itemsPerPage = 20 // Changed to multiple of 4 (4x5)
   const { addItem } = useCartStore()
+  
+  // Search cache and debounce
+  const searchCache = useRef<Map<string, WPSItem[]>>(new Map())
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const currentSearchRef = useRef<string>('')
+  
+  // Filter results cache
+  const filterCache = useRef<Map<string, {
+    products: WPSItem[]
+    nextCursor: string | null
+    hasMore: boolean
+    timestamp: number
+  }>>(new Map())
+  const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
-  // Fetch initial products on mount
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true)
-      try {
-        const response = await fetch(`/api/products?page=${itemsPerPage}`)
-        const data = await response.json()
-
-        if (data.success && data.data) {
-          // Extract items from products
-          const allItems: WPSItem[] = []
-          data.data.forEach((product: any) => {
-            if (product.items && product.items.data) {
-              allItems.push(...product.items.data)
-            }
-          })
-          setAllProducts(allItems)
-          
-          // Set cursor for pagination
-          if (data.meta?.cursor?.next) {
-            setNextCursor(data.meta.cursor.next)
-            setHasMore(true)
-          } else {
-            setHasMore(false)
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch products:', error)
-      } finally {
-        setLoading(false)
-      }
+  // Build filter query parameters
+  const buildFilterParams = useCallback(() => {
+    const params = new URLSearchParams()
+    
+    // Always include page size
+    params.set('page', itemsPerPage.toString())
+    
+    // Add filters
+    if (selectedBrands.length > 0) {
+      params.set('brands', selectedBrands.join(','))
     }
+    
+    if (selectedItemTypes.length > 0) {
+      params.set('item_types', selectedItemTypes.join(','))
+    }
+    
+    if (showInStockOnly) {
+      params.set('in_stock', 'true')
+    }
+    
+    // Add sorting
+    if (sortBy && sortBy !== 'name_asc') {
+      params.set('sort', sortBy)
+    }
+    
+    return params.toString()
+  }, [selectedBrands, selectedItemTypes, showInStockOnly, sortBy, itemsPerPage])
 
-    fetchProducts()
+  // Create cache key for filter combination
+  const createCacheKey = useCallback((cursor?: string) => {
+    const filterParams = buildFilterParams()
+    return cursor ? `${filterParams}&cursor=${cursor}` : filterParams
+  }, [buildFilterParams])
+
+  // Check if cache entry is still valid
+  const isCacheValid = useCallback((timestamp: number) => {
+    return Date.now() - timestamp < CACHE_DURATION
   }, [])
 
-  // Load more products with cursor pagination
-  const loadMoreProducts = async () => {
-    if (!nextCursor || loadingMore) return
+  // Fetch products with current filters
+  const fetchProducts = useCallback(async (cursor?: string, reset: boolean = false) => {
+    const isInitialLoad = !cursor
+    const cacheKey = createCacheKey(cursor)
     
-    setLoadingMore(true)
+    // Check cache first
+    const cachedResult = filterCache.current.get(cacheKey)
+    if (cachedResult && isCacheValid(cachedResult.timestamp)) {
+      console.log('📦 Using cached result for:', cacheKey)
+      
+      if (reset || isInitialLoad) {
+        setAllProducts(cachedResult.products)
+      } else {
+        setAllProducts(prev => [...prev, ...cachedResult.products])
+      }
+      
+      setNextCursor(cachedResult.nextCursor)
+      setHasMore(cachedResult.hasMore)
+      return
+    }
+    
+    // Set loading states
+    if (isInitialLoad && !loadingFilters) setLoading(true)
+    else if (!isInitialLoad) setLoadingMore(true)
+    
     try {
-      const response = await fetch(`/api/products?page=${itemsPerPage}&cursor=${nextCursor}`)
+      console.log('🌐 Making API call for:', cacheKey)
+      const filterParams = buildFilterParams()
+      const cursorParam = cursor ? `&cursor=${cursor}` : ''
+      const response = await fetch(`/api/products?${filterParams}${cursorParam}`)
       const data = await response.json()
 
       if (data.success && data.data) {
@@ -176,22 +222,144 @@ export default function ProductsPage() {
           }
         })
         
-        // Append new items to existing products
-        setAllProducts(prev => [...prev, ...newItems])
+        const nextCursor = data.meta?.cursor?.next || null
+        const hasMore = !!nextCursor
         
-        // Update cursor for next page
-        if (data.meta?.cursor?.next) {
-          setNextCursor(data.meta.cursor.next)
+        // Cache the result
+        filterCache.current.set(cacheKey, {
+          products: newItems,
+          nextCursor,
+          hasMore,
+          timestamp: Date.now()
+        })
+        
+        if (reset || isInitialLoad) {
+          setAllProducts(newItems)
         } else {
-          setHasMore(false)
+          setAllProducts(prev => [...prev, ...newItems])
+        }
+        
+        setNextCursor(nextCursor)
+        setHasMore(hasMore)
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error)
+    } finally {
+      if (isInitialLoad && !loadingFilters) setLoading(false)
+      if (!isInitialLoad) setLoadingMore(false)
+    }
+  }, [buildFilterParams, loadingFilters, createCacheKey, isCacheValid])
+
+  // Fetch initial products on mount
+  useEffect(() => {
+    fetchProducts()
+  }, [])
+
+  // Refetch when filters change
+  useEffect(() => {
+    // Skip initial load
+    if (loading) return
+    
+    // Set loading state for filters specifically
+    setLoadingFilters(true)
+    
+    // Reset and fetch with new filters
+    fetchProducts(undefined, true).finally(() => {
+      setLoadingFilters(false)
+    })
+  }, [selectedBrands, selectedItemTypes, showInStockOnly, sortBy])
+
+  // Clean up expired cache entries periodically
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      const now = Date.now()
+      for (const [key, value] of filterCache.current.entries()) {
+        if (!isCacheValid(value.timestamp)) {
+          filterCache.current.delete(key)
+        }
+      }
+    }, 60000) // Clean up every minute
+    
+    return () => clearInterval(cleanupInterval)
+  }, [isCacheValid])
+
+  // Search function with caching
+  const performSearch = useCallback(async (query: string, type: 'name' | 'sku') => {
+    const cacheKey = `${type}:${query.toLowerCase()}`
+    
+    // Check cache first
+    if (searchCache.current.has(cacheKey)) {
+      const cachedResults = searchCache.current.get(cacheKey)!
+      setSearchResults(cachedResults)
+      setIsSearchActive(true)
+      return
+    }
+    
+    setSearching(true)
+    try {
+      const searchParam = type === 'name' ? 'search' : 'sku'
+      const response = await fetch(`/api/products?page=50&${searchParam}=${encodeURIComponent(query)}`)
+      const data = await response.json()
+
+      if (data.success && data.data) {
+        // Extract items from products
+        const searchItems: WPSItem[] = []
+        data.data.forEach((product: any) => {
+          if (product.items && product.items.data) {
+            searchItems.push(...product.items.data)
+          }
+        })
+        
+        // Cache the results
+        searchCache.current.set(cacheKey, searchItems)
+        
+        // Only update if this is still the current search
+        if (currentSearchRef.current === query) {
+          setSearchResults(searchItems)
+          setIsSearchActive(true)
         }
       }
     } catch (error) {
-      console.error('Failed to load more products:', error)
+      console.error('Search failed:', error)
     } finally {
-      setLoadingMore(false)
+      setSearching(false)
     }
-  }
+  }, [])
+
+  // Debounced search effect
+  useEffect(() => {
+    if (searchTerm.length >= 3) {
+      currentSearchRef.current = searchTerm
+      
+      // Clear existing timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+      
+      // Set new timeout for debounced search
+      searchTimeoutRef.current = setTimeout(() => {
+        performSearch(searchTerm, searchType)
+      }, 300) // 300ms debounce
+    } else {
+      // Clear search when less than 3 characters
+      setIsSearchActive(false)
+      setSearchResults([])
+      currentSearchRef.current = ''
+    }
+    
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+    }
+  }, [searchTerm, searchType, performSearch])
+
+  // Load more products with current filters
+  const loadMoreProducts = useCallback(async () => {
+    if (!nextCursor || loadingMore || isSearchActive) return
+    
+    await fetchProducts(nextCursor, false)
+  }, [nextCursor, loadingMore, isSearchActive, fetchProducts])
 
   // Scroll to top functionality
   useEffect(() => {
@@ -207,58 +375,53 @@ export default function ProductsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // Client-side filtering and sorting
-  const filteredAndSortedProducts = useMemo(() => {
-    let filtered = [...allProducts]
+  // Get the appropriate product list based on search state
+  const displayProducts = useMemo(() => {
+    if (isSearchActive) {
+      // For search results, still apply client-side filtering since search is separate
+      let filtered = [...searchResults]
 
-    // Search filter
-    if (searchTerm.length >= 3) {
-      filtered = filtered.filter(product => {
-        if (searchType === 'sku') {
-          return product.sku.toLowerCase().includes(searchTerm.toLowerCase())
-        } else {
-          return product.name.toLowerCase().includes(searchTerm.toLowerCase())
+      // Brand filter
+      if (selectedBrands.length > 0) {
+        filtered = filtered.filter(product => 
+          product.brand?.data?.name && selectedBrands.includes(product.brand.data.name)
+        )
+      }
+
+      // Item type filter
+      if (selectedItemTypes.length > 0) {
+        filtered = filtered.filter(product => 
+          product.product_type && selectedItemTypes.includes(product.product_type)
+        )
+      }
+
+      // Stock filter
+      if (showInStockOnly) {
+        filtered = filtered.filter(product => product.status === 'STK')
+      }
+
+      // Sorting for search results
+      filtered.sort((a, b) => {
+        switch (sortBy) {
+          case 'name_asc':
+            return a.name.localeCompare(b.name)
+          case 'name_desc':
+            return b.name.localeCompare(a.name)
+          case 'newest':
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          case 'created_asc':
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          default:
+            return 0
         }
       })
+
+      return filtered
     }
-
-    // Brand filter
-    if (selectedBrands.length > 0) {
-      filtered = filtered.filter(product => 
-        product.brand?.data?.name && selectedBrands.includes(product.brand.data.name)
-      )
-    }
-
-    // Item type filter
-    if (selectedItemTypes.length > 0) {
-      filtered = filtered.filter(product => 
-        product.product_type && selectedItemTypes.includes(product.product_type)
-      )
-    }
-
-    // Stock filter
-    if (showInStockOnly) {
-      filtered = filtered.filter(product => product.status === 'STK')
-    }
-
-    // Sorting
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'name_asc':
-          return a.name.localeCompare(b.name)
-        case 'name_desc':
-          return b.name.localeCompare(a.name)
-        case 'newest':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        case 'created_asc':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        default:
-          return 0
-      }
-    })
-
-    return filtered
-  }, [allProducts, searchTerm, searchType, selectedBrands, selectedItemTypes, showInStockOnly, sortBy])
+    
+    // For regular browsing, products are already filtered and sorted by server
+    return allProducts
+  }, [isSearchActive, searchResults, allProducts, selectedBrands, selectedItemTypes, showInStockOnly, sortBy])
 
   const formatPrice = (price: string) => {
     const numPrice = parseFloat(price)
@@ -283,11 +446,19 @@ export default function ProductsPage() {
     setSearchTerm('')
     setSelectedBrands([])
     setSelectedItemTypes([])
-    setShowInStockOnly(false)
+    setShowInStockOnly(true) // Reset to default (true)
+    setIsSearchActive(false)
+    setSearchResults([])
+    setBrandSearchTerm('')
+    setItemTypeSearchTerm('')
+    currentSearchRef.current = ''
+    
+    // Clear filter cache when resetting filters
+    filterCache.current.clear()
   }
 
   const activeFiltersCount = [
-    searchTerm.length >= 3,
+    isSearchActive,
     selectedBrands.length > 0,
     selectedItemTypes.length > 0,
     showInStockOnly
@@ -309,7 +480,24 @@ export default function ProductsPage() {
     )
   }
 
-  if (loading) {
+  // Filter brands based on search
+  const filteredBrands = useMemo(() => {
+    if (!brandSearchTerm) return ALL_BRANDS
+    return ALL_BRANDS.filter(brand => 
+      brand.toLowerCase().includes(brandSearchTerm.toLowerCase())
+    )
+  }, [brandSearchTerm])
+
+  // Filter item types based on search
+  const filteredItemTypes = useMemo(() => {
+    if (!itemTypeSearchTerm) return ALL_ITEM_TYPES
+    return ALL_ITEM_TYPES.filter(itemType => 
+      itemType.toLowerCase().includes(itemTypeSearchTerm.toLowerCase())
+    )
+  }, [itemTypeSearchTerm])
+
+  // Only show full skeleton on true initial load (when we have no products at all)
+  if (loading && allProducts.length === 0 && !loadingFilters) {
     return (
       <div className="min-h-screen bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -353,6 +541,11 @@ export default function ProductsPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-12 pr-12 py-4 text-lg border-2 border-steel-300 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all"
                   />
+                  {searching && (
+                    <div className="absolute right-12 top-1/2 transform -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-500" />
+                    </div>
+                  )}
                   {searchTerm && (
                     <button
                       onClick={() => setSearchTerm('')}
@@ -365,6 +558,21 @@ export default function ProductsPage() {
                 {searchTerm.length > 0 && searchTerm.length < 3 && (
                   <div className="mt-2 text-sm text-steel-500">
                     Type {3 - searchTerm.length} more character{3 - searchTerm.length !== 1 ? 's' : ''} to search
+                  </div>
+                )}
+                {searching && (
+                  <div className="mt-2 text-sm text-primary-600">
+                    Searching...
+                  </div>
+                )}
+                {isSearchActive && searchResults.length > 0 && (
+                  <div className="mt-2 text-sm text-green-600">
+                    Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for "{searchTerm}"
+                  </div>
+                )}
+                {isSearchActive && searchResults.length === 0 && !searching && (
+                  <div className="mt-2 text-sm text-steel-500">
+                    No results found for "{searchTerm}"
                   </div>
                 )}
               </div>
@@ -392,6 +600,29 @@ export default function ProductsPage() {
                   By SKU
                 </button>
               </div>
+
+              {/* In Stock Toggle - Prominent */}
+              <button
+                onClick={() => setShowInStockOnly(!showInStockOnly)}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all border-2 min-w-[140px] ${
+                  showInStockOnly 
+                    ? 'bg-green-50 border-green-300 text-green-700 shadow-sm' 
+                    : 'bg-white border-steel-300 text-steel-600 hover:border-green-300 hover:text-green-600'
+                }`}
+              >
+                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all ${
+                  showInStockOnly 
+                    ? 'bg-green-500 border-green-500' 
+                    : 'border-steel-400'
+                }`}>
+                  {showInStockOnly && (
+                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+                In Stock Only
+              </button>
 
               {/* Filter Toggle */}
               <button
@@ -432,19 +663,48 @@ export default function ProductsPage() {
                   <label className="block text-sm font-medium text-steel-700 mb-3">
                     Brands ({selectedBrands.length} selected)
                   </label>
-                  <div className="bg-white rounded-lg border border-steel-200 max-h-40 overflow-y-auto">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1 p-2">
-                      {ALL_BRANDS.map(brand => (
-                        <label key={brand} className="flex items-center space-x-2 p-2 hover:bg-steel-50 rounded cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedBrands.includes(brand)}
-                            onChange={() => handleBrandChange(brand)}
-                            className="form-checkbox text-primary-600 rounded"
-                          />
-                          <span className="text-sm text-steel-700 truncate">{brand}</span>
-                        </label>
-                      ))}
+                  <div className="bg-white rounded-lg border border-steel-200">
+                    {/* Brand Search Bar */}
+                    <div className="p-3 border-b border-steel-200">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-steel-400 h-4 w-4" />
+                        <input
+                          type="text"
+                          placeholder="Search brands..."
+                          value={brandSearchTerm}
+                          onChange={(e) => setBrandSearchTerm(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 text-sm border border-steel-300 rounded-md focus:border-primary-500 focus:ring-1 focus:ring-primary-200"
+                        />
+                        {brandSearchTerm && (
+                          <button
+                            onClick={() => setBrandSearchTerm('')}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-steel-400 hover:text-steel-600"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {/* Brand List */}
+                    <div className="max-h-40 overflow-y-auto">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1 p-2">
+                        {filteredBrands.map(brand => (
+                          <label key={brand} className="flex items-center space-x-2 p-2 hover:bg-steel-50 rounded cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedBrands.includes(brand)}
+                              onChange={() => handleBrandChange(brand)}
+                              className="form-checkbox text-primary-600 rounded"
+                            />
+                            <span className="text-sm text-steel-700 truncate">{brand}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {filteredBrands.length === 0 && (
+                        <div className="text-center py-4 text-steel-500 text-sm">
+                          No brands found matching "{brandSearchTerm}"
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -454,34 +714,57 @@ export default function ProductsPage() {
                   <label className="block text-sm font-medium text-steel-700 mb-3">
                     Item Types ({selectedItemTypes.length} selected)
                   </label>
-                  <div className="bg-white rounded-lg border border-steel-200 max-h-40 overflow-y-auto">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1 p-2">
-                      {ALL_ITEM_TYPES.map(itemType => (
-                        <label key={itemType} className="flex items-center space-x-2 p-2 hover:bg-steel-50 rounded cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedItemTypes.includes(itemType)}
-                            onChange={() => handleItemTypeChange(itemType)}
-                            className="form-checkbox text-primary-600 rounded"
-                          />
-                          <span className="text-sm text-steel-700 truncate">{itemType}</span>
-                        </label>
-                      ))}
+                  <div className="bg-white rounded-lg border border-steel-200">
+                    {/* Item Type Search Bar */}
+                    <div className="p-3 border-b border-steel-200">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-steel-400 h-4 w-4" />
+                        <input
+                          type="text"
+                          placeholder="Search item types..."
+                          value={itemTypeSearchTerm}
+                          onChange={(e) => setItemTypeSearchTerm(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 text-sm border border-steel-300 rounded-md focus:border-primary-500 focus:ring-1 focus:ring-primary-200"
+                        />
+                        {itemTypeSearchTerm && (
+                          <button
+                            onClick={() => setItemTypeSearchTerm('')}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-steel-400 hover:text-steel-600"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {/* Item Type List */}
+                    <div className="max-h-40 overflow-y-auto">
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1 p-2">
+                        {filteredItemTypes.map(itemType => (
+                          <label key={itemType} className="flex items-center space-x-2 p-2 hover:bg-steel-50 rounded cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedItemTypes.includes(itemType)}
+                              onChange={() => handleItemTypeChange(itemType)}
+                              className="form-checkbox text-primary-600 rounded"
+                            />
+                            <span className="text-sm text-steel-700 truncate">{itemType}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {filteredItemTypes.length === 0 && (
+                        <div className="text-center py-4 text-steel-500 text-sm">
+                          No item types found matching "{itemTypeSearchTerm}"
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* Additional Filters */}
                 <div className="flex flex-wrap gap-4">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={showInStockOnly}
-                      onChange={(e) => setShowInStockOnly(e.target.checked)}
-                      className="form-checkbox text-primary-600 rounded"
-                    />
-                    <span className="text-sm font-medium text-steel-700">In Stock Only</span>
-                  </label>
+                  <div className="text-sm text-steel-600">
+                    Additional filters can be found above in the search bar area.
+                  </div>
                 </div>
               </div>
             </div>
@@ -491,13 +774,20 @@ export default function ProductsPage() {
           <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center mb-6">
             {/* Results Count */}
             <div className="flex items-center gap-4">
-              <p className="text-steel-600">
-                {filteredAndSortedProducts.length} {filteredAndSortedProducts.length === 1 ? 'product' : 'products'} found
-                {searchTerm.length >= 3 && ` for "${searchTerm}"`}
-              </p>
-              {hasMore && (
+              {loadingFilters ? (
+                <div className="flex items-center gap-2 text-steel-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600" />
+                  <span>Updating results...</span>
+                </div>
+              ) : (
+                <p className="text-steel-600">
+                  {displayProducts.length} result{displayProducts.length === 1 ? '' : 's'}
+                  {isSearchActive ? ` for "${searchTerm}"` : ''}
+                </p>
+              )}
+              {hasMore && !isSearchActive && (
                 <p className="text-steel-500 text-sm">
-                  More products available - scroll down to load more
+                  Load more to see additional results
                 </p>
               )}
             </div>
@@ -541,7 +831,7 @@ export default function ProductsPage() {
           {/* Active Filters Tags */}
           {activeFiltersCount > 0 && (
             <div className="flex flex-wrap gap-2 mb-6">
-              {searchTerm.length >= 3 && (
+              {isSearchActive && (
                 <span className="inline-flex items-center gap-1 bg-primary-100 text-primary-800 px-3 py-1 rounded-full text-sm">
                   Search: {searchTerm}
                   <button onClick={() => setSearchTerm('')} className="hover:bg-primary-200 rounded-full p-1">
@@ -578,13 +868,69 @@ export default function ProductsPage() {
         </div>
 
         {/* Products Grid */}
-        {filteredAndSortedProducts.length > 0 ? (
+        {loadingFilters ? (
           <div className={`grid gap-6 ${
             viewMode === 'grid' 
               ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' 
               : 'grid-cols-1'
           }`}>
-            {filteredAndSortedProducts.map((product) => (
+            {[...Array(itemsPerPage)].map((_, i) => (
+              <div
+                key={i}
+                className={`group bg-white border border-steel-200 rounded-lg overflow-hidden ${
+                  viewMode === 'list' ? 'flex' : ''
+                }`}
+              >
+                {/* Product Image Skeleton */}
+                <div className={`relative bg-steel-50 overflow-hidden ${
+                  viewMode === 'list' ? 'w-48 h-48' : 'aspect-square'
+                }`}>
+                  <div className="w-full h-full bg-steel-200 animate-pulse" />
+                </div>
+
+                {/* Product Info Skeleton */}
+                <div className={`p-4 ${viewMode === 'list' ? 'flex-1' : ''}`}>
+                  {/* Brand */}
+                  <div className="h-3 bg-steel-200 rounded w-16 mb-1 animate-pulse" />
+
+                  {/* Product Name */}
+                  <div className={`space-y-2 mb-2 ${
+                    viewMode === 'list' ? '' : 'h-10'
+                  }`}>
+                    <div className="h-4 bg-steel-200 rounded animate-pulse" />
+                    {viewMode === 'grid' && (
+                      <div className="h-4 bg-steel-200 rounded w-3/4 animate-pulse" />
+                    )}
+                  </div>
+
+                  {/* Product Type */}
+                  <div className="h-3 bg-steel-200 rounded w-20 mb-2 animate-pulse" />
+
+                  {/* Price */}
+                  <div className={`flex items-center justify-between mb-3 ${
+                    viewMode === 'list' ? 'flex-col items-start' : ''
+                  }`}>
+                    <div className="h-5 bg-steel-200 rounded w-16 animate-pulse" />
+                  </div>
+
+                  {/* SKU */}
+                  <div className="h-3 bg-steel-200 rounded w-24 mb-3 animate-pulse" />
+
+                  {/* Add to Cart Button */}
+                  <div className={`h-10 bg-steel-200 rounded animate-pulse ${
+                    viewMode === 'list' ? 'w-32' : 'w-full'
+                  }`} />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : displayProducts.length > 0 ? (
+          <div className={`grid gap-6 ${
+            viewMode === 'grid' 
+              ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4' 
+              : 'grid-cols-1'
+          }`}>
+            {displayProducts.map((product) => (
               <div
                 key={product.id}
                 className={`group bg-white border border-steel-200 rounded-lg overflow-hidden hover:shadow-card-hover transition-all duration-300 ${
@@ -703,8 +1049,8 @@ export default function ProductsPage() {
           </div>
         )}
 
-        {/* Load More Button */}
-        {hasMore && filteredAndSortedProducts.length > 0 && (
+        {/* Load More Button - only show when not searching */}
+        {hasMore && !isSearchActive && displayProducts.length > 0 && (
           <div className="flex justify-center mt-12">
             <button
               onClick={loadMoreProducts}
@@ -722,6 +1068,15 @@ export default function ProductsPage() {
             </button>
           </div>
         )}
+
+        {/* Results Summary */}
+        <div className="mt-8 text-center text-steel-600">
+          {isSearchActive ? (
+            `${displayProducts.length} result${displayProducts.length === 1 ? '' : 's'} for "${searchTerm}"`
+          ) : (
+            `${displayProducts.length}${hasMore ? '+' : ''} result${displayProducts.length === 1 ? '' : 's'}`
+          )}
+        </div>
 
       </div>
 

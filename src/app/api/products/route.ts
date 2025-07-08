@@ -19,7 +19,27 @@ export async function GET(request: NextRequest) {
     if (searchParams.get('min_price')) params['filter[list_price][gt]'] = searchParams.get('min_price')
     if (searchParams.get('max_price')) params['filter[list_price][lt]'] = searchParams.get('max_price')
     if (searchParams.get('search')) params['filter[name][pre]'] = searchParams.get('search')
+    if (searchParams.get('sku')) params['filter[sku][pre]'] = searchParams.get('sku')
     if (searchParams.get('product_type')) params['filter[product_type]'] = searchParams.get('product_type')
+    
+    // Stock filtering
+    if (searchParams.get('in_stock') === 'true') {
+      params['filter[status]'] = 'STK'
+    }
+    
+    // Note: Brand filtering is handled later after we get brand data
+    
+    // Handle multiple item types (comma-separated)
+    const itemTypes = searchParams.get('item_types')
+    if (itemTypes) {
+      const typeArray = itemTypes.split(',').map(t => t.trim()).filter(Boolean)
+      if (typeArray.length === 1) {
+        params['filter[product_type]'] = typeArray[0]
+      } else if (typeArray.length > 1) {
+        // WPS API might support multiple values - let's try comma-separated
+        params['filter[product_type]'] = typeArray.join(',')
+      }
+    }
     
     // Sorting - only use supported WPS API sort parameters
     const sort = searchParams.get('sort')
@@ -76,18 +96,37 @@ export async function GET(request: NextRequest) {
     const itemsParams = { ...params }
     itemsParams.include = 'images,product'
     
-    const [itemsResponse, brandsResponse] = await Promise.all([
-      client.getItems(itemsParams),
-      client.getBrands({ 'page[size]': 1000 })
-    ])
-
-    // Create brand lookup map
+    // Get brands first to handle brand name filtering
+    const brandsResponse = await client.getBrands({ 'page[size]': 1000 })
+    
+    // Create brand lookup maps
     const brandMap: Record<number, { id: number; name: string }> = {}
+    const brandNameToIdMap: Record<string, number> = {}
     if (brandsResponse.data) {
       brandsResponse.data.forEach((brand: { id: number; name: string }) => {
         brandMap[brand.id] = brand
+        brandNameToIdMap[brand.name.toUpperCase()] = brand.id
       })
     }
+    
+    // Handle brand name filtering by converting to IDs
+    const brands = searchParams.get('brands')
+    if (brands) {
+      const brandNames = brands.split(',').map(b => b.trim().toUpperCase()).filter(Boolean)
+      const brandIds = brandNames
+        .map(name => brandNameToIdMap[name])
+        .filter(id => id !== undefined)
+      
+      if (brandIds.length === 1) {
+        itemsParams['filter[brand_id]'] = brandIds[0]
+      } else if (brandIds.length > 1) {
+        // Try comma-separated brand IDs
+        itemsParams['filter[brand_id]'] = brandIds.join(',')
+      }
+    }
+    
+    // Now get items with all filters applied
+    const itemsResponse = await client.getItems(itemsParams)
 
     // Enhance items with brand data
     const enhancedItems = itemsResponse.data.map(item => ({
@@ -117,7 +156,14 @@ export async function GET(request: NextRequest) {
       success: true,
       data: enhancedProducts,
       meta: itemsResponse.meta,
-      params: params // For debugging
+      filters: {
+        brands: searchParams.get('brands'),
+        itemTypes: searchParams.get('item_types'),
+        inStock: searchParams.get('in_stock'),
+        search: searchParams.get('search'),
+        sku: searchParams.get('sku')
+      },
+      params: itemsParams // For debugging
     })
 
   } catch (error: any) {
