@@ -48,8 +48,9 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
 
   if (viewMode === 'list') {
     return (
-      <div className="bg-white border border-steel-200 rounded-lg overflow-hidden hover:shadow-card-hover transition-all duration-300 group">
-        <div className="flex">
+      <Link href={`/product/${product.product_id}`} className="block">
+        <div className="bg-white border border-steel-200 rounded-lg overflow-hidden hover:shadow-card-hover transition-all duration-300 group cursor-pointer">
+          <div className="flex">
           {/* Product Image */}
           <div className="relative w-48 h-48 bg-steel-50 flex-shrink-0">
             {imageLoading ? (
@@ -98,13 +99,8 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
               )}
 
               {/* Product Name */}
-              <h3 className="text-lg font-semibold text-steel-900 mb-2">
-                <Link
-                  href={`/product/${product.product_id}`}
-                  className="hover:text-primary-600 transition-colors"
-                >
-                  {product.name}
-                </Link>
+              <h3 className="text-lg font-semibold text-steel-900 mb-2 hover:text-primary-600 transition-colors">
+                {product.name}
               </h3>
 
               {/* Product Type & SKU */}
@@ -173,14 +169,16 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
               </div>
             </div>
           </div>
+          </div>
         </div>
-      </div>
+      </Link>
     )
   }
 
   // Grid view (default)
   return (
-    <div className="bg-white border border-steel-200 rounded-lg overflow-hidden hover:shadow-card-hover transition-all duration-300 group">
+    <Link href={`/product/${product.product_id}`} className="block">
+      <div className="bg-white border border-steel-200 rounded-lg overflow-hidden hover:shadow-card-hover transition-all duration-300 group cursor-pointer">
       {/* Product Image */}
       <div className="relative aspect-product bg-steel-50 overflow-hidden">
         {imageLoading ? (
@@ -255,13 +253,8 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
         )}
 
         {/* Product Name */}
-        <h3 className="text-sm font-medium text-steel-900 mb-2 line-clamp-2 h-10">
-          <Link
-            href={`/product/${product.product_id}`}
-            className="hover:text-primary-600 transition-colors"
-          >
-            {product.name}
-          </Link>
+        <h3 className="text-sm font-medium text-steel-900 mb-2 line-clamp-2 h-10 hover:text-primary-600 transition-colors">
+          {product.name}
         </h3>
 
         {/* Product Type */}
@@ -312,12 +305,13 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
         </button>
       </div>
 
-      {/* Quick View Modal */}
-      <QuickView 
-        isOpen={showQuickView}
-        onClose={() => setShowQuickView(false)}
-        productId={product.product_id}
-      />
-    </div>
+        {/* Quick View Modal */}
+        <QuickView 
+          isOpen={showQuickView}
+          onClose={() => setShowQuickView(false)}
+          productId={product.product_id}
+        />
+      </div>
+    </Link>
   )
 }

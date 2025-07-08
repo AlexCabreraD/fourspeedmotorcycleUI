@@ -1227,12 +1227,16 @@ export default function ProductsPage() {
               : 'grid-cols-1'
           }`}>
             {displayProducts.map((product) => (
-              <div
+              <Link
                 key={product.id}
-                className={`group bg-white border border-steel-200 rounded-lg overflow-hidden hover:shadow-card-hover transition-all duration-300 ${
-                  viewMode === 'list' ? 'flex' : ''
-                }`}
+                href={`/product/${product.product_id}`}
+                className="block"
               >
+                <div
+                  className={`group bg-white border border-steel-200 rounded-lg overflow-hidden hover:shadow-card-hover transition-all duration-300 cursor-pointer ${
+                    viewMode === 'list' ? 'flex' : ''
+                  }`}
+                >
                 {/* Product Image */}
                 <div className={`relative bg-steel-50 overflow-hidden ${
                   viewMode === 'list' ? 'w-48 h-48' : 'aspect-square'
@@ -1252,10 +1256,7 @@ export default function ProductsPage() {
                       className="w-full h-full"
                     />
                   )}
-                  <Link
-                    href={`/product/${product.product_id}`}
-                    className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300"
-                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300" />
                 </div>
 
                 {/* Product Info */}
@@ -1268,15 +1269,10 @@ export default function ProductsPage() {
                   )}
 
                   {/* Product Name */}
-                  <h3 className={`font-medium text-steel-900 mb-2 ${
+                  <h3 className={`font-medium text-steel-900 mb-2 hover:text-primary-600 transition-colors ${
                     viewMode === 'list' ? 'text-lg' : 'text-sm line-clamp-2 h-10'
                   }`}>
-                    <Link
-                      href={`/product/${product.product_id}`}
-                      className="hover:text-primary-600 transition-colors"
-                    >
-                      {product.name}
-                    </Link>
+                    {product.name}
                   </h3>
 
                   {/* Product Type */}
@@ -1311,7 +1307,11 @@ export default function ProductsPage() {
 
                   {/* Add to Cart Button */}
                   <button
-                    onClick={() => handleAddToCart(product)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      handleAddToCart(product)
+                    }}
                     className={`btn btn-primary ${
                       viewMode === 'list' ? 'btn-lg' : 'btn-sm w-full'
                     }`}
@@ -1319,7 +1319,8 @@ export default function ProductsPage() {
                     Add to Cart
                   </button>
                 </div>
-              </div>
+                </div>
+              </Link>
             ))}
           </div>
         ) : (
