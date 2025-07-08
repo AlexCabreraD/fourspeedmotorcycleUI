@@ -43,7 +43,7 @@ export default function Navigation() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`)
       setSearchQuery('')
     }
   }
@@ -95,7 +95,7 @@ export default function Navigation() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search parts, brands, or SKU..."
+                    placeholder="Search 40k+ motorcycle parts & accessories..."
                     className="w-full pl-10 pr-4 py-2 border border-steel-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                   />
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-steel-400" />
@@ -115,13 +115,17 @@ export default function Navigation() {
                 Home
               </Link>
               
+              <Link href="/products" className="nav-link font-semibold text-primary-600 hover:text-primary-700">
+                All Products
+              </Link>
+              
               {/* Categories dropdown */}
               <div 
                 className="relative"
                 onMouseEnter={handleCategoryMouseEnter}
                 onMouseLeave={handleCategoryMouseLeave}
               >
-                <button className="nav-link flex items-center">
+                <button className="nav-link text-steel-500 hover:text-steel-600 flex items-center">
                   Categories
                   <svg className="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -157,7 +161,7 @@ export default function Navigation() {
                 )}
               </div>
 
-              <Link href="/brands" className="nav-link">
+              <Link href="/brands" className="nav-link text-steel-500 hover:text-steel-600">
                 Brands
               </Link>
               <Link href="/about" className="nav-link">
@@ -213,7 +217,7 @@ export default function Navigation() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search parts, brands, or SKU..."
+                  placeholder="Search 40k+ motorcycle parts & accessories..."
                   className="w-full pl-10 pr-16 py-2 border border-steel-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
                 />
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-steel-400" />
@@ -240,9 +244,17 @@ export default function Navigation() {
                 Home
               </Link>
               
+              <Link
+                href="/products"
+                className="block px-3 py-2 text-base font-semibold text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-md"
+                onClick={() => setIsOpen(false)}
+              >
+                All Products
+              </Link>
+              
               {/* Mobile categories */}
               <div className="space-y-1">
-                <div className="px-3 py-2 text-base font-medium text-steel-900">Categories</div>
+                <div className="px-3 py-2 text-base font-medium text-steel-600">Categories</div>
                 {categories.map((category) => (
                   <Link
                     key={category.id}
@@ -257,7 +269,7 @@ export default function Navigation() {
 
               <Link
                 href="/brands"
-                className="block px-3 py-2 text-base font-medium text-steel-700 hover:text-steel-900 hover:bg-steel-50 rounded-md"
+                className="block px-3 py-2 text-base font-medium text-steel-600 hover:text-steel-700 hover:bg-steel-50 rounded-md"
                 onClick={() => setIsOpen(false)}
               >
                 Brands

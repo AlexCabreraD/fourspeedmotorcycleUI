@@ -125,6 +125,18 @@ export default function ProductsPage() {
   const [isSearchActive, setIsSearchActive] = useState(false)
   const [brandSearchTerm, setBrandSearchTerm] = useState('')
   const [itemTypeSearchTerm, setItemTypeSearchTerm] = useState('')
+  
+  // New filter states
+  const [priceRange, setPriceRange] = useState({ min: '', max: '' })
+  const [newArrivalsFilter, setNewArrivalsFilter] = useState('')
+  const [recentlyUpdatedFilter, setRecentlyUpdatedFilter] = useState('')
+  const [weightRange, setWeightRange] = useState({ min: '', max: '' })
+  const [dimensionFilters, setDimensionFilters] = useState({
+    length: { min: '', max: '' },
+    width: { min: '', max: '' },
+    height: { min: '', max: '' }
+  })
+  
   const itemsPerPage = 20 // Changed to multiple of 4 (4x5)
   const { addItem } = useCartStore()
   
@@ -161,6 +173,38 @@ export default function ProductsPage() {
     if (showInStockOnly) {
       params.set('in_stock', 'true')
     }
+    
+    // Price range filters
+    if (priceRange.min) {
+      params.set('min_price', priceRange.min)
+    }
+    if (priceRange.max) {
+      params.set('max_price', priceRange.max)
+    }
+    
+    // Date filters
+    if (newArrivalsFilter) {
+      params.set('new_arrivals_days', newArrivalsFilter)
+    }
+    if (recentlyUpdatedFilter) {
+      params.set('recently_updated_days', recentlyUpdatedFilter)
+    }
+    
+    // Weight range filters
+    if (weightRange.min) {
+      params.set('min_weight', weightRange.min)
+    }
+    if (weightRange.max) {
+      params.set('max_weight', weightRange.max)
+    }
+    
+    // Dimension filters
+    if (dimensionFilters.length.min) params.set('min_length', dimensionFilters.length.min)
+    if (dimensionFilters.length.max) params.set('max_length', dimensionFilters.length.max)
+    if (dimensionFilters.width.min) params.set('min_width', dimensionFilters.width.min)
+    if (dimensionFilters.width.max) params.set('max_width', dimensionFilters.width.max)
+    if (dimensionFilters.height.min) params.set('min_height', dimensionFilters.height.min)
+    if (dimensionFilters.height.max) params.set('max_height', dimensionFilters.height.max)
     
     // Add sorting
     if (sortBy && sortBy !== 'name_asc') {
@@ -267,7 +311,7 @@ export default function ProductsPage() {
     fetchProducts(undefined, true).finally(() => {
       setLoadingFilters(false)
     })
-  }, [selectedBrands, selectedItemTypes, showInStockOnly, sortBy])
+  }, [selectedBrands, selectedItemTypes, showInStockOnly, sortBy, priceRange, newArrivalsFilter, recentlyUpdatedFilter, weightRange, dimensionFilters])
 
   // Clean up expired cache entries periodically
   useEffect(() => {
@@ -451,6 +495,15 @@ export default function ProductsPage() {
     setSearchResults([])
     setBrandSearchTerm('')
     setItemTypeSearchTerm('')
+    setPriceRange({ min: '', max: '' })
+    setNewArrivalsFilter('')
+    setRecentlyUpdatedFilter('')
+    setWeightRange({ min: '', max: '' })
+    setDimensionFilters({
+      length: { min: '', max: '' },
+      width: { min: '', max: '' },
+      height: { min: '', max: '' }
+    })
     currentSearchRef.current = ''
     
     // Clear filter cache when resetting filters
@@ -461,7 +514,14 @@ export default function ProductsPage() {
     isSearchActive,
     selectedBrands.length > 0,
     selectedItemTypes.length > 0,
-    showInStockOnly
+    showInStockOnly,
+    priceRange.min || priceRange.max,
+    newArrivalsFilter,
+    recentlyUpdatedFilter,
+    weightRange.min || weightRange.max,
+    dimensionFilters.length.min || dimensionFilters.length.max ||
+    dimensionFilters.width.min || dimensionFilters.width.max ||
+    dimensionFilters.height.min || dimensionFilters.height.max
   ].filter(Boolean).length
 
   const handleBrandChange = (brand: string) => {
@@ -760,10 +820,200 @@ export default function ProductsPage() {
                   </div>
                 </div>
 
-                {/* Additional Filters */}
-                <div className="flex flex-wrap gap-4">
-                  <div className="text-sm text-steel-600">
-                    Additional filters can be found above in the search bar area.
+                {/* Price Range Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-steel-700 mb-3">
+                    Price Range (USD)
+                  </label>
+                  <div className="flex gap-3 items-center">
+                    <div>
+                      <label className="block text-xs text-steel-500 mb-1">Min</label>
+                      <input
+                        type="number"
+                        placeholder="0"
+                        value={priceRange.min}
+                        onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
+                        className="w-24 px-3 py-2 text-sm border border-steel-300 rounded-md focus:border-primary-500 focus:ring-1 focus:ring-primary-200"
+                      />
+                    </div>
+                    <span className="text-steel-400 mt-5">to</span>
+                    <div>
+                      <label className="block text-xs text-steel-500 mb-1">Max</label>
+                      <input
+                        type="number"
+                        placeholder="1000"
+                        value={priceRange.max}
+                        onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
+                        className="w-24 px-3 py-2 text-sm border border-steel-300 rounded-md focus:border-primary-500 focus:ring-1 focus:ring-primary-200"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Date Filters */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-steel-700 mb-3">
+                      New Arrivals
+                    </label>
+                    <select
+                      value={newArrivalsFilter}
+                      onChange={(e) => setNewArrivalsFilter(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-steel-300 rounded-md focus:border-primary-500 focus:ring-1 focus:ring-primary-200"
+                    >
+                      <option value="">All items</option>
+                      <option value="7">Last 7 days</option>
+                      <option value="30">Last 30 days</option>
+                      <option value="90">Last 3 months</option>
+                      <option value="365">Last year</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-steel-700 mb-3">
+                      Recently Updated
+                    </label>
+                    <select
+                      value={recentlyUpdatedFilter}
+                      onChange={(e) => setRecentlyUpdatedFilter(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-steel-300 rounded-md focus:border-primary-500 focus:ring-1 focus:ring-primary-200"
+                    >
+                      <option value="">All items</option>
+                      <option value="7">Last 7 days</option>
+                      <option value="30">Last 30 days</option>
+                      <option value="90">Last 3 months</option>
+                      <option value="365">Last year</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Weight Range Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-steel-700 mb-3">
+                    Weight Range (lbs)
+                  </label>
+                  <div className="flex gap-3 items-center">
+                    <div>
+                      <label className="block text-xs text-steel-500 mb-1">Min</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        placeholder="0"
+                        value={weightRange.min}
+                        onChange={(e) => setWeightRange(prev => ({ ...prev, min: e.target.value }))}
+                        className="w-24 px-3 py-2 text-sm border border-steel-300 rounded-md focus:border-primary-500 focus:ring-1 focus:ring-primary-200"
+                      />
+                    </div>
+                    <span className="text-steel-400 mt-5">to</span>
+                    <div>
+                      <label className="block text-xs text-steel-500 mb-1">Max</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        placeholder="50"
+                        value={weightRange.max}
+                        onChange={(e) => setWeightRange(prev => ({ ...prev, max: e.target.value }))}
+                        className="w-24 px-3 py-2 text-sm border border-steel-300 rounded-md focus:border-primary-500 focus:ring-1 focus:ring-primary-200"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dimensions Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-steel-700 mb-3">
+                    Dimensions (inches)
+                  </label>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Length */}
+                    <div>
+                      <label className="block text-xs text-steel-500 mb-2">Length</label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="Min"
+                          value={dimensionFilters.length.min}
+                          onChange={(e) => setDimensionFilters(prev => ({ 
+                            ...prev, 
+                            length: { ...prev.length, min: e.target.value }
+                          }))}
+                          className="w-20 px-2 py-1 text-xs border border-steel-300 rounded focus:border-primary-500"
+                        />
+                        <span className="text-xs text-steel-400">-</span>
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="Max"
+                          value={dimensionFilters.length.max}
+                          onChange={(e) => setDimensionFilters(prev => ({ 
+                            ...prev, 
+                            length: { ...prev.length, max: e.target.value }
+                          }))}
+                          className="w-20 px-2 py-1 text-xs border border-steel-300 rounded focus:border-primary-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Width */}
+                    <div>
+                      <label className="block text-xs text-steel-500 mb-2">Width</label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="Min"
+                          value={dimensionFilters.width.min}
+                          onChange={(e) => setDimensionFilters(prev => ({ 
+                            ...prev, 
+                            width: { ...prev.width, min: e.target.value }
+                          }))}
+                          className="w-20 px-2 py-1 text-xs border border-steel-300 rounded focus:border-primary-500"
+                        />
+                        <span className="text-xs text-steel-400">-</span>
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="Max"
+                          value={dimensionFilters.width.max}
+                          onChange={(e) => setDimensionFilters(prev => ({ 
+                            ...prev, 
+                            width: { ...prev.width, max: e.target.value }
+                          }))}
+                          className="w-20 px-2 py-1 text-xs border border-steel-300 rounded focus:border-primary-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Height */}
+                    <div>
+                      <label className="block text-xs text-steel-500 mb-2">Height</label>
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="Min"
+                          value={dimensionFilters.height.min}
+                          onChange={(e) => setDimensionFilters(prev => ({ 
+                            ...prev, 
+                            height: { ...prev.height, min: e.target.value }
+                          }))}
+                          className="w-20 px-2 py-1 text-xs border border-steel-300 rounded focus:border-primary-500"
+                        />
+                        <span className="text-xs text-steel-400">-</span>
+                        <input
+                          type="number"
+                          step="0.1"
+                          placeholder="Max"
+                          value={dimensionFilters.height.max}
+                          onChange={(e) => setDimensionFilters(prev => ({ 
+                            ...prev, 
+                            height: { ...prev.height, max: e.target.value }
+                          }))}
+                          className="w-20 px-2 py-1 text-xs border border-steel-300 rounded focus:border-primary-500"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -859,6 +1109,52 @@ export default function ProductsPage() {
                 <span className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
                   In Stock Only
                   <button onClick={() => setShowInStockOnly(false)} className="hover:bg-yellow-200 rounded-full p-1">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {(priceRange.min || priceRange.max) && (
+                <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
+                  Price: ${priceRange.min || '0'} - ${priceRange.max || '∞'}
+                  <button onClick={() => setPriceRange({ min: '', max: '' })} className="hover:bg-purple-200 rounded-full p-1">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {newArrivalsFilter && (
+                <span className="inline-flex items-center gap-1 bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">
+                  New: Last {newArrivalsFilter} days
+                  <button onClick={() => setNewArrivalsFilter('')} className="hover:bg-indigo-200 rounded-full p-1">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {recentlyUpdatedFilter && (
+                <span className="inline-flex items-center gap-1 bg-cyan-100 text-cyan-800 px-3 py-1 rounded-full text-sm">
+                  Updated: Last {recentlyUpdatedFilter} days
+                  <button onClick={() => setRecentlyUpdatedFilter('')} className="hover:bg-cyan-200 rounded-full p-1">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {(weightRange.min || weightRange.max) && (
+                <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm">
+                  Weight: {weightRange.min || '0'} - {weightRange.max || '∞'} lbs
+                  <button onClick={() => setWeightRange({ min: '', max: '' })} className="hover:bg-orange-200 rounded-full p-1">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {(dimensionFilters.length.min || dimensionFilters.length.max || 
+                dimensionFilters.width.min || dimensionFilters.width.max ||
+                dimensionFilters.height.min || dimensionFilters.height.max) && (
+                <span className="inline-flex items-center gap-1 bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm">
+                  Dimensions Applied
+                  <button onClick={() => setDimensionFilters({
+                    length: { min: '', max: '' },
+                    width: { min: '', max: '' },
+                    height: { min: '', max: '' }
+                  })} className="hover:bg-teal-200 rounded-full p-1">
                     <X className="h-3 w-3" />
                   </button>
                 </span>

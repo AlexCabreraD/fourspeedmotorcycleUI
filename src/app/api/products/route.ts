@@ -16,16 +16,45 @@ export async function GET(request: NextRequest) {
     // Filtering
     if (searchParams.get('brand')) params['filter[brand_id]'] = searchParams.get('brand')
     if (searchParams.get('category')) params['filter[category_id]'] = searchParams.get('category')
-    if (searchParams.get('min_price')) params['filter[list_price][gt]'] = searchParams.get('min_price')
-    if (searchParams.get('max_price')) params['filter[list_price][lt]'] = searchParams.get('max_price')
     if (searchParams.get('search')) params['filter[name][pre]'] = searchParams.get('search')
     if (searchParams.get('sku')) params['filter[sku][pre]'] = searchParams.get('sku')
     if (searchParams.get('product_type')) params['filter[product_type]'] = searchParams.get('product_type')
+    
+    // Price range filtering
+    if (searchParams.get('min_price')) params['filter[list_price][gte]'] = searchParams.get('min_price')
+    if (searchParams.get('max_price')) params['filter[list_price][lte]'] = searchParams.get('max_price')
     
     // Stock filtering
     if (searchParams.get('in_stock') === 'true') {
       params['filter[status]'] = 'STK'
     }
+    
+    // Date filtering
+    if (searchParams.get('new_arrivals_days')) {
+      const days = parseInt(searchParams.get('new_arrivals_days')!)
+      const dateThreshold = new Date()
+      dateThreshold.setDate(dateThreshold.getDate() - days)
+      params['filter[created_at][gte]'] = dateThreshold.toISOString().split('T')[0]
+    }
+    
+    if (searchParams.get('recently_updated_days')) {
+      const days = parseInt(searchParams.get('recently_updated_days')!)
+      const dateThreshold = new Date()
+      dateThreshold.setDate(dateThreshold.getDate() - days)
+      params['filter[updated_at][gte]'] = dateThreshold.toISOString().split('T')[0]
+    }
+    
+    // Weight range filtering
+    if (searchParams.get('min_weight')) params['filter[weight][gte]'] = searchParams.get('min_weight')
+    if (searchParams.get('max_weight')) params['filter[weight][lte]'] = searchParams.get('max_weight')
+    
+    // Dimension filtering
+    if (searchParams.get('min_length')) params['filter[length][gte]'] = searchParams.get('min_length')
+    if (searchParams.get('max_length')) params['filter[length][lte]'] = searchParams.get('max_length')
+    if (searchParams.get('min_width')) params['filter[width][gte]'] = searchParams.get('min_width')
+    if (searchParams.get('max_width')) params['filter[width][lte]'] = searchParams.get('max_width')
+    if (searchParams.get('min_height')) params['filter[height][gte]'] = searchParams.get('min_height')
+    if (searchParams.get('max_height')) params['filter[height][lte]'] = searchParams.get('max_height')
     
     // Note: Brand filtering is handled later after we get brand data
     
@@ -161,7 +190,22 @@ export async function GET(request: NextRequest) {
         itemTypes: searchParams.get('item_types'),
         inStock: searchParams.get('in_stock'),
         search: searchParams.get('search'),
-        sku: searchParams.get('sku')
+        sku: searchParams.get('sku'),
+        priceRange: {
+          min: searchParams.get('min_price'),
+          max: searchParams.get('max_price')
+        },
+        newArrivals: searchParams.get('new_arrivals_days'),
+        recentlyUpdated: searchParams.get('recently_updated_days'),
+        weightRange: {
+          min: searchParams.get('min_weight'),
+          max: searchParams.get('max_weight')
+        },
+        dimensions: {
+          length: { min: searchParams.get('min_length'), max: searchParams.get('max_length') },
+          width: { min: searchParams.get('min_width'), max: searchParams.get('max_width') },
+          height: { min: searchParams.get('min_height'), max: searchParams.get('max_height') }
+        }
       },
       params: itemsParams // For debugging
     })

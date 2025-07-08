@@ -107,7 +107,7 @@ export default function HeroSection() {
                   {currentSlideData.cta}
                 </Link>
                 <Link
-                  href="/search"
+                  href="/products"
                   className="btn btn-outline btn-lg inline-flex items-center justify-center text-white border-white hover:bg-white hover:text-steel-900"
                 >
                   <Search className="mr-2 h-5 w-5" />

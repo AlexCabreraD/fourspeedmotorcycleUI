@@ -120,7 +120,7 @@ export default function CategoriesPage() {
             Use our search function or contact our parts specialists for assistance finding the right parts for your motorcycle.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/search" className="btn btn-primary">
+            <Link href="/products" className="btn btn-primary">
               Search Products
             </Link>
             <Link href="/contact" className="btn btn-outline">
