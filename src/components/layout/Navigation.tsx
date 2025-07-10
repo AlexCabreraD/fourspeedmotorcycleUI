@@ -78,12 +78,11 @@ export default function Navigation() {
             {/* Logo */}
             <div className="flex-shrink-0">
               <Link href="/" className="flex items-center group">
-                <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-2 rounded-xl font-display font-bold text-lg transition-all duration-300 group-hover:shadow-lg group-hover:shadow-primary-500/25">
-                  4Speed
-                </div>
-                <span className="text-xl font-display font-bold text-steel-700 ml-2">
-                  Motorcycle
-                </span>
+                <img 
+                  src="/assets/4speedMotorcylceLogo.svg" 
+                  alt="4Speed Motorcycle" 
+                  className="h-12 w-auto transition-all duration-300 group-hover:scale-105"
+                />
               </Link>
             </div>
 

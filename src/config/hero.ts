@@ -8,7 +8,6 @@ export interface HeroSlide {
   secondaryBtn?: {
     text: string
     link: string
-    icon?: string
   }
   background: string
   image?: string
@@ -47,8 +46,7 @@ export const heroConfig: HeroConfig = {
       ctaLink: "/categories",
       secondaryBtn: {
         text: "Find Parts",
-        link: "/products",
-        icon: "Search"
+        link: "/products"
       },
       background: "bg-gradient-to-r from-steel-900 via-steel-800 to-primary-900",
       image: "/images/hero/HardDrive-077.JPG"
@@ -63,8 +61,7 @@ export const heroConfig: HeroConfig = {
       ctaLink: "/new-arrivals",
       secondaryBtn: {
         text: "Find Parts",
-        link: "/products",
-        icon: "Search"
+        link: "/products"
       },
       background: "bg-gradient-to-r from-primary-900 via-primary-800 to-accent-900",
       image: "/images/hero/HardDrive-112.JPG"
@@ -79,8 +76,7 @@ export const heroConfig: HeroConfig = {
       ctaLink: "/sale",
       secondaryBtn: {
         text: "Find Parts",
-        link: "/products",
-        icon: "Search"
+        link: "/products"
       },
       background: "bg-gradient-to-r from-accent-900 via-accent-800 to-primary-900",
       image: "/images/hero/RST2024-091.JPG"

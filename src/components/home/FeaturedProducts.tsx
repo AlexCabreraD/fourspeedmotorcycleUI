@@ -12,15 +12,30 @@ export default function FeaturedProducts() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch both products and brands in parallel
-        const [productsResponse, brandsResponse] = await Promise.all([
-          fetch('/api/products?page=12&sort=newest'),
-          fetch('/api/brands?page=1000') // Get a large set of brands
-        ])
+        // Define popular motorcycle categories for curation
+        const popularCategories = [
+          'Suspension',
+          'Exhaust', 
+          'Brakes',
+          'Engine',
+          'Electrical',
+          'Body',
+          'Wheels',
+          'Drive'
+        ]
         
-        const [productsData, brandsData] = await Promise.all([
-          productsResponse.json(),
-          brandsResponse.json()
+        // Fetch 2 items from each popular category (in stock only)
+        const categoryPromises = popularCategories.map(category =>
+          fetch(`/api/products?item_types=${encodeURIComponent(category)}&in_stock=true&page=2&sort=newest`)
+            .then(res => res.json())
+        )
+        
+        // Also fetch brands for enhancement
+        const brandsPromise = fetch('/api/brands?page=1000').then(res => res.json())
+        
+        const [brandsData, ...categoryResults] = await Promise.all([
+          brandsPromise,
+          ...categoryPromises
         ])
         
         // Create brand lookup map
@@ -31,23 +46,73 @@ export default function FeaturedProducts() {
           })
         }
         
-        if (productsData.success && productsData.data) {
-          // Extract items from products - each product contains items
-          const allItems: WPSItem[] = []
-          productsData.data.forEach((product: { items?: { data?: WPSItem[] } }) => {
-            if (product.items && product.items.data) {
-              allItems.push(...product.items.data)
+        // Collect items from each category
+        const featuredItems: WPSItem[] = []
+        
+        categoryResults.forEach((categoryData, index) => {
+          if (categoryData.success && categoryData.data) {
+            // Extract items from products in this category
+            const categoryItems: WPSItem[] = []
+            categoryData.data.forEach((product: { items?: { data?: WPSItem[] } }) => {
+              if (product.items && product.items.data) {
+                // Filter for in-stock items only
+                const inStockItems = product.items.data.filter((item: WPSItem) => 
+                  item.status === 'STK' || item.status === 'LTD'
+                )
+                categoryItems.push(...inStockItems)
+              }
+            })
+            
+            // Take first item from this category (if any)
+            if (categoryItems.length > 0) {
+              const item = categoryItems[0]
+              featuredItems.push({
+                ...item,
+                brand: item.brand_id ? { data: brandMap[item.brand_id] } : undefined,
+                // Add category for debugging/display
+                _featuredCategory: popularCategories[index]
+              })
             }
-          })
-          
-          // Enhance items with brand data
-          const featuredItems = allItems.slice(0, 8).map(item => ({
-            ...item,
-            brand: item.brand_id ? { data: brandMap[item.brand_id] } : undefined
-          }))
-          
-          setProducts(featuredItems)
+          }
+        })
+        
+        // If we don't have 8 items, fill with newest in-stock items
+        if (featuredItems.length < 8) {
+          try {
+            const fallbackResponse = await fetch('/api/products?in_stock=true&sort=newest&page=5')
+            const fallbackData = await fallbackResponse.json()
+            
+            if (fallbackData.success && fallbackData.data) {
+              const fallbackItems: WPSItem[] = []
+              fallbackData.data.forEach((product: { items?: { data?: WPSItem[] } }) => {
+                if (product.items && product.items.data) {
+                  const inStockItems = product.items.data.filter((item: WPSItem) => 
+                    item.status === 'STK' || item.status === 'LTD'
+                  )
+                  fallbackItems.push(...inStockItems)
+                }
+              })
+              
+              // Add unique items (not already in featuredItems)
+              const existingIds = new Set(featuredItems.map(item => item.id))
+              const uniqueFallbacks = fallbackItems
+                .filter(item => !existingIds.has(item.id))
+                .slice(0, 8 - featuredItems.length)
+                .map(item => ({
+                  ...item,
+                  brand: item.brand_id ? { data: brandMap[item.brand_id] } : undefined
+                }))
+              
+              featuredItems.push(...uniqueFallbacks)
+            }
+          } catch (fallbackError) {
+            console.warn('Failed to fetch fallback products:', fallbackError)
+          }
         }
+        
+        // Limit to 8 items total
+        setProducts(featuredItems.slice(0, 8))
+        
       } catch (error) {
         console.error('Failed to fetch featured products:', error)
       } finally {

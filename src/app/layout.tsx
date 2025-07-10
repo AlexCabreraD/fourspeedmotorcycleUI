@@ -44,17 +44,19 @@ export default function RootLayout({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div className="col-span-1 md:col-span-2">
-                <h3 className="text-2xl font-display font-bold mb-4">
-                  <span className="text-primary-400">4Speed</span>
-                  <span className="text-white ml-1">Motorcycle</span>
-                </h3>
+                <img 
+                  src="/assets/4speedMotorcylceLogo.svg" 
+                  alt="4Speed Motorcycle" 
+                  className="h-12 w-auto mb-4"
+                  style={{ filter: 'brightness(0) invert(1)' }}
+                />
                 <p className="text-steel-400 mb-4">
                   Your trusted source for premium motorcycle parts, accessories, and gear. 
                   We&apos;ve been serving riders since 1995 with quality parts and expert service.
                 </p>
                 <div className="text-steel-400">
-                  <p>📞 1-800-MOTO-PARTS</p>
-                  <p>📧 support@4speedmotorcycle.com</p>
+                  <p>Phone: 1-800-MOTO-PARTS</p>
+                  <p>Email: support@4speedmotorcycle.com</p>
                 </div>
               </div>
               

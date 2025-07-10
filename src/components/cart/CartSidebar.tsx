@@ -1,13 +1,16 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { X, Plus, Minus, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
 import { useCartStore } from '@/lib/store/cart'
 import { ImageUtils } from '@/lib/api/wps-client'
+import ConfirmationModal from '@/components/ui/ConfirmationModal'
 
 export default function CartSidebar() {
   const { items, isOpen, closeCart, updateQuantity, removeItem, totalPrice, totalItems, shippingTotal, grandTotal } = useCartStore()
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [itemToRemove, setItemToRemove] = useState<any>(null)
 
   // Prevent body scroll when cart is open
   useEffect(() => {
@@ -43,6 +46,23 @@ export default function CartSidebar() {
     
     // Fallback placeholder
     return '/placeholder-product.svg'
+  }
+
+  const handleRemoveClick = (item: any) => {
+    setItemToRemove(item)
+    setShowConfirmModal(true)
+  }
+
+  const handleConfirmRemove = () => {
+    if (itemToRemove) {
+      removeItem(itemToRemove.id)
+      setItemToRemove(null)
+    }
+  }
+
+  const handleCloseModal = () => {
+    setShowConfirmModal(false)
+    setItemToRemove(null)
   }
 
   if (!isOpen) return null
@@ -117,8 +137,17 @@ export default function CartSidebar() {
                       {/* Quantity Controls */}
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-6 h-6 flex items-center justify-center bg-white border border-steel-300 rounded text-steel-600 hover:bg-steel-50"
+                          onClick={() => {
+                            if (item.quantity > 1) {
+                              updateQuantity(item.id, item.quantity - 1)
+                            }
+                          }}
+                          disabled={item.quantity <= 1}
+                          className={`w-6 h-6 flex items-center justify-center bg-white border border-steel-300 rounded transition-colors ${
+                            item.quantity <= 1 
+                              ? 'text-steel-300' 
+                              : 'text-steel-600 hover:bg-steel-50'
+                          }`}
                         >
                           <Minus className="h-3 w-3" />
                         </button>
@@ -136,7 +165,7 @@ export default function CartSidebar() {
                     
                     {/* Remove Button */}
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => handleRemoveClick(item)}
                       className="text-xs text-accent-600 hover:text-accent-700 mt-1"
                     >
                       Remove
@@ -198,6 +227,19 @@ export default function CartSidebar() {
           </div>
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={handleCloseModal}
+        onConfirm={handleConfirmRemove}
+        title="Remove Item"
+        message={`Are you sure you want to remove "${itemToRemove?.name}" from your cart?`}
+        confirmText="Remove"
+        cancelText="Keep Item"
+        confirmVariant="danger"
+        icon="warning"
+      />
     </>
   )
 }

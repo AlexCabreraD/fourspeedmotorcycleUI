@@ -92,7 +92,6 @@ export default function HeroSection() {
                     href={currentSlideData.secondaryBtn.link}
                     className="btn btn-outline btn-lg inline-flex items-center justify-center text-white border-white hover:bg-white hover:text-steel-900"
                   >
-                    {currentSlideData.secondaryBtn.icon === 'Search' && <Search className="mr-2 h-5 w-5" />}
                     {currentSlideData.secondaryBtn.text}
                   </Link>
                 )}
