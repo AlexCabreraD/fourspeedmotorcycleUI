@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { Search, ShoppingCart, Menu, X, User } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart'
 
@@ -19,9 +19,14 @@ export default function Navigation() {
   const [categories, setCategories] = useState<CategoryNode[]>([])
   const [showCategories, setShowCategories] = useState(false)
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [isScrolled, setIsScrolled] = useState(false)
   
   const router = useRouter()
+  const pathname = usePathname()
   const { totalItems, toggleCart } = useCartStore()
+  
+  // Check if we're on homepage to enable transparent navbar
+  const isHomePage = pathname === '/'
 
   // Fetch main categories
   useEffect(() => {
@@ -38,6 +43,17 @@ export default function Navigation() {
     }
 
     fetchCategories()
+  }, [])
+
+  // Handle scroll for transparent navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY
+      setIsScrolled(scrollTop > 50) // Show background after 50px scroll
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   const handleSearch = (e: React.FormEvent) => {
@@ -65,13 +81,15 @@ export default function Navigation() {
 
   return (
     <>
-      {/* Top announcement bar */}
-      <div className="bg-gradient-to-r from-accent-600 to-accent-700 text-white text-center py-2.5 text-sm font-medium">
-        <p>Free shipping on orders over $99 | Call us: 1-800-MOTO-PARTS</p>
-      </div>
 
       {/* Main navigation */}
-      <nav className="bg-white border-b border-steel-200 sticky top-0 z-50 backdrop-blur-md bg-white/95">
+      <nav className={`border-b sticky top-0 z-50 backdrop-blur-md transition-all duration-300 ${
+        isHomePage
+          ? (isScrolled 
+              ? 'bg-white/95 border-steel-200' 
+              : 'bg-transparent border-transparent')
+          : 'bg-white border-steel-200'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-18">
             
@@ -81,7 +99,10 @@ export default function Navigation() {
                 <img 
                   src="/assets/4speedMotorcylceLogo.svg" 
                   alt="4Speed Motorcycle" 
-                  className="h-12 w-auto transition-all duration-300 group-hover:scale-105"
+                  className={`h-12 w-auto transition-all duration-300 group-hover:scale-105 ${
+                    isHomePage && !isScrolled ? 'drop-shadow-lg' : ''
+                  }`}
+                  style={isHomePage && !isScrolled ? { filter: 'brightness(0) invert(1)' } : {}}
                 />
               </Link>
             </div>
@@ -112,14 +133,34 @@ export default function Navigation() {
 
             {/* Desktop navigation links */}
             <div className="hidden lg:flex items-center space-x-8">
-              <Link href="/" className="nav-link font-medium text-steel-700 hover:text-primary-600 transition-colors relative group">
+              <Link href="/" className={`nav-link font-medium transition-colors relative group ${
+                isHomePage
+                  ? (isScrolled 
+                      ? 'text-steel-700 hover:text-primary-600' 
+                      : 'text-white hover:text-primary-300 drop-shadow-md')
+                  : 'text-steel-700 hover:text-primary-600'
+              }`}>
                 Home
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 transition-all duration-200 group-hover:w-full"></span>
+                <span className={`absolute -bottom-1 left-0 w-0 h-0.5 transition-all duration-200 group-hover:w-full ${
+                  isHomePage
+                    ? (isScrolled ? 'bg-primary-600' : 'bg-white')
+                    : 'bg-primary-600'
+                }`}></span>
               </Link>
               
-              <Link href="/products" className="nav-link font-semibold text-primary-600 hover:text-primary-700 transition-colors relative group">
+              <Link href="/products" className={`nav-link font-semibold transition-colors relative group ${
+                isHomePage
+                  ? (isScrolled 
+                      ? 'text-primary-600 hover:text-primary-700' 
+                      : 'text-white hover:text-primary-300 drop-shadow-md')
+                  : 'text-primary-600 hover:text-primary-700'
+              }`}>
                 All Products
-                <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-primary-600"></span>
+                <span className={`absolute -bottom-1 left-0 w-full h-0.5 ${
+                  isHomePage
+                    ? (isScrolled ? 'bg-primary-600' : 'bg-white')
+                    : 'bg-primary-600'
+                }`}></span>
               </Link>
               
               {/* Categories dropdown */}
@@ -128,12 +169,22 @@ export default function Navigation() {
                 onMouseEnter={handleCategoryMouseEnter}
                 onMouseLeave={handleCategoryMouseLeave}
               >
-                <button className="nav-link font-medium text-steel-700 hover:text-primary-600 flex items-center transition-colors group">
+                <button className={`nav-link font-medium flex items-center transition-colors group ${
+                  isHomePage
+                    ? (isScrolled 
+                        ? 'text-steel-700 hover:text-primary-600' 
+                        : 'text-white hover:text-primary-300 drop-shadow-md')
+                    : 'text-steel-700 hover:text-primary-600'
+                }`}>
                   Categories
                   <svg className="ml-1 h-4 w-4 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary-600 transition-all duration-200 group-hover:w-full"></span>
+                  <span className={`absolute -bottom-1 left-0 w-0 h-0.5 transition-all duration-200 group-hover:w-full ${
+                    isHomePage
+                      ? (isScrolled ? 'bg-primary-600' : 'bg-white')
+                      : 'bg-primary-600'
+                  }`}></span>
                 </button>
                 
                 {showCategories && (
@@ -169,19 +220,37 @@ export default function Navigation() {
             {/* Action buttons */}
             <div className="flex items-center space-x-2">
               {/* Search button - mobile */}
-              <button className="lg:hidden p-3 text-steel-600 hover:text-steel-900 hover:bg-steel-50 rounded-lg transition-colors">
+              <button className={`lg:hidden p-3 rounded-lg transition-colors ${
+                isHomePage
+                  ? (isScrolled 
+                      ? 'text-steel-600 hover:text-steel-900 hover:bg-steel-50' 
+                      : 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md')
+                  : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
+              }`}>
                 <Search className="h-5 w-5" />
               </button>
 
               {/* Account */}
-              <button className="hidden sm:block p-3 text-steel-600 hover:text-steel-900 hover:bg-steel-50 rounded-lg transition-colors">
+              <button className={`hidden sm:block p-3 rounded-lg transition-colors ${
+                isHomePage
+                  ? (isScrolled 
+                      ? 'text-steel-600 hover:text-steel-900 hover:bg-steel-50' 
+                      : 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md')
+                  : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
+              }`}>
                 <User className="h-5 w-5" />
               </button>
 
               {/* Cart */}
               <button 
                 onClick={toggleCart}
-                className="relative p-3 text-steel-600 hover:text-steel-900 hover:bg-steel-50 rounded-lg transition-colors"
+                className={`relative p-3 rounded-lg transition-colors ${
+                  isHomePage
+                    ? (isScrolled 
+                        ? 'text-steel-600 hover:text-steel-900 hover:bg-steel-50' 
+                        : 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md')
+                    : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
+                }`}
               >
                 <ShoppingCart className="h-5 w-5" />
                 {totalItems > 0 && (
@@ -194,7 +263,13 @@ export default function Navigation() {
               {/* Mobile menu button */}
               <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="lg:hidden p-3 text-steel-600 hover:text-steel-900 hover:bg-steel-50 rounded-lg transition-colors"
+                className={`lg:hidden p-3 rounded-lg transition-colors ${
+                  isHomePage
+                    ? (isScrolled 
+                        ? 'text-steel-600 hover:text-steel-900 hover:bg-steel-50' 
+                        : 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md')
+                    : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
+                }`}
               >
                 {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
@@ -226,11 +301,23 @@ export default function Navigation() {
 
         {/* Mobile menu */}
         {isOpen && (
-          <div className="lg:hidden border-t border-steel-200 bg-white">
+          <div className={`lg:hidden border-t transition-all duration-300 ${
+            isHomePage
+              ? (isScrolled 
+                  ? 'border-steel-200 bg-white' 
+                  : 'border-white/20 bg-black/80 backdrop-blur-md')
+              : 'border-steel-200 bg-white'
+          }`}>
             <div className="px-4 pt-4 pb-6 space-y-2">
               <Link
                 href="/"
-                className="block px-4 py-3 text-base font-medium text-steel-700 hover:text-steel-900 hover:bg-steel-50 rounded-xl transition-colors"
+                className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${
+                  isHomePage
+                    ? (isScrolled 
+                        ? 'text-steel-700 hover:text-steel-900 hover:bg-steel-50' 
+                        : 'text-white hover:text-primary-300 hover:bg-white/10')
+                    : 'text-steel-700 hover:text-steel-900 hover:bg-steel-50'
+                }`}
                 onClick={() => setIsOpen(false)}
               >
                 Home
@@ -238,7 +325,13 @@ export default function Navigation() {
               
               <Link
                 href="/products"
-                className="block px-4 py-3 text-base font-semibold text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-xl transition-colors"
+                className={`block px-4 py-3 text-base font-semibold rounded-xl transition-colors ${
+                  isHomePage
+                    ? (isScrolled 
+                        ? 'text-primary-600 hover:text-primary-700 hover:bg-primary-50' 
+                        : 'text-primary-300 hover:text-white hover:bg-white/10')
+                    : 'text-primary-600 hover:text-primary-700 hover:bg-primary-50'
+                }`}
                 onClick={() => setIsOpen(false)}
               >
                 All Products
@@ -246,12 +339,22 @@ export default function Navigation() {
               
               {/* Mobile categories */}
               <div className="space-y-2">
-                <div className="px-4 py-2 text-base font-semibold text-steel-600">Categories</div>
+                <div className={`px-4 py-2 text-base font-semibold ${
+                  isHomePage
+                    ? (isScrolled ? 'text-steel-600' : 'text-white/80')
+                    : 'text-steel-600'
+                }`}>Categories</div>
                 {categories.map((category) => (
                   <Link
                     key={category.id}
                     href={`/category/${category.slug}`}
-                    className="block px-6 py-2 text-sm text-steel-600 hover:text-steel-900 hover:bg-steel-50 rounded-lg transition-colors"
+                    className={`block px-6 py-2 text-sm rounded-lg transition-colors ${
+                      isHomePage
+                        ? (isScrolled 
+                            ? 'text-steel-600 hover:text-steel-900 hover:bg-steel-50' 
+                            : 'text-white/90 hover:text-white hover:bg-white/10')
+                        : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
+                    }`}
                     onClick={() => setIsOpen(false)}
                   >
                     {category.name}
@@ -259,10 +362,20 @@ export default function Navigation() {
                 ))}
               </div>
               
-              <div className="border-t border-steel-200 pt-4 mt-4">
+              <div className={`border-t pt-4 mt-4 ${
+                isHomePage
+                  ? (isScrolled ? 'border-steel-200' : 'border-white/20')
+                  : 'border-steel-200'
+              }`}>
                 <Link
                   href="/account"
-                  className="block px-4 py-3 text-base font-medium text-steel-700 hover:text-steel-900 hover:bg-steel-50 rounded-xl transition-colors"
+                  className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${
+                    isHomePage
+                      ? (isScrolled 
+                          ? 'text-steel-700 hover:text-steel-900 hover:bg-steel-50' 
+                          : 'text-white hover:text-primary-300 hover:bg-white/10')
+                      : 'text-steel-700 hover:text-steel-900 hover:bg-steel-50'
+                  }`}
                   onClick={() => setIsOpen(false)}
                 >
                   My Account

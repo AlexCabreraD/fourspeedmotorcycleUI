@@ -11,6 +11,7 @@ const heroSlides = heroConfig.slides.filter(slide => slide.enabled)
 export default function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isAutoPlaying, setIsAutoPlaying] = useState(heroConfig.autoPlay)
+  const [scrollY, setScrollY] = useState(0)
 
   // Auto-advance slides
   useEffect(() => {
@@ -22,6 +23,16 @@ export default function HeroSection() {
 
     return () => clearInterval(timer)
   }, [isAutoPlaying])
+
+  // Parallax scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollY(window.scrollY)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
@@ -39,96 +50,79 @@ export default function HeroSection() {
   }
 
   const currentSlideData = heroSlides[currentSlide]
+  
+  // Calculate parallax offset (background moves slower than scroll)
+  const parallaxOffset = scrollY * 0.5
 
   return (
-    <section className="relative h-[70vh] min-h-[500px] overflow-hidden">
-      {/* Background Image */}
+    <section className="relative h-screen overflow-hidden -mt-18 pt-18">
+      {/* Background Image with Parallax */}
       {currentSlideData.image && (
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 overflow-hidden">
           <img
             src={currentSlideData.image}
             alt={currentSlideData.title}
-            className="w-full h-full object-cover object-right"
-            style={{ objectPosition: 'right center' }}
+            className="w-full h-[120%] object-cover object-right"
+            style={{ 
+              objectPosition: 'right center',
+              transform: `translate3d(0, ${parallaxOffset}px, 0)`,
+              willChange: 'transform'
+            }}
           />
         </div>
       )}
       
-      {/* Background overlay for text readability */}
-      <div className="absolute inset-0 bg-black bg-opacity-50" />
+      {/* Subtle overlay */}
+      <div className="absolute inset-0 bg-black/30" />
       
       {/* Fallback gradient background */}
       <div className={`absolute inset-0 ${currentSlideData.background} transition-all duration-1000 ${currentSlideData.image ? 'opacity-30' : 'opacity-100'}`} />
 
-      {/* Content */}
-      <div className="relative h-full flex items-center">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="flex items-center">
+      {/* Minimal Clean Content - Bottom Left Positioning */}
+      <div className="relative h-full flex items-end">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pb-24">
+          <div className="max-w-2xl space-y-6 text-white">
             
-            {/* Text Content */}
-            <div className="text-white space-y-6 max-w-2xl">
-              <div className="space-y-4">
-                <p className="text-primary-300 font-medium text-lg tracking-wide">
-                  {currentSlideData.subtitle}
-                </p>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold leading-tight">
-                  {currentSlideData.title}
-                </h1>
-                <p className="text-xl text-steel-200 max-w-lg leading-relaxed">
-                  {currentSlideData.description}
-                </p>
-              </div>
-
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Link
-                  href={currentSlideData.ctaLink}
-                  className="btn btn-accent btn-lg inline-flex items-center justify-center"
-                >
-                  {currentSlideData.cta}
-                </Link>
-                {currentSlideData.secondaryBtn && (
-                  <Link
-                    href={currentSlideData.secondaryBtn.link}
-                    className="btn btn-outline btn-lg inline-flex items-center justify-center text-white border-white hover:bg-white hover:text-steel-900"
-                  >
-                    {currentSlideData.secondaryBtn.text}
-                  </Link>
-                )}
-              </div>
-
-              {/* Quick Stats */}
-              <div className="flex flex-wrap gap-8 pt-8 border-t border-white border-opacity-20">
-                <div>
-                  <div className="text-2xl font-bold text-primary-300">{heroConfig.stats.customers}</div>
-                  <div className="text-sm text-steel-300">Happy Customers</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-primary-300">{heroConfig.stats.parts}</div>
-                  <div className="text-sm text-steel-300">Parts in Stock</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-primary-300">{heroConfig.stats.experience}</div>
-                  <div className="text-sm text-steel-300">Years Experience</div>
-                </div>
-              </div>
+            {/* Clean Typography */}
+            <div className="space-y-4">
+              <p className="text-primary-300 font-medium text-sm tracking-[0.2em] uppercase">
+                {currentSlideData.subtitle}
+              </p>
+              <h1 className="text-4xl md:text-6xl font-display font-bold leading-tight">
+                {currentSlideData.title}
+              </h1>
+              <p className="text-lg text-steel-100 leading-relaxed max-w-lg">
+                {currentSlideData.description}
+              </p>
             </div>
 
+            {/* Simple CTA */}
+            <div className="pt-6">
+              <Link
+                href={currentSlideData.ctaLink}
+                className="inline-flex items-center gap-3 text-white border-b-2 border-primary-400 pb-1 font-semibold text-lg hover:border-white transition-colors group"
+              >
+                {currentSlideData.cta}
+                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Navigation Controls */}
-      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
-        <div className="flex space-x-2">
+      {/* Minimal navigation dots - top right */}
+      <div className="absolute top-32 right-8">
+        <div className="flex flex-col space-y-3">
           {heroSlides.map((_, index) => (
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              className={`w-2 h-8 rounded-full transition-all duration-300 ${
                 index === currentSlide 
-                  ? 'bg-primary-400 w-8' 
-                  : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+                  ? 'bg-primary-400' 
+                  : 'bg-white bg-opacity-30 hover:bg-opacity-60'
               }`}
             />
           ))}
