@@ -210,7 +210,7 @@ export default function Navigation() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search 40k+ motorcycle parts & accessories..."
+                  placeholder="Search..."
                   className="w-full pl-12 pr-16 py-3 bg-steel-50 border border-steel-200 rounded-full focus:ring-2 focus:ring-primary-500 focus:border-primary-500 focus:bg-white transition-all duration-200 text-sm placeholder-steel-400"
                 />
                 <Search className="absolute left-4 top-3.5 h-5 w-5 text-steel-400" />

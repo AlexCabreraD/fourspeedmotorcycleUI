@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { Grid, List, Search, Package, Filter, X, ChevronLeft, ChevronRight, ArrowUp } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart'
 import { WPSItem, ImageUtils } from '@/lib/api/wps-client'
@@ -105,6 +106,7 @@ const SORT_OPTIONS = [
 ]
 
 export default function ProductsPage() {
+  const searchParams = useSearchParams()
   const [allProducts, setAllProducts] = useState<WPSItem[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -293,6 +295,14 @@ export default function ProductsPage() {
       if (!isInitialLoad) setLoadingMore(false)
     }
   }, [buildFilterParams, loadingFilters, createCacheKey, isCacheValid])
+
+  // Initialize search term from URL parameter
+  useEffect(() => {
+    const urlSearchTerm = searchParams.get('search')
+    if (urlSearchTerm) {
+      setSearchTerm(urlSearchTerm)
+    }
+  }, [searchParams])
 
   // Fetch initial products on mount
   useEffect(() => {
@@ -589,7 +599,8 @@ export default function ProductsPage() {
 
           {/* Enhanced Search Bar */}
           <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-            <div className="flex flex-col lg:flex-row gap-4">
+            {/* Main controls row - consistent height */}
+            <div className="flex flex-col lg:flex-row gap-4 items-stretch">
               {/* Main Search Input */}
               <div className="flex-1">
                 <div className="relative">
@@ -599,7 +610,7 @@ export default function ProductsPage() {
                     placeholder={`Search by ${searchType === 'name' ? 'product name' : 'SKU'}... (minimum 3 characters)`}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-12 py-4 text-lg border-2 border-steel-300 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all"
+                    className="w-full pl-12 pr-12 py-4 text-lg border-2 border-steel-300 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all h-[60px]"
                   />
                   {searching && (
                     <div className="absolute right-12 top-1/2 transform -translate-y-1/2">
@@ -615,30 +626,10 @@ export default function ProductsPage() {
                     </button>
                   )}
                 </div>
-                {searchTerm.length > 0 && searchTerm.length < 3 && (
-                  <div className="mt-2 text-sm text-steel-500">
-                    Type {3 - searchTerm.length} more character{3 - searchTerm.length !== 1 ? 's' : ''} to search
-                  </div>
-                )}
-                {searching && (
-                  <div className="mt-2 text-sm text-primary-600">
-                    Searching...
-                  </div>
-                )}
-                {isSearchActive && searchResults.length > 0 && (
-                  <div className="mt-2 text-sm text-green-600">
-                    Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for "{searchTerm}"
-                  </div>
-                )}
-                {isSearchActive && searchResults.length === 0 && !searching && (
-                  <div className="mt-2 text-sm text-steel-500">
-                    No results found for "{searchTerm}"
-                  </div>
-                )}
               </div>
 
               {/* Search Type Toggle */}
-              <div className="flex bg-steel-100 rounded-lg p-1">
+              <div className="flex bg-steel-100 rounded-lg p-2 h-[60px] items-center">
                 <button
                   onClick={() => setSearchType('name')}
                   className={`px-4 py-2 rounded-md font-medium transition-all ${
@@ -664,7 +655,7 @@ export default function ProductsPage() {
               {/* In Stock Toggle - Prominent */}
               <button
                 onClick={() => setShowInStockOnly(!showInStockOnly)}
-                className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all border-2 min-w-[140px] ${
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-all border-2 min-w-[140px] h-[60px] ${
                   showInStockOnly 
                     ? 'bg-green-50 border-green-300 text-green-700 shadow-sm' 
                     : 'bg-white border-steel-300 text-steel-600 hover:border-green-300 hover:text-green-600'
@@ -687,7 +678,7 @@ export default function ProductsPage() {
               {/* Filter Toggle */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`btn btn-outline flex items-center gap-2 min-w-[120px] ${
+                className={`btn btn-outline flex items-center gap-2 min-w-[120px] h-[60px] ${
                   showFilters ? 'bg-primary-50 border-primary-300' : ''
                 }`}
               >
@@ -699,6 +690,30 @@ export default function ProductsPage() {
                   </span>
                 )}
               </button>
+            </div>
+
+            {/* Helper text row - appears below all controls */}
+            <div className="mt-3">
+              {searchTerm.length > 0 && searchTerm.length < 3 && (
+                <div className="text-sm text-steel-500">
+                  Type {3 - searchTerm.length} more character{3 - searchTerm.length !== 1 ? 's' : ''} to search
+                </div>
+              )}
+              {searching && (
+                <div className="text-sm text-primary-600">
+                  Searching...
+                </div>
+              )}
+              {isSearchActive && searchResults.length > 0 && (
+                <div className="text-sm text-green-600">
+                  Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for "{searchTerm}"
+                </div>
+              )}
+              {isSearchActive && searchResults.length === 0 && !searching && (
+                <div className="text-sm text-steel-500">
+                  No results found for "{searchTerm}"
+                </div>
+              )}
             </div>
           </div>
 

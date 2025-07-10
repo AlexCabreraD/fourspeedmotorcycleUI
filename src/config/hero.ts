@@ -51,7 +51,7 @@ export const heroConfig: HeroConfig = {
         icon: "Search"
       },
       background: "bg-gradient-to-r from-steel-900 via-steel-800 to-primary-900",
-      image: "/api/placeholder/hero-bike-1.jpg"
+      image: "/images/hero/HardDrive-077.JPG"
     },
     {
       id: 2,
@@ -67,7 +67,7 @@ export const heroConfig: HeroConfig = {
         icon: "Search"
       },
       background: "bg-gradient-to-r from-primary-900 via-primary-800 to-accent-900",
-      image: "/api/placeholder/hero-parts.jpg"
+      image: "/images/hero/HardDrive-112.JPG"
     },
     {
       id: 3,
@@ -83,7 +83,7 @@ export const heroConfig: HeroConfig = {
         icon: "Search"
       },
       background: "bg-gradient-to-r from-accent-900 via-accent-800 to-primary-900",
-      image: "/api/placeholder/hero-sale.jpg"
+      image: "/images/hero/RST2024-091.JPG"
     }
   ]
 }

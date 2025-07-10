@@ -42,21 +42,31 @@ export default function HeroSection() {
 
   return (
     <section className="relative h-[70vh] min-h-[500px] overflow-hidden">
-      {/* Background with overlay */}
-      <div className={`absolute inset-0 ${currentSlideData.background} transition-all duration-1000`}>
-        <div className="absolute inset-0 bg-black bg-opacity-40" />
-        
-        {/* Background pattern */}
-        <div className="absolute inset-0 bg-industrial opacity-10" />
-      </div>
+      {/* Background Image */}
+      {currentSlideData.image && (
+        <div className="absolute inset-0">
+          <img
+            src={currentSlideData.image}
+            alt={currentSlideData.title}
+            className="w-full h-full object-cover object-right"
+            style={{ objectPosition: 'right center' }}
+          />
+        </div>
+      )}
+      
+      {/* Background overlay for text readability */}
+      <div className="absolute inset-0 bg-black bg-opacity-50" />
+      
+      {/* Fallback gradient background */}
+      <div className={`absolute inset-0 ${currentSlideData.background} transition-all duration-1000 ${currentSlideData.image ? 'opacity-30' : 'opacity-100'}`} />
 
       {/* Content */}
       <div className="relative h-full flex items-center">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="flex items-center">
             
             {/* Text Content */}
-            <div className="text-white space-y-6">
+            <div className="text-white space-y-6 max-w-2xl">
               <div className="space-y-4">
                 <p className="text-primary-300 font-medium text-lg tracking-wide">
                   {currentSlideData.subtitle}
@@ -105,29 +115,6 @@ export default function HeroSection() {
               </div>
             </div>
 
-            {/* Visual Element / Secondary Content */}
-            <div className="hidden lg:block">
-              <div className="relative">
-                {/* Decorative elements */}
-                <div className="absolute -top-4 -right-4 w-24 h-24 bg-primary-500 rounded-full opacity-20" />
-                <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-accent-500 rounded-full opacity-20" />
-                
-                {/* Main visual */}
-                <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-8 border border-white border-opacity-20">
-                  <div className="text-center space-y-4">
-                    <h3 className="text-2xl font-bold text-white">
-                      Free Shipping
-                    </h3>
-                    <p className="text-steel-200">
-                      On all orders over $99
-                    </p>
-                    <div className="text-4xl font-bold text-primary-300">
-                      $99+
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
