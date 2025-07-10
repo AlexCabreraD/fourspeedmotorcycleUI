@@ -3,51 +3,22 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { heroConfig } from '@/config/hero'
 
-const heroSlides = [
-  {
-    id: 1,
-    title: "Premium Motorcycle Parts",
-    subtitle: "Performance & Style Combined",
-    description: "Discover our extensive collection of high-quality motorcycle parts from the industry's leading brands.",
-    cta: "Shop Parts",
-    ctaLink: "/categories",
-    background: "bg-gradient-to-r from-steel-900 via-steel-800 to-primary-900",
-    image: "/api/placeholder/hero-bike-1.jpg"
-  },
-  {
-    id: 2,
-    title: "New Arrivals",
-    subtitle: "Latest Gear & Accessories",
-    description: "Check out the newest additions to our inventory. Fresh parts, gear, and accessories just arrived.",
-    cta: "View New Arrivals",
-    ctaLink: "/new-arrivals",
-    background: "bg-gradient-to-r from-primary-900 via-primary-800 to-accent-900",
-    image: "/api/placeholder/hero-parts.jpg"
-  },
-  {
-    id: 3,
-    title: "Winter Sale",
-    subtitle: "Up to 40% Off Select Items",
-    description: "Don't miss out on our biggest sale of the year. Limited time offers on premium motorcycle parts.",
-    cta: "Shop Sale",
-    ctaLink: "/sale",
-    background: "bg-gradient-to-r from-accent-900 via-accent-800 to-primary-900",
-    image: "/api/placeholder/hero-sale.jpg"
-  }
-]
+// Get enabled slides only
+const heroSlides = heroConfig.slides.filter(slide => slide.enabled)
 
 export default function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [isAutoPlaying, setIsAutoPlaying] = useState(true)
+  const [isAutoPlaying, setIsAutoPlaying] = useState(heroConfig.autoPlay)
 
   // Auto-advance slides
   useEffect(() => {
-    if (!isAutoPlaying) return
+    if (!isAutoPlaying || !heroConfig.autoPlay) return
 
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
-    }, 5000)
+    }, heroConfig.slideInterval)
 
     return () => clearInterval(timer)
   }, [isAutoPlaying])
@@ -106,27 +77,29 @@ export default function HeroSection() {
                 >
                   {currentSlideData.cta}
                 </Link>
-                <Link
-                  href="/products"
-                  className="btn btn-outline btn-lg inline-flex items-center justify-center text-white border-white hover:bg-white hover:text-steel-900"
-                >
-                  <Search className="mr-2 h-5 w-5" />
-                  Find Parts
-                </Link>
+                {currentSlideData.secondaryBtn && (
+                  <Link
+                    href={currentSlideData.secondaryBtn.link}
+                    className="btn btn-outline btn-lg inline-flex items-center justify-center text-white border-white hover:bg-white hover:text-steel-900"
+                  >
+                    {currentSlideData.secondaryBtn.icon === 'Search' && <Search className="mr-2 h-5 w-5" />}
+                    {currentSlideData.secondaryBtn.text}
+                  </Link>
+                )}
               </div>
 
               {/* Quick Stats */}
               <div className="flex flex-wrap gap-8 pt-8 border-t border-white border-opacity-20">
                 <div>
-                  <div className="text-2xl font-bold text-primary-300">50K+</div>
+                  <div className="text-2xl font-bold text-primary-300">{heroConfig.stats.customers}</div>
                   <div className="text-sm text-steel-300">Happy Customers</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-primary-300">100K+</div>
+                  <div className="text-2xl font-bold text-primary-300">{heroConfig.stats.parts}</div>
                   <div className="text-sm text-steel-300">Parts in Stock</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-primary-300">25+</div>
+                  <div className="text-2xl font-bold text-primary-300">{heroConfig.stats.experience}</div>
                   <div className="text-sm text-steel-300">Years Experience</div>
                 </div>
               </div>
