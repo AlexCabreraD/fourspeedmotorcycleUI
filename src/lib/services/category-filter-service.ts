@@ -8,6 +8,7 @@ export interface CategoryFilterParams {
   // Basic filtering
   productTypes?: string[]
   search?: string
+  sku?: string
   
   // Price filtering
   minPrice?: number
@@ -15,6 +16,9 @@ export interface CategoryFilterParams {
   
   // Availability
   inStock?: boolean
+  
+  // Brand filtering
+  brandNames?: string[]
   
   // Pagination
   pageSize?: number
@@ -66,21 +70,30 @@ export class CategoryFilterService {
     // Apply sorting
     this.applySorting(query, params.sortBy || 'name_asc')
 
-    // Apply category-specific product type filters
-    const categoryProductTypes = params.productTypes || category.productTypeFilters
-    if (categoryProductTypes.length > 0) {
-      if (categoryProductTypes.length === 1) {
-        query.filterByProductType(categoryProductTypes[0])
-      } else {
-        // Multiple product types - use first one for now since WPS doesn't support OR queries
-        query.filterByProductType(categoryProductTypes[0])
+    // Apply category-specific product type filters only if no search is provided
+    // When searching, we want to search across all product types to find relevant items
+    if (!params.search) {
+      const categoryProductTypes = params.productTypes || category.productTypeFilters
+      if (categoryProductTypes.length > 0) {
+        if (categoryProductTypes.length === 1) {
+          query.filterByProductType(categoryProductTypes[0])
+        } else {
+          // Multiple product types - use first one for now since WPS doesn't support OR queries
+          query.filterByProductType(categoryProductTypes[0])
+        }
       }
     }
 
 
     // Apply search filtering
     if (params.search) {
-      query.filterByName(params.search, 'con')
+      // Use 'pre' operator since 'con' doesn't seem to work in WPS API
+      query.filterByName(params.search, 'pre')
+    }
+
+    // Apply SKU filtering
+    if (params.sku) {
+      query.filterBySku(params.sku, 'pre')
     }
 
     // Apply price range filtering
@@ -124,10 +137,34 @@ export class CategoryFilterService {
     try {
       // Execute the query
       const response = await this.client.executeQuery('items', query)
+      
+      let filteredItems = response.data
+
+      // Apply client-side brand filtering if brand names are specified
+      if (params.brandNames && params.brandNames.length > 0) {
+        filteredItems = filteredItems.filter(item => {
+          // Check if item has brand data and if the brand name matches
+          // Brand structure: item.brand.data.name
+          const itemBrand = item.brand?.data?.name || item.brand?.name || item.brand_name || ''
+          return params.brandNames!.some(brandName => 
+            itemBrand.toUpperCase().includes(brandName.toUpperCase())
+          )
+        })
+      }
+
+      // Apply client-side price filtering as backup (in case WPS API filtering didn't work)
+      if (params.minPrice !== undefined || params.maxPrice !== undefined) {
+        filteredItems = filteredItems.filter(item => {
+          const price = parseFloat(item.list_price || '0')
+          const minCheck = params.minPrice === undefined || price >= params.minPrice
+          const maxCheck = params.maxPrice === undefined || price <= params.maxPrice
+          return minCheck && maxCheck
+        })
+      }
 
       return {
-        items: response.data,
-        totalCount: response.data.length,
+        items: filteredItems,
+        totalCount: filteredItems.length,
         hasMore: !!response.meta?.cursor?.next,
         nextCursor: response.meta?.cursor?.next,
         appliedFilters: params,

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // Filtering
     if (searchParams.get('brand')) params['filter[brand_id]'] = searchParams.get('brand')
     if (searchParams.get('category')) params['filter[category_id]'] = searchParams.get('category')
-    if (searchParams.get('search')) params['filter[name][pre]'] = searchParams.get('search')
+    if (searchParams.get('search')) params['filter[name][like]'] = `%${searchParams.get('search')}%`
     if (searchParams.get('sku')) params['filter[sku][pre]'] = searchParams.get('sku')
     if (searchParams.get('product_type')) params['filter[product_type]'] = searchParams.get('product_type')
     

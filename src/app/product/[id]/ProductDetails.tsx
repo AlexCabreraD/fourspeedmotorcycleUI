@@ -433,11 +433,16 @@ export default function ProductDetails({ params }: Props) {
                 <span className="font-mono ml-1">{selectedItem?.sku}</span>
               </div>
 
-              {/* Item Selection */}
+              {/* Item Selection - Enhanced */}
               {product.items && product.items.length > 1 && (
-                <div className="space-y-3">
-                  <h3 className="font-semibold text-steel-900">Available Options:</h3>
-                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-steel-900">Available Options</h3>
+                    <span className="text-sm text-steel-500 bg-steel-100 px-3 py-1 rounded-full">
+                      {product.items.length} options
+                    </span>
+                  </div>
+                  <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
                     {product.items.map((item) => (
                       <button
                         key={item.id}
@@ -445,23 +450,55 @@ export default function ProductDetails({ params }: Props) {
                           setSelectedItem(item)
                           setCurrentImageIndex(0)
                         }}
-                        className={`w-full p-3 border rounded-lg text-left transition-all hover:shadow-md ${
+                        className={`w-full p-3 border-2 rounded-xl text-left transition-all duration-200 hover:shadow-lg transform hover:scale-[1.02] ${
                           selectedItem?.id === item.id
-                            ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-200'
-                            : 'border-steel-200 hover:border-steel-300'
+                            ? 'border-primary-500 bg-gradient-to-r from-primary-50 to-blue-50 ring-2 ring-primary-200 shadow-md'
+                            : 'border-steel-200 hover:border-primary-300 bg-white hover:bg-primary-25'
                         }`}
                       >
                         <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-medium text-steel-900 text-sm">{item.name}</p>
-                            <p className="text-xs text-steel-600">SKU: {item.sku}</p>
+                          <div className="flex-1 pr-4">
+                            <div className="flex items-center space-x-2 mb-2">
+                              {selectedItem?.id === item.id && (
+                                <div className="w-3 h-3 bg-primary-500 rounded-full flex-shrink-0 animate-pulse"></div>
+                              )}
+                              <p className="font-semibold text-steel-900 text-base leading-tight">{item.name}</p>
+                            </div>
+                            <div className="flex items-center space-x-3 text-sm">
+                              <span className="text-steel-600 bg-steel-100 px-2 py-1 rounded-md font-mono">
+                                SKU: {item.sku}
+                              </span>
+                              {item.status && (
+                                <span className={`px-2 py-1 rounded-md text-xs font-semibold ${
+                                  item.status === 'STK' 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : item.status === 'LTD'
+                                    ? 'bg-yellow-100 text-yellow-700'
+                                    : 'bg-red-100 text-red-700'
+                                }`}>
+                                  {item.status === 'STK' ? 'In Stock' : item.status === 'LTD' ? 'Limited' : 'Out of Stock'}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <span className="font-bold text-primary-600">
-                            {formatPrice(item.list_price)}
-                          </span>
+                          <div className="text-right">
+                            <span className="text-xl font-bold text-primary-600 block">
+                              {formatPrice(item.list_price)}
+                            </span>
+                            {item.mapp_price && parseFloat(item.mapp_price) > parseFloat(item.list_price) && (
+                              <span className="text-sm text-steel-400 line-through">
+                                {formatPrice(item.mapp_price)}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </button>
                     ))}
+                  </div>
+                  
+                  {/* Helper text */}
+                  <div className="text-xs text-steel-500 text-center bg-steel-50 rounded-lg p-2">
+                    Click on an option above to view details and pricing
                   </div>
                 </div>
               )}

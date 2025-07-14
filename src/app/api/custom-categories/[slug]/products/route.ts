@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { CategoryFilterService, CategoryFilterParams } from '@/lib/services/category-filter-service'
+import { CategoryProductService, CategoryFilterParams } from '@/lib/services/category-product-service'
 import { getCategoryBySlug } from '@/lib/constants/custom-categories'
 
 export async function GET(
@@ -19,12 +19,11 @@ export async function GET(
       )
     }
 
-    // Create filter service
-    const filterService = new CategoryFilterService()
+    // Create product service
+    const productService = new CategoryProductService()
     
     // Parse filter parameters
     const filterParams: CategoryFilterParams = {}
-    
     
     // Pagination
     const pageSize = searchParams.get('page')
@@ -50,7 +49,6 @@ export async function GET(
       filterParams.productTypes = productType.split(',')
     }
     
-    
     // Price range filtering
     const minPrice = searchParams.get('min_price')
     const maxPrice = searchParams.get('max_price')
@@ -63,12 +61,8 @@ export async function GET(
     
     // Search filtering
     const search = searchParams.get('search')
-    const sku = searchParams.get('sku')
     if (search) {
       filterParams.search = search
-    }
-    if (sku) {
-      filterParams.sku = sku
     }
     
     // Stock filtering
@@ -76,69 +70,8 @@ export async function GET(
       filterParams.inStock = true
     }
     
-    // Brand filtering - Note: WPS API uses brand_id, but we'll try to filter by brand name in the response
-    const brands = searchParams.get('brands')
-    if (brands) {
-      // Store brand names for post-filtering since WPS API doesn't support brand name filtering directly
-      filterParams.brandNames = brands.split(',')
-    }
-
-    // Date filtering
-    const newArrivals = searchParams.get('new_arrivals_days')
-    if (newArrivals) {
-      const daysAgo = new Date()
-      daysAgo.setDate(daysAgo.getDate() - parseInt(newArrivals))
-      filterParams.additionalFilters = { 
-        ...filterParams.additionalFilters, 
-        'created_at[gte]': daysAgo.toISOString().split('T')[0] 
-      }
-    }
-
-    const recentlyUpdated = searchParams.get('recently_updated_days')
-    if (recentlyUpdated) {
-      const daysAgo = new Date()
-      daysAgo.setDate(daysAgo.getDate() - parseInt(recentlyUpdated))
-      filterParams.additionalFilters = { 
-        ...filterParams.additionalFilters, 
-        'updated_at[gte]': daysAgo.toISOString().split('T')[0] 
-      }
-    }
-
-    // Weight filtering
-    const minWeight = searchParams.get('min_weight')
-    const maxWeight = searchParams.get('max_weight')
-    if (minWeight) {
-      filterParams.additionalFilters = { 
-        ...filterParams.additionalFilters, 
-        'weight[gte]': parseFloat(minWeight) 
-      }
-    }
-    if (maxWeight) {
-      filterParams.additionalFilters = { 
-        ...filterParams.additionalFilters, 
-        'weight[lte]': parseFloat(maxWeight) 
-      }
-    }
-
-    // Dimension filtering
-    const minLength = searchParams.get('min_length')
-    const maxLength = searchParams.get('max_length')
-    const minWidth = searchParams.get('min_width')
-    const maxWidth = searchParams.get('max_width')
-    const minHeight = searchParams.get('min_height')
-    const maxHeight = searchParams.get('max_height')
-    
-    if (minLength) filterParams.additionalFilters = { ...filterParams.additionalFilters, 'length[gte]': parseFloat(minLength) }
-    if (maxLength) filterParams.additionalFilters = { ...filterParams.additionalFilters, 'length[lte]': parseFloat(maxLength) }
-    if (minWidth) filterParams.additionalFilters = { ...filterParams.additionalFilters, 'width[gte]': parseFloat(minWidth) }
-    if (maxWidth) filterParams.additionalFilters = { ...filterParams.additionalFilters, 'width[lte]': parseFloat(maxWidth) }
-    if (minHeight) filterParams.additionalFilters = { ...filterParams.additionalFilters, 'height[gte]': parseFloat(minHeight) }
-    if (maxHeight) filterParams.additionalFilters = { ...filterParams.additionalFilters, 'height[lte]': parseFloat(maxHeight) }
-
     // Additional custom filters based on category type
     const additionalFilters: Record<string, any> = {}
-    
-    // Engine & Performance specific filters - no additional filters needed as WPS API doesn't support engine type descriptors
     
     // Wheels & Tires specific filters
     if (slug === 'wheels-tires') {
@@ -213,11 +146,11 @@ export async function GET(
     }
     
     // Execute the query
-    const result = await filterService.getItemsForCategory(slug, filterParams)
+    const result = await productService.getProductsForCategory(slug, filterParams)
     
     return NextResponse.json({
       success: true,
-      data: result.items,
+      data: result.products,
       meta: {
         cursor: {
           current: null,
@@ -238,10 +171,10 @@ export async function GET(
     })
 
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch category items'
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch category products'
     const errorStatus = (error as any)?.status || 500
     
-    console.error('Custom Category Items API Error:', error)
+    console.error('Custom Category Products API Error:', error)
     
     return NextResponse.json(
       { 

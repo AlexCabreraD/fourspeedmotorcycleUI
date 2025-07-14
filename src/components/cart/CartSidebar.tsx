@@ -3,12 +3,16 @@
 import { useEffect, useState } from 'react'
 import { X, Plus, Minus, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
-import { useCartStore } from '@/lib/store/cart'
+import { useCartStore, selectTotalItems, selectTotalPrice, selectShippingTotal, selectGrandTotal } from '@/lib/store/cart'
 import { ImageUtils } from '@/lib/api/wps-client'
 import ConfirmationModal from '@/components/ui/ConfirmationModal'
 
 export default function CartSidebar() {
-  const { items, isOpen, closeCart, updateQuantity, removeItem, totalPrice, totalItems, shippingTotal, grandTotal } = useCartStore()
+  const { items, isOpen, closeCart, updateQuantity, removeItem } = useCartStore()
+  const totalItems = useCartStore(selectTotalItems)
+  const totalPrice = useCartStore(selectTotalPrice)
+  const shippingTotal = useCartStore(selectShippingTotal)
+  const grandTotal = useCartStore(selectGrandTotal)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [itemToRemove, setItemToRemove] = useState<any>(null)
 

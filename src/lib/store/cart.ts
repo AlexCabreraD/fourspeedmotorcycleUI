@@ -17,12 +17,29 @@ interface CartState {
   clearCart: () => void
   toggleCart: () => void
   closeCart: () => void
-  // Computed values
-  totalItems: number
-  totalPrice: number
-  shippingTotal: number
-  taxTotal: number
-  grandTotal: number
+}
+
+// Selectors
+export const selectTotalItems = (state: CartState) => 
+  state.items.reduce((total, item) => total + item.quantity, 0)
+
+export const selectTotalPrice = (state: CartState) => 
+  state.items.reduce((total, item) => {
+    const price = parseFloat(item.list_price) || 0
+    return total + (price * item.quantity)
+  }, 0)
+
+export const selectShippingTotal = (state: CartState) => {
+  const total = selectTotalPrice(state)
+  return total > 99 ? 0 : 12.95
+}
+
+export const selectTaxTotal = (state: CartState) => {
+  return selectTotalPrice(state) * 0.085
+}
+
+export const selectGrandTotal = (state: CartState) => {
+  return selectTotalPrice(state) + selectShippingTotal(state) + selectTaxTotal(state)
 }
 
 export const useCartStore = create<CartState>()(
@@ -82,33 +99,6 @@ export const useCartStore = create<CartState>()(
       
       closeCart: () => {
         set({ isOpen: false })
-      },
-      
-      // Computed values
-      get totalItems() {
-        return get().items.reduce((total, item) => total + item.quantity, 0)
-      },
-      
-      get totalPrice() {
-        return get().items.reduce((total, item) => {
-          const price = parseFloat(item.list_price) || 0
-          return total + (price * item.quantity)
-        }, 0)
-      },
-      
-      get shippingTotal() {
-        const total = get().totalPrice
-        // Free shipping over $99, otherwise $12.95
-        return total > 99 ? 0 : 12.95
-      },
-      
-      get taxTotal() {
-        // 8.5% tax rate (can be configurable)
-        return get().totalPrice * 0.085
-      },
-      
-      get grandTotal() {
-        return get().totalPrice + get().shippingTotal + get().taxTotal
       }
     }),
     {

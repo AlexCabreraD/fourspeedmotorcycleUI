@@ -155,6 +155,59 @@ export interface AdvancedQueryOptions {
     include?: string[];
 }
 
+// Cart and Order interfaces
+export interface WPSCartItem {
+    sku: string;
+    quantity: number;
+    notes?: string;
+}
+
+export interface WPSCart {
+    po_number: string;
+    ship_to?: string;
+    ship_name?: string;
+    ship_address1?: string;
+    ship_address2?: string;
+    ship_city?: string;
+    ship_state?: string;
+    ship_zip?: string;
+    ship_phone?: string;
+    email?: string;
+    warehouse?: string;
+    shipping_method?: string;
+    pay_type?: 'CC' | 'OO';
+    cc_last_four?: string;
+    promo_code?: string;
+    comment1?: string;
+    comment2?: string;
+    items?: WPSCartItem[];
+}
+
+export interface WPSOrder {
+    po_number: string;
+    order_number?: string;
+    invoice_number?: string;
+    status?: string;
+    order_date?: string;
+    ship_date?: string;
+    invoice_date?: string;
+    freight?: string;
+    misc_charges?: string;
+    order_total?: string;
+    warehouse?: string;
+    tracking_numbers?: string[];
+    shipping_method?: string;
+    items?: WPSOrderItem[];
+}
+
+export interface WPSOrderItem {
+    sku: string;
+    quantity: number;
+    unit_price?: string;
+    line_total?: string;
+    status?: string;
+}
+
 // Core entity interfaces (keeping the same)
 export interface WPSItem {
     id: number;
@@ -210,7 +263,9 @@ export interface WPSProduct {
     size_chart_id: number | null;
     created_at: string;
     updated_at: string;
-    items?: WPSItem[];
+    items?: {
+        data: WPSItem[];
+    };
     images?: {
         data: WPSImage[];
     };
@@ -840,6 +895,39 @@ export class WPSApiClient {
     async getBrand(id: number, params?: QueryParams): Promise<ApiResponse<WPSBrand>> {
         const cleanParams = this.cleanParams(params);
         return this.get<WPSBrand>(`brands/${id}`, cleanParams);
+    }
+
+    // Cart Management API
+    async createCart(cartData: WPSCart): Promise<ApiResponse<WPSCart>> {
+        const cleanData = this.cleanParams(cartData);
+        return this.post<WPSCart>('carts', cleanData);
+    }
+
+    async getCart(poNumber: string): Promise<ApiResponse<WPSCart>> {
+        return this.get<WPSCart>(`carts/${poNumber}`);
+    }
+
+    async addItemToCart(poNumber: string, item: WPSCartItem): Promise<ApiResponse<any>> {
+        const cleanData = this.cleanParams(item);
+        return this.post<any>(`carts/${poNumber}/items`, cleanData);
+    }
+
+    async deleteCart(poNumber: string): Promise<ApiResponse<any>> {
+        return this.delete<any>(`carts/${poNumber}`);
+    }
+
+    // Order Management API  
+    async createOrder(poNumber: string): Promise<ApiResponse<WPSOrder>> {
+        return this.post<WPSOrder>('orders', { po_number: poNumber });
+    }
+
+    async getOrder(poNumber: string): Promise<ApiResponse<WPSOrder>> {
+        return this.get<WPSOrder>(`orders/${poNumber}`);
+    }
+
+    async getOrders(params?: { from_date?: string; to_date?: string }): Promise<ApiResponse<WPSOrder[]>> {
+        const cleanParams = this.cleanParams(params);
+        return this.get<WPSOrder[]>('orders', cleanParams);
     }
 
     // Images API

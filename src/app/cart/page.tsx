@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react'
-import { useCartStore } from '@/lib/store/cart'
+import { useCartStore, selectTotalItems, selectTotalPrice, selectShippingTotal, selectTaxTotal, selectGrandTotal } from '@/lib/store/cart'
 import { useItemImage } from '@/hooks/useItemImages'
 import ConfirmationModal from '@/components/ui/ConfirmationModal'
 
@@ -121,7 +121,12 @@ function CartItem({ item, updateQuantity, onRemoveClick }: {
 }
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, totalPrice, totalItems, shippingTotal, taxTotal, grandTotal } = useCartStore()
+  const { items, updateQuantity, removeItem } = useCartStore()
+  const totalItems = useCartStore(selectTotalItems)
+  const totalPrice = useCartStore(selectTotalPrice)
+  const shippingTotal = useCartStore(selectShippingTotal)
+  const taxTotal = useCartStore(selectTaxTotal)
+  const grandTotal = useCartStore(selectGrandTotal)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [itemToRemove, setItemToRemove] = useState<any>(null)
 

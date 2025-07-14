@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Star, ShoppingCart, Eye, Heart } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart'
-import { WPSItem, ImageUtils } from '@/lib/api/wps-client'
+import { WPSProduct, WPSItem, ImageUtils } from '@/lib/api/wps-client'
 import { useItemImage } from '@/hooks/useItemImages'
 import QuickView from './QuickView'
 import ImagePlaceholder from '@/components/ui/ImagePlaceholder'
@@ -16,6 +16,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
   const { addItem } = useCartStore()
+  
   const { imageUrl, loading: imageLoading, hasImages } = useItemImage(product, 'card')
   const [showQuickView, setShowQuickView] = useState(false)
 

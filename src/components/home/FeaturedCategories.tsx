@@ -56,65 +56,61 @@ export default function FeaturedCategories() {
   }
 
   return (
-    <section className="py-16 bg-steel-50">
+    <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
+        {/* Clean Section Header */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-display font-bold text-steel-900 mb-4">
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-steel-900 mb-4">
             Shop by Category
           </h2>
-          <p className="text-xl text-steel-600 max-w-2xl mx-auto">
-            Find exactly what you need for your ride. From performance upgrades to essential maintenance parts.
+          <p className="text-lg text-steel-600 max-w-2xl mx-auto">
+            Find the perfect parts for your ride
           </p>
         </div>
 
-        {/* Categories Grid */}
+        {/* Clean Categories Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          {categories.map((category) => {
+          {categories.map((category, index) => {
             const visual = getCategoryVisual(category.slug)
             
             return (
               <Link
                 key={category.id}
                 href={`/category/${category.slug}`}
-                className="group relative overflow-hidden rounded-lg bg-white shadow-card hover:shadow-card-hover transition-all duration-300 transform hover:-translate-y-1"
+                className="group relative overflow-hidden rounded-lg bg-white shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                {/* Gradient Background */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${visual.gradient} opacity-10 group-hover:opacity-20 transition-opacity duration-300`} />
+                {/* Clean Category Image */}
+                <div className="w-full h-48 bg-gray-400 relative">
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300"></div>
+                </div>
                 
-                {/* Content */}
-                <div className="relative p-8 h-48 flex flex-col justify-between">
-                  <div>
-                    <div className="text-4xl mb-4">{visual.icon}</div>
-                    <h3 className="text-xl font-semibold text-steel-900 mb-2 group-hover:text-primary-600 transition-colors">
-                      {category.name}
-                    </h3>
-                    <p className="text-steel-600 text-sm">
-                      {category.description || `Premium ${category.name.toLowerCase()} parts and accessories`}
-                    </p>
-                  </div>
+                {/* Simple Content */}
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-steel-900 mb-2 group-hover:text-orange-600 transition-colors duration-300">
+                    {category.name}
+                  </h3>
+                  <p className="text-steel-600 text-sm mb-4">
+                    {category.description || `Premium ${category.name.toLowerCase()} parts and accessories`}
+                  </p>
                   
-                  <div className="flex items-center text-primary-600 font-medium group-hover:text-primary-700">
+                  <div className="flex items-center text-orange-600 font-semibold group-hover:text-orange-700">
                     <span className="text-sm">Shop Now</span>
                     <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform duration-300" />
                   </div>
                 </div>
-
-                {/* Hover Effect Border */}
-                <div className="absolute inset-0 border-2 border-transparent group-hover:border-primary-200 rounded-lg transition-colors duration-300" />
               </Link>
             )
           })}
         </div>
 
-        {/* View All Categories CTA */}
+        {/* Simple CTA */}
         <div className="text-center">
           <Link
             href="/categories"
-            className="btn btn-outline btn-lg inline-flex items-center"
+            className="inline-flex items-center gap-2 text-orange-600 font-semibold hover:text-orange-700 transition-colors duration-200"
           >
             View All Categories
-            <ArrowRight className="ml-2 h-5 w-5" />
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>

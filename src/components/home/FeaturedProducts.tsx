@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
 import { WPSItem } from '@/lib/api/wps-client'
 import ProductCard from '@/components/products/ProductCard'
 
@@ -143,36 +144,38 @@ export default function FeaturedProducts() {
   }
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-steel-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section Header */}
+        {/* Simple Header */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-display font-bold text-steel-900 mb-4">
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-steel-900 mb-4">
             Featured Products
           </h2>
-          <p className="text-xl text-steel-600 max-w-2xl mx-auto">
-            Discover our most popular and highest-rated motorcycle parts and accessories.
+          <p className="text-lg text-steel-600 max-w-2xl mx-auto">
+            High-performance parts built to last
           </p>
         </div>
 
-        {/* Products Grid */}
+        {/* Clean Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {products.map((product) => (
-            <ProductCard 
-              key={product.id} 
-              product={product} 
-              viewMode="grid"
-            />
+            <div key={product.id} className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
+              <ProductCard 
+                product={product} 
+                viewMode="grid"
+              />
+            </div>
           ))}
         </div>
 
-        {/* View All Products CTA */}
+        {/* Simple CTA */}
         <div className="text-center">
           <Link
             href="/products"
-            className="btn btn-outline btn-lg"
+            className="inline-flex items-center gap-2 text-orange-600 font-semibold hover:text-orange-700 transition-colors duration-200"
           >
             View All Products
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>

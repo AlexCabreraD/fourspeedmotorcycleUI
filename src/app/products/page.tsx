@@ -143,7 +143,11 @@ export default function ProductsPage() {
   const { addItem } = useCartStore()
   
   // Search cache and debounce
-  const searchCache = useRef<Map<string, WPSItem[]>>(new Map())
+  const searchCache = useRef<Map<string, {
+    items: WPSItem[]
+    nextCursor: string | null
+    hasMore: boolean
+  }>>(new Map())
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const currentSearchRef = useRef<string>('')
   
@@ -214,7 +218,7 @@ export default function ProductsPage() {
     }
     
     return params.toString()
-  }, [selectedBrands, selectedItemTypes, showInStockOnly, sortBy, itemsPerPage])
+  }, [selectedBrands, selectedItemTypes, showInStockOnly, sortBy, itemsPerPage, priceRange, newArrivalsFilter, recentlyUpdatedFilter, weightRange, dimensionFilters])
 
   // Create cache key for filter combination
   const createCacheKey = useCallback((cursor?: string) => {
@@ -309,19 +313,80 @@ export default function ProductsPage() {
     fetchProducts()
   }, [])
 
-  // Refetch when filters change
+  // Refetch when filters change (excluding search-related state to avoid infinite loops)
   useEffect(() => {
     // Skip initial load
     if (loading) return
     
+    console.log('🔄 Filter change detected, refetching products...')
+    console.log('Brands:', selectedBrands)
+    console.log('Item types:', selectedItemTypes)
+    console.log('Price range:', priceRange)
+    console.log('In stock only:', showInStockOnly)
+    
     // Set loading state for filters specifically
     setLoadingFilters(true)
     
-    // Reset and fetch with new filters
-    fetchProducts(undefined, true).finally(() => {
+    // Reset and fetch with new filters for regular browsing
+    // Search will be handled separately by the debounced search effect
+    if (!isSearchActive) {
+      fetchProducts(undefined, true).finally(() => {
+        setLoadingFilters(false)
+      })
+    } else {
       setLoadingFilters(false)
-    })
-  }, [selectedBrands, selectedItemTypes, showInStockOnly, sortBy, priceRange, newArrivalsFilter, recentlyUpdatedFilter, weightRange, dimensionFilters])
+    }
+  }, [selectedBrands, selectedItemTypes, showInStockOnly, sortBy, priceRange, newArrivalsFilter, recentlyUpdatedFilter, weightRange, dimensionFilters, fetchProducts, loading])
+
+  // Separate effect for handling search when filters change
+  useEffect(() => {
+    if (isSearchActive && searchTerm.length >= 3) {
+      // Clear existing timeout to avoid multiple concurrent searches
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+      
+      // Reset pagination state for filter-triggered search
+      setNextCursor(null)
+      setHasMore(true)
+      
+      // Debounce the search with filters
+      searchTimeoutRef.current = setTimeout(() => {
+        const filterParams = buildFilterParams()
+        const searchParam = searchType === 'name' ? 'search' : 'sku'
+        
+        setSearching(true)
+        fetch(`/api/products?${filterParams}&${searchParam}=${encodeURIComponent(searchTerm)}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.success && data.data) {
+              // Extract items from products
+              const searchItems: WPSItem[] = []
+              data.data.forEach((product: any) => {
+                if (product.items && product.items.data) {
+                  searchItems.push(...product.items.data)
+                }
+              })
+              
+              // Update cursor for pagination
+              setNextCursor(data.meta?.cursor?.next || null)
+              setHasMore(!!data.meta?.cursor?.next)
+              
+              // Only update if this is still the current search
+              if (currentSearchRef.current === searchTerm) {
+                setSearchResults(searchItems)
+              }
+            }
+          })
+          .catch(error => {
+            console.error('Search failed:', error)
+          })
+          .finally(() => {
+            setSearching(false)
+          })
+      }, 300)
+    }
+  }, [selectedBrands, selectedItemTypes, showInStockOnly, sortBy, priceRange, newArrivalsFilter, recentlyUpdatedFilter, weightRange, dimensionFilters, isSearchActive, searchTerm, searchType, buildFilterParams])
 
   // Clean up expired cache entries periodically
   useEffect(() => {
@@ -337,14 +402,31 @@ export default function ProductsPage() {
     return () => clearInterval(cleanupInterval)
   }, [isCacheValid])
 
-  // Search function with caching
-  const performSearch = useCallback(async (query: string, type: 'name' | 'sku') => {
-    const cacheKey = `${type}:${query.toLowerCase()}`
+  // Search function with caching and filter support
+  const performSearch = useCallback(async (query: string, type: 'name' | 'sku', cursor?: string) => {
+    const filterParams = buildFilterParams()
+    const cacheKey = `${type}:${query.toLowerCase()}:${filterParams}${cursor ? `:${cursor}` : ''}`
+    
+    // For new searches (no cursor), always reset pagination state and clear cache
+    if (!cursor) {
+      // Clear existing search cache for new searches to ensure fresh pagination data
+      for (const [key] of searchCache.current.entries()) {
+        if (key.startsWith(`${type}:${query.toLowerCase()}:`)) {
+          searchCache.current.delete(key)
+        }
+      }
+    }
     
     // Check cache first
     if (searchCache.current.has(cacheKey)) {
-      const cachedResults = searchCache.current.get(cacheKey)!
-      setSearchResults(cachedResults)
+      const cachedResult = searchCache.current.get(cacheKey)!
+      if (cursor) {
+        setSearchResults(prev => [...prev, ...cachedResult.items])
+      } else {
+        setSearchResults(cachedResult.items)
+        setNextCursor(cachedResult.nextCursor)
+        setHasMore(cachedResult.hasMore)
+      }
       setIsSearchActive(true)
       return
     }
@@ -352,7 +434,8 @@ export default function ProductsPage() {
     setSearching(true)
     try {
       const searchParam = type === 'name' ? 'search' : 'sku'
-      const response = await fetch(`/api/products?page=50&${searchParam}=${encodeURIComponent(query)}`)
+      const cursorParam = cursor ? `&cursor=${cursor}` : ''
+      const response = await fetch(`/api/products?${filterParams}&${searchParam}=${encodeURIComponent(query)}${cursorParam}`)
       const data = await response.json()
 
       if (data.success && data.data) {
@@ -364,13 +447,27 @@ export default function ProductsPage() {
           }
         })
         
-        // Cache the results
-        searchCache.current.set(cacheKey, searchItems)
+        // Update cursor for pagination
+        const nextCursor = data.meta?.cursor?.next || null
+        const hasMore = !!nextCursor
+        setNextCursor(nextCursor)
+        setHasMore(hasMore)
+        
+        // Cache the results with pagination metadata
+        searchCache.current.set(cacheKey, {
+          items: searchItems,
+          nextCursor,
+          hasMore
+        })
         
         // Only update if this is still the current search
         if (currentSearchRef.current === query) {
-          setSearchResults(searchItems)
-          setIsSearchActive(true)
+          if (cursor) {
+            setSearchResults(prev => [...prev, ...searchItems])
+          } else {
+            setSearchResults(searchItems)
+            setIsSearchActive(true)
+          }
         }
       }
     } catch (error) {
@@ -378,7 +475,7 @@ export default function ProductsPage() {
     } finally {
       setSearching(false)
     }
-  }, [])
+  }, [buildFilterParams])
 
   // Debounced search effect
   useEffect(() => {
@@ -390,6 +487,10 @@ export default function ProductsPage() {
         clearTimeout(searchTimeoutRef.current)
       }
       
+      // Reset pagination state for new search
+      setNextCursor(null)
+      setHasMore(true)
+      
       // Set new timeout for debounced search
       searchTimeoutRef.current = setTimeout(() => {
         performSearch(searchTerm, searchType)
@@ -398,6 +499,8 @@ export default function ProductsPage() {
       // Clear search when less than 3 characters
       setIsSearchActive(false)
       setSearchResults([])
+      setNextCursor(null)
+      setHasMore(true)
       currentSearchRef.current = ''
     }
     
@@ -410,10 +513,43 @@ export default function ProductsPage() {
 
   // Load more products with current filters
   const loadMoreProducts = useCallback(async () => {
-    if (!nextCursor || loadingMore || isSearchActive) return
+    if (!nextCursor || loadingMore) return
     
-    await fetchProducts(nextCursor, false)
-  }, [nextCursor, loadingMore, isSearchActive, fetchProducts])
+    if (isSearchActive) {
+      // Load more search results
+      setLoadingMore(true)
+      try {
+        const filterParams = buildFilterParams()
+        const searchParam = searchType === 'name' ? 'search' : 'sku'
+        const response = await fetch(`/api/products?${filterParams}&${searchParam}=${encodeURIComponent(searchTerm)}&cursor=${nextCursor}`)
+        const data = await response.json()
+
+        if (data.success && data.data) {
+          // Extract items from products
+          const searchItems: WPSItem[] = []
+          data.data.forEach((product: any) => {
+            if (product.items && product.items.data) {
+              searchItems.push(...product.items.data)
+            }
+          })
+          
+          // Update cursor for pagination
+          setNextCursor(data.meta?.cursor?.next || null)
+          setHasMore(!!data.meta?.cursor?.next)
+          
+          // Append to existing search results
+          setSearchResults(prev => [...prev, ...searchItems])
+        }
+      } catch (error) {
+        console.error('Load more search failed:', error)
+      } finally {
+        setLoadingMore(false)
+      }
+    } else {
+      // Load more regular products
+      await fetchProducts(nextCursor, false)
+    }
+  }, [nextCursor, loadingMore, isSearchActive, fetchProducts, searchTerm, searchType, buildFilterParams])
 
   // Scroll to top functionality
   useEffect(() => {
@@ -432,50 +568,13 @@ export default function ProductsPage() {
   // Get the appropriate product list based on search state
   const displayProducts = useMemo(() => {
     if (isSearchActive) {
-      // For search results, still apply client-side filtering since search is separate
-      let filtered = [...searchResults]
-
-      // Brand filter
-      if (selectedBrands.length > 0) {
-        filtered = filtered.filter(product => 
-          product.brand?.data?.name && selectedBrands.includes(product.brand.data.name)
-        )
-      }
-
-      // Item type filter
-      if (selectedItemTypes.length > 0) {
-        filtered = filtered.filter(product => 
-          product.product_type && selectedItemTypes.includes(product.product_type)
-        )
-      }
-
-      // Stock filter
-      if (showInStockOnly) {
-        filtered = filtered.filter(product => product.status === 'STK')
-      }
-
-      // Sorting for search results
-      filtered.sort((a, b) => {
-        switch (sortBy) {
-          case 'name_asc':
-            return a.name.localeCompare(b.name)
-          case 'name_desc':
-            return b.name.localeCompare(a.name)
-          case 'newest':
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          case 'created_asc':
-            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-          default:
-            return 0
-        }
-      })
-
-      return filtered
+      // Search results are now pre-filtered and sorted by the API
+      return searchResults
     }
     
     // For regular browsing, products are already filtered and sorted by server
     return allProducts
-  }, [isSearchActive, searchResults, allProducts, selectedBrands, selectedItemTypes, showInStockOnly, sortBy])
+  }, [isSearchActive, searchResults, allProducts])
 
   const formatPrice = (price: string) => {
     const numPrice = parseFloat(price)
@@ -516,8 +615,13 @@ export default function ProductsPage() {
     })
     currentSearchRef.current = ''
     
+    // Reset pagination state
+    setNextCursor(null)
+    setHasMore(true)
+    
     // Clear filter cache when resetting filters
     filterCache.current.clear()
+    searchCache.current.clear()
   }
 
   const activeFiltersCount = [
@@ -552,18 +656,22 @@ export default function ProductsPage() {
 
   // Filter brands based on search
   const filteredBrands = useMemo(() => {
-    if (!brandSearchTerm) return ALL_BRANDS
-    return ALL_BRANDS.filter(brand => 
-      brand.toLowerCase().includes(brandSearchTerm.toLowerCase())
-    )
+    const brands = !brandSearchTerm 
+      ? ALL_BRANDS 
+      : ALL_BRANDS.filter(brand => 
+          brand.toLowerCase().includes(brandSearchTerm.toLowerCase())
+        )
+    return brands.sort((a, b) => a.localeCompare(b))
   }, [brandSearchTerm])
 
   // Filter item types based on search
   const filteredItemTypes = useMemo(() => {
-    if (!itemTypeSearchTerm) return ALL_ITEM_TYPES
-    return ALL_ITEM_TYPES.filter(itemType => 
-      itemType.toLowerCase().includes(itemTypeSearchTerm.toLowerCase())
-    )
+    const itemTypes = !itemTypeSearchTerm 
+      ? ALL_ITEM_TYPES 
+      : ALL_ITEM_TYPES.filter(itemType => 
+          itemType.toLowerCase().includes(itemTypeSearchTerm.toLowerCase())
+        )
+    return itemTypes.sort((a, b) => a.localeCompare(b))
   }, [itemTypeSearchTerm])
 
   // Only show full skeleton on true initial load (when we have no products at all)
@@ -1050,7 +1158,7 @@ export default function ProductsPage() {
                   {isSearchActive ? ` for "${searchTerm}"` : ''}
                 </p>
               )}
-              {hasMore && !isSearchActive && (
+              {hasMore && (
                 <p className="text-steel-500 text-sm">
                   Load more to see additional results
                 </p>
@@ -1361,23 +1469,45 @@ export default function ProductsPage() {
           </div>
         )}
 
-        {/* Load More Button - only show when not searching */}
-        {hasMore && !isSearchActive && displayProducts.length > 0 && (
-          <div className="flex justify-center mt-12">
+        {/* Load More Button - show for both regular browsing and search results */}
+        {displayProducts.length > 0 && (
+          <div className="flex flex-col items-center mt-12">
             <button
               onClick={loadMoreProducts}
-              disabled={loadingMore}
-              className="btn btn-primary btn-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loadingMore || !hasMore}
+              className={`btn btn-lg inline-flex items-center ${
+                !hasMore 
+                  ? 'btn-disabled bg-steel-100 text-steel-500 cursor-not-allowed' 
+                  : 'btn-primary'
+              }`}
             >
               {loadingMore ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600 mr-2" />
                   Loading More...
                 </>
+              ) : !hasMore ? (
+                <>
+                  All Products Loaded
+                  <svg className="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </>
               ) : (
-                'Load More Products'
+                <>
+                  Load More Products
+                  <svg className="ml-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </>
               )}
             </button>
+            <p className="text-sm text-steel-600 mt-2">
+              {hasMore ? 
+                `Loaded ${displayProducts.length} products • More available` :
+                `All ${displayProducts.length} ${displayProducts.length === 1 ? 'product' : 'products'} loaded`
+              }
+            </p>
           </div>
         )}
 

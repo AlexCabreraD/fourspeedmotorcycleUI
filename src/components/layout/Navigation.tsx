@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { Search, ShoppingCart, Menu, X, User } from 'lucide-react'
-import { useCartStore } from '@/lib/store/cart'
+import { useCartStore, selectTotalItems } from '@/lib/store/cart'
 
 interface CategoryNode {
   id: number
@@ -23,7 +23,8 @@ export default function Navigation() {
   
   const router = useRouter()
   const pathname = usePathname()
-  const { totalItems, toggleCart } = useCartStore()
+  const toggleCart = useCartStore((state) => state.toggleCart)
+  const totalItems = useCartStore(selectTotalItems)
   
   // Check if we're on homepage to enable transparent navbar
   const isHomePage = pathname === '/'
