@@ -34,7 +34,7 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className="antialiased bg-slate-50 text-slate-900">
         <Navigation />
-        <main className="min-h-screen">
+        <main className="min-h-screen relative">
           {children}
         </main>
         <CartSidebar />

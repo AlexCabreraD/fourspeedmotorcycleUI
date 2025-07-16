@@ -23,7 +23,9 @@
       "Bash(chown:*)",
       "Bash(npm run lint:*)",
       "Bash(find:*)",
-      "Bash(ss:*)"
+      "Bash(ss:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }

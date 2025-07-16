@@ -8,6 +8,7 @@ export interface CustomCategory {
   slug: string
   description: string
   icon: string
+  image?: string
   gradient: string
   productTypeFilters: string[]
   brandFilters?: number[]
@@ -50,6 +51,7 @@ export const CUSTOM_CATEGORIES: CustomCategory[] = [
     slug: 'engine-performance',
     description: 'Engine parts, performance upgrades, and power-enhancing modifications',
     icon: '⚙️',
+    image: '/images/categories/engine.JPG',
     gradient: 'from-red-500 to-orange-600',
     productTypeFilters: [
       'Engine', 'Intake/Carb/Fuel System', 'Exhaust', 'Air Filters', 
@@ -65,6 +67,7 @@ export const CUSTOM_CATEGORIES: CustomCategory[] = [
     slug: 'suspension-handling',
     description: 'Suspension components, forks, shocks, and handling upgrades',
     icon: '🔧',
+    image: '/images/categories/suspension.JPG',
     gradient: 'from-blue-500 to-indigo-600',
     productTypeFilters: [
       'Suspension', 'Forks', 'Steering', 'Handlebars', 'Risers'
@@ -77,6 +80,7 @@ export const CUSTOM_CATEGORIES: CustomCategory[] = [
     slug: 'wheels-tires',
     description: 'Wheels, tires, tubes, and tire accessories for all riding conditions',
     icon: '🛞',
+    image: '/images/categories/wheelsTires.JPG',
     gradient: 'from-gray-500 to-slate-700',
     productTypeFilters: [
       'Wheels', 'Tires', 'Tubes', 'Rims', 'Tire/Wheel Accessories', 
@@ -90,6 +94,7 @@ export const CUSTOM_CATEGORIES: CustomCategory[] = [
     slug: 'protective-gear',
     description: 'Helmets, body armor, protective clothing, and safety equipment',
     icon: '🛡️',
+    image: '/images/categories/protectiveGear.JPG',
     gradient: 'from-green-500 to-emerald-600',
     productTypeFilters: [
       'Helmets', 'Protective/Safety', 'Guards/Braces', 'Handguards',
@@ -103,13 +108,15 @@ export const CUSTOM_CATEGORIES: CustomCategory[] = [
     slug: 'riding-apparel',
     description: 'Jackets, pants, gloves, boots, and all riding clothing',
     icon: '👕',
+    image: '/images/categories/ridingApparel.JPG',
     gradient: 'from-purple-500 to-pink-600',
     productTypeFilters: [
       'Jackets', 'Pants', 'Gloves', 'Footwear', 'Shirts', 'Shorts',
       'Hoodies', 'Jerseys', 'Vests', 'Layers', 'Suits', 'Onesies',
       'Tank Tops', 'Sweaters', 'Socks', 'Undergarments', 'Shoes',
       'Headgear'
-    ]
+    ],
+    featured: true
   },
   {
     id: 'brakes-drivetrain',
@@ -117,10 +124,12 @@ export const CUSTOM_CATEGORIES: CustomCategory[] = [
     slug: 'brakes-drivetrain',
     description: 'Brake components, chains, sprockets, and drivetrain parts',
     icon: '⚡',
+    image: '/images/categories/drivetrain.JPG',
     gradient: 'from-yellow-500 to-amber-600',
     productTypeFilters: [
       'Brakes', 'Chains', 'Sprockets', 'Drive', 'Belts'
-    ]
+    ],
+    featured: true
   },
   {
     id: 'electrical-lighting',

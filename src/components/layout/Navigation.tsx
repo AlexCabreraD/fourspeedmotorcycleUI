@@ -26,8 +26,9 @@ export default function Navigation() {
   const toggleCart = useCartStore((state) => state.toggleCart)
   const totalItems = useCartStore(selectTotalItems)
   
-  // Check if we're on homepage to enable transparent navbar
+  // Check if we're on homepage or categories page to enable transparent navbar
   const isHomePage = pathname === '/'
+  const isCategoriesPage = pathname === '/categories'
 
   // Fetch main categories
   useEffect(() => {
@@ -89,7 +90,9 @@ export default function Navigation() {
           ? (isScrolled 
               ? 'bg-white/95 border-steel-200' 
               : 'bg-transparent border-transparent')
-          : 'bg-white border-steel-200'
+          : isCategoriesPage
+            ? 'bg-transparent border-transparent'
+            : 'bg-white border-steel-200'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-18">
@@ -101,9 +104,9 @@ export default function Navigation() {
                   src="/assets/4speedMotorcylceLogo.svg" 
                   alt="4Speed Motorcycle" 
                   className={`h-12 w-auto transition-all duration-300 group-hover:scale-105 ${
-                    isHomePage && !isScrolled ? 'drop-shadow-lg' : ''
+                    (isHomePage && !isScrolled) || isCategoriesPage ? 'drop-shadow-lg' : ''
                   }`}
-                  style={isHomePage && !isScrolled ? { filter: 'brightness(0) invert(1)' } : {}}
+                  style={(isHomePage && !isScrolled) || isCategoriesPage ? { filter: 'brightness(0) invert(1)' } : {}}
                 />
               </Link>
             </div>
@@ -135,32 +138,109 @@ export default function Navigation() {
             {/* Desktop navigation links */}
             <div className="hidden lg:flex items-center space-x-8">
               <Link href="/" className={`nav-link font-medium transition-colors relative group ${
-                isHomePage
-                  ? (isScrolled 
-                      ? 'text-steel-700 hover:text-primary-600' 
-                      : 'text-white hover:text-primary-300 drop-shadow-md')
-                  : 'text-steel-700 hover:text-primary-600'
+                pathname === '/'
+                  ? (isHomePage
+                      ? (isScrolled 
+                          ? 'text-primary-600 hover:text-primary-700' 
+                          : 'text-white hover:text-primary-300 drop-shadow-md')
+                      : 'text-primary-600 hover:text-primary-700')
+                  : (isHomePage
+                      ? (isScrolled 
+                          ? 'text-steel-700 hover:text-primary-600' 
+                          : 'text-white hover:text-primary-300 drop-shadow-md')
+                      : isCategoriesPage
+                        ? 'text-white hover:text-primary-300 drop-shadow-md'
+                        : 'text-steel-700 hover:text-primary-600')
               }`}>
                 Home
-                <span className={`absolute -bottom-1 left-0 w-0 h-0.5 transition-all duration-200 group-hover:w-full ${
-                  isHomePage
-                    ? (isScrolled ? 'bg-primary-600' : 'bg-white')
-                    : 'bg-primary-600'
+                <span className={`absolute -bottom-1 left-0 h-0.5 transition-all duration-200 ${
+                  pathname === '/'
+                    ? `w-full ${
+                        isHomePage
+                          ? (isScrolled ? 'bg-primary-600' : 'bg-white')
+                          : 'bg-primary-600'
+                      }`
+                    : `w-0 group-hover:w-full ${
+                        isHomePage
+                          ? (isScrolled ? 'bg-primary-600' : 'bg-white')
+                          : isCategoriesPage
+                            ? 'bg-white'
+                            : 'bg-primary-600'
+                      }`
                 }`}></span>
               </Link>
               
-              <Link href="/products" className={`nav-link font-semibold transition-colors relative group ${
-                isHomePage
-                  ? (isScrolled 
-                      ? 'text-primary-600 hover:text-primary-700' 
-                      : 'text-white hover:text-primary-300 drop-shadow-md')
-                  : 'text-primary-600 hover:text-primary-700'
+              <Link href="/products" className={`nav-link font-medium transition-colors relative group ${
+                pathname === '/products'
+                  ? (isHomePage
+                      ? (isScrolled 
+                          ? 'text-primary-600 hover:text-primary-700 font-semibold' 
+                          : 'text-white hover:text-primary-300 drop-shadow-md font-semibold')
+                      : isCategoriesPage
+                        ? 'text-white hover:text-primary-300 drop-shadow-md font-semibold'
+                        : 'text-primary-600 hover:text-primary-700 font-semibold')
+                  : (isHomePage
+                      ? (isScrolled 
+                          ? 'text-steel-700 hover:text-primary-600' 
+                          : 'text-white hover:text-primary-300 drop-shadow-md')
+                      : isCategoriesPage
+                        ? 'text-white hover:text-primary-300 drop-shadow-md'
+                        : 'text-steel-700 hover:text-primary-600')
               }`}>
                 All Products
-                <span className={`absolute -bottom-1 left-0 w-full h-0.5 ${
-                  isHomePage
-                    ? (isScrolled ? 'bg-primary-600' : 'bg-white')
-                    : 'bg-primary-600'
+                <span className={`absolute -bottom-1 left-0 h-0.5 transition-all duration-200 ${
+                  pathname === '/products'
+                    ? `w-full ${
+                        isHomePage
+                          ? (isScrolled ? 'bg-primary-600' : 'bg-white')
+                          : isCategoriesPage
+                            ? 'bg-white'
+                            : 'bg-primary-600'
+                      }`
+                    : `w-0 group-hover:w-full ${
+                        isHomePage
+                          ? (isScrolled ? 'bg-primary-600' : 'bg-white')
+                          : isCategoriesPage
+                            ? 'bg-white'
+                            : 'bg-primary-600'
+                      }`
+                }`}></span>
+              </Link>
+              
+              <Link href="/contact" className={`nav-link font-medium transition-colors relative group ${
+                pathname === '/contact'
+                  ? (isHomePage
+                      ? (isScrolled 
+                          ? 'text-primary-600 hover:text-primary-700' 
+                          : 'text-white hover:text-primary-300 drop-shadow-md')
+                      : isCategoriesPage
+                        ? 'text-white hover:text-primary-300 drop-shadow-md'
+                        : 'text-primary-600 hover:text-primary-700')
+                  : (isHomePage
+                      ? (isScrolled 
+                          ? 'text-steel-700 hover:text-primary-600' 
+                          : 'text-white hover:text-primary-300 drop-shadow-md')
+                      : isCategoriesPage
+                        ? 'text-white hover:text-primary-300 drop-shadow-md'
+                        : 'text-steel-700 hover:text-primary-600')
+              }`}>
+                Contact
+                <span className={`absolute -bottom-1 left-0 h-0.5 transition-all duration-200 ${
+                  pathname === '/contact'
+                    ? `w-full ${
+                        isHomePage
+                          ? (isScrolled ? 'bg-primary-600' : 'bg-white')
+                          : isCategoriesPage
+                            ? 'bg-white'
+                            : 'bg-primary-600'
+                      }`
+                    : `w-0 group-hover:w-full ${
+                        isHomePage
+                          ? (isScrolled ? 'bg-primary-600' : 'bg-white')
+                          : isCategoriesPage
+                            ? 'bg-white'
+                            : 'bg-primary-600'
+                      }`
                 }`}></span>
               </Link>
               
@@ -170,23 +250,60 @@ export default function Navigation() {
                 onMouseEnter={handleCategoryMouseEnter}
                 onMouseLeave={handleCategoryMouseLeave}
               >
-                <button className={`nav-link font-medium flex items-center transition-colors group ${
-                  isHomePage
-                    ? (isScrolled 
-                        ? 'text-steel-700 hover:text-primary-600' 
-                        : 'text-white hover:text-primary-300 drop-shadow-md')
-                    : 'text-steel-700 hover:text-primary-600'
-                }`}>
-                  Categories
-                  <svg className="ml-1 h-4 w-4 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                  <span className={`absolute -bottom-1 left-0 w-0 h-0.5 transition-all duration-200 group-hover:w-full ${
+                <div className="flex items-center">
+                  <Link 
+                    href="/categories"
+                    className={`nav-link font-medium transition-colors relative group ${
+                      pathname === '/categories'
+                        ? (isHomePage
+                            ? (isScrolled 
+                                ? 'text-primary-600 hover:text-primary-700' 
+                                : 'text-white hover:text-primary-300 drop-shadow-md')
+                            : isCategoriesPage
+                              ? 'text-white hover:text-primary-300 drop-shadow-md'
+                              : 'text-primary-600 hover:text-primary-700')
+                        : (isHomePage
+                            ? (isScrolled 
+                                ? 'text-steel-700 hover:text-primary-600' 
+                                : 'text-white hover:text-primary-300 drop-shadow-md')
+                            : isCategoriesPage
+                              ? 'text-white hover:text-primary-300 drop-shadow-md'
+                              : 'text-steel-700 hover:text-primary-600')
+                    }`}
+                  >
+                    Categories
+                    <span className={`absolute -bottom-1 left-0 h-0.5 transition-all duration-200 ${
+                      pathname === '/categories'
+                        ? `w-full ${
+                            isHomePage
+                              ? (isScrolled ? 'bg-primary-600' : 'bg-white')
+                              : isCategoriesPage
+                                ? 'bg-white'
+                                : 'bg-primary-600'
+                          }`
+                        : `w-0 group-hover:w-full ${
+                            isHomePage
+                              ? (isScrolled ? 'bg-primary-600' : 'bg-white')
+                              : isCategoriesPage
+                                ? 'bg-white'
+                                : 'bg-primary-600'
+                          }`
+                    }`}></span>
+                  </Link>
+                  <button className={`ml-1 p-1 transition-colors group ${
                     isHomePage
-                      ? (isScrolled ? 'bg-primary-600' : 'bg-white')
-                      : 'bg-primary-600'
-                  }`}></span>
-                </button>
+                      ? (isScrolled 
+                          ? 'text-steel-700 hover:text-primary-600' 
+                          : 'text-white hover:text-primary-300 drop-shadow-md')
+                      : isCategoriesPage
+                        ? 'text-white hover:text-primary-300 drop-shadow-md'
+                        : 'text-steel-700 hover:text-primary-600'
+                  }`}>
+                    <svg className="h-4 w-4 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                </div>
                 
                 {showCategories && (
                   <div 
@@ -226,7 +343,9 @@ export default function Navigation() {
                   ? (isScrolled 
                       ? 'text-steel-600 hover:text-steel-900 hover:bg-steel-50' 
                       : 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md')
-                  : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
+                  : isCategoriesPage
+                    ? 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md'
+                    : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
               }`}>
                 <Search className="h-5 w-5" />
               </button>
@@ -237,7 +356,9 @@ export default function Navigation() {
                   ? (isScrolled 
                       ? 'text-steel-600 hover:text-steel-900 hover:bg-steel-50' 
                       : 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md')
-                  : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
+                  : isCategoriesPage
+                    ? 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md'
+                    : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
               }`}>
                 <User className="h-5 w-5" />
               </button>
@@ -250,7 +371,9 @@ export default function Navigation() {
                     ? (isScrolled 
                         ? 'text-steel-600 hover:text-steel-900 hover:bg-steel-50' 
                         : 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md')
-                    : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
+                    : isCategoriesPage
+                      ? 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md'
+                      : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
                 }`}
               >
                 <ShoppingCart className="h-5 w-5" />
@@ -269,7 +392,9 @@ export default function Navigation() {
                     ? (isScrolled 
                         ? 'text-steel-600 hover:text-steel-900 hover:bg-steel-50' 
                         : 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md')
-                    : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
+                    : isCategoriesPage
+                      ? 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md'
+                      : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
                 }`}
               >
                 {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -307,7 +432,9 @@ export default function Navigation() {
               ? (isScrolled 
                   ? 'border-steel-200 bg-white' 
                   : 'border-white/20 bg-black/80 backdrop-blur-md')
-              : 'border-steel-200 bg-white'
+              : isCategoriesPage
+                ? 'border-white/20 bg-black/80 backdrop-blur-md'
+                : 'border-steel-200 bg-white'
           }`}>
             <div className="px-4 pt-4 pb-6 space-y-2">
               <Link
@@ -317,7 +444,11 @@ export default function Navigation() {
                     ? (isScrolled 
                         ? 'text-steel-700 hover:text-steel-900 hover:bg-steel-50' 
                         : 'text-white hover:text-primary-300 hover:bg-white/10')
-                    : 'text-steel-700 hover:text-steel-900 hover:bg-steel-50'
+                    : isCategoriesPage
+                      ? 'text-white hover:text-primary-300 hover:bg-white/10'
+                      : isCategoriesPage
+                      ? 'text-white hover:text-primary-300 hover:bg-white/10'
+                      : 'text-steel-700 hover:text-steel-900 hover:bg-steel-50'
                 }`}
                 onClick={() => setIsOpen(false)}
               >
@@ -338,13 +469,39 @@ export default function Navigation() {
                 All Products
               </Link>
               
+              <Link
+                href="/contact"
+                className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${
+                  isHomePage
+                    ? (isScrolled 
+                        ? 'text-steel-700 hover:text-steel-900 hover:bg-steel-50' 
+                        : 'text-white hover:text-primary-300 hover:bg-white/10')
+                    : isCategoriesPage
+                      ? 'text-white hover:text-primary-300 hover:bg-white/10'
+                      : 'text-steel-700 hover:text-steel-900 hover:bg-steel-50'
+                }`}
+                onClick={() => setIsOpen(false)}
+              >
+                Contact
+              </Link>
+              
               {/* Mobile categories */}
               <div className="space-y-2">
-                <div className={`px-4 py-2 text-base font-semibold ${
-                  isHomePage
-                    ? (isScrolled ? 'text-steel-600' : 'text-white/80')
-                    : 'text-steel-600'
-                }`}>Categories</div>
+                <Link
+                  href="/categories"
+                  className={`block px-4 py-3 text-base font-semibold rounded-xl transition-colors ${
+                    isHomePage
+                      ? (isScrolled 
+                          ? 'text-steel-700 hover:text-steel-900 hover:bg-steel-50' 
+                          : 'text-white hover:text-primary-300 hover:bg-white/10')
+                      : isCategoriesPage
+                      ? 'text-white hover:text-primary-300 hover:bg-white/10'
+                      : 'text-steel-700 hover:text-steel-900 hover:bg-steel-50'
+                  }`}
+                  onClick={() => setIsOpen(false)}
+                >
+                  Categories
+                </Link>
                 {categories.map((category) => (
                   <Link
                     key={category.id}
@@ -366,7 +523,9 @@ export default function Navigation() {
               <div className={`border-t pt-4 mt-4 ${
                 isHomePage
                   ? (isScrolled ? 'border-steel-200' : 'border-white/20')
-                  : 'border-steel-200'
+                  : isCategoriesPage
+                    ? 'border-white/20'
+                    : 'border-steel-200'
               }`}>
                 <Link
                   href="/account"
@@ -375,6 +534,8 @@ export default function Navigation() {
                       ? (isScrolled 
                           ? 'text-steel-700 hover:text-steel-900 hover:bg-steel-50' 
                           : 'text-white hover:text-primary-300 hover:bg-white/10')
+                      : isCategoriesPage
+                      ? 'text-white hover:text-primary-300 hover:bg-white/10'
                       : 'text-steel-700 hover:text-steel-900 hover:bg-steel-50'
                   }`}
                   onClick={() => setIsOpen(false)}

@@ -127,15 +127,32 @@ export default function FeaturedProducts() {
 
   if (loading) {
     return (
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-steel-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <div className="h-8 bg-steel-200 rounded w-64 mx-auto mb-4 animate-pulse" />
-            <div className="h-4 bg-steel-200 rounded w-96 mx-auto animate-pulse" />
+            <div className="h-8 bg-steel-300 rounded w-64 mx-auto mb-4 animate-pulse" />
+            <div className="h-4 bg-steel-300 rounded w-96 mx-auto animate-pulse" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-80 bg-steel-200 rounded-lg animate-pulse" />
+              <div key={i} className="bg-white rounded-2xl shadow-lg overflow-hidden animate-pulse">
+                <div className="h-48 bg-gradient-to-br from-steel-200 via-steel-300 to-steel-200" />
+                <div className="p-4">
+                  <div className="h-4 bg-steel-200 rounded w-full mb-2" />
+                  <div className="h-4 bg-steel-200 rounded w-3/4 mb-3" />
+                  <div className="flex justify-between items-center mb-3">
+                    <div className="h-6 bg-green-200 rounded w-20" />
+                    <div className="h-4 bg-steel-200 rounded w-16" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-steel-200 rounded w-full" />
+                    <div className="h-3 bg-steel-200 rounded w-2/3" />
+                  </div>
+                  <div className="mt-4">
+                    <div className="h-10 bg-orange-200 rounded-lg w-full" />
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </div>

@@ -55,7 +55,7 @@ export default function HeroSection() {
   const parallaxOffset = scrollY * 0.5
 
   return (
-    <section className="relative h-screen overflow-hidden -mt-18 pt-18">
+    <section className="relative h-screen overflow-hidden">
       {/* Background Image with Parallax */}
       {currentSlideData.image && (
         <div className="absolute inset-0 overflow-hidden">

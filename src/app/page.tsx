@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { ArrowRight, Shield, Truck, Phone, Star } from 'lucide-react'
+import Image from 'next/image'
+import { ArrowRight, Shield, Truck, Phone, Star, ChevronDown } from 'lucide-react'
 import HeroSection from '@/components/home/HeroSection'
 import FeaturedCategories from '@/components/home/FeaturedCategories'
 import FeaturedProducts from '@/components/home/FeaturedProducts'
@@ -7,98 +8,174 @@ import TrustBadges from '@/components/home/TrustBadges'
 
 export default function Home() {
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
+    <div className="min-h-screen bg-black overflow-x-hidden -mt-[72px]">
+      {/* ORIGINAL HERO SECTION */}
       <HeroSection />
 
-      {/* Trust Badges */}
+      {/* TRUST BADGES */}
       <TrustBadges />
 
-      {/* Featured Categories */}
+      {/* FEATURED CATEGORIES */}
       <FeaturedCategories />
 
-      {/* Featured Products */}
-      <FeaturedProducts />
-
-
-      {/* Company Info Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
-          {/* Simple Header */}
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-steel-900 mb-4">
-              Why Choose 4SpeedMotorcycle?
+      {/* CRAFTMANSHIP SECTION - Full Bleed Split */}
+      <div className="relative h-screen flex">
+        {/* Image Side */}
+        <div className="w-1/2 relative overflow-hidden">
+          <Image
+            src="/images/assets/craftsmanship-workshop-mechanic.JPG"
+            alt="Expert Craftsmanship"
+            fill
+            className="object-cover"
+            sizes="50vw"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/30"></div>
+        </div>
+        
+        {/* Content Side */}
+        <div className="w-1/2 bg-white flex items-center">
+          <div className="p-16 lg:p-24">
+            <div className="inline-block px-4 py-2 bg-orange-100 text-orange-600 text-sm font-bold uppercase tracking-wider mb-8">
+              Our Promise
+            </div>
+            <h2 className="text-5xl lg:text-6xl font-display font-black text-steel-900 mb-8 leading-tight">
+              Expert
+              <span className="block text-orange-600">Craftsmanship</span>
             </h2>
-            <p className="text-lg text-steel-600 max-w-3xl mx-auto">
-              Trusted by riders since 1995. Premium parts, expert knowledge, unmatched service.
+            <p className="text-xl text-steel-600 leading-relaxed mb-8 max-w-lg">
+              Every part we sell is carefully selected by motorcycle experts who understand 
+              the demands of performance riding. Quality isn't just a promise—it's our standard.
             </p>
-          </div>
-
-          {/* Clean Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             
-            <div className="text-center group">
-              <div className="w-16 h-16 bg-orange-600 rounded-lg mx-auto mb-4 flex items-center justify-center group-hover:bg-orange-700 transition-colors duration-200">
-                <Shield className="h-8 w-8 text-white" />
+            <div className="space-y-6 mb-10">
+              <div className="flex items-center">
+                <div className="w-3 h-3 bg-orange-500 rounded-full mr-4"></div>
+                <span className="text-steel-700 font-medium">Rigorous quality testing on every product</span>
               </div>
-              <h3 className="text-lg font-bold text-steel-900 mb-2">
-                Quality Guaranteed
-              </h3>
-              <p className="text-steel-600 text-sm">
-                All parts backed by manufacturer warranties and our quality guarantee.
-              </p>
-            </div>
-
-            <div className="text-center group">
-              <div className="w-16 h-16 bg-orange-600 rounded-lg mx-auto mb-4 flex items-center justify-center group-hover:bg-orange-700 transition-colors duration-200">
-                <Truck className="h-8 w-8 text-white" />
+              <div className="flex items-center">
+                <div className="w-3 h-3 bg-orange-500 rounded-full mr-4"></div>
+                <span className="text-steel-700 font-medium">Expert installation guidance included</span>
               </div>
-              <h3 className="text-lg font-bold text-steel-900 mb-2">
-                Fast Shipping
-              </h3>
-              <p className="text-steel-600 text-sm">
-                Free shipping over $99 with most orders shipping same day.
-              </p>
-            </div>
-
-            <div className="text-center group">
-              <div className="w-16 h-16 bg-orange-600 rounded-lg mx-auto mb-4 flex items-center justify-center group-hover:bg-orange-700 transition-colors duration-200">
-                <Phone className="h-8 w-8 text-white" />
+              <div className="flex items-center">
+                <div className="w-3 h-3 bg-orange-500 rounded-full mr-4"></div>
+                <span className="text-steel-700 font-medium">Full manufacturer warranties honored</span>
               </div>
-              <h3 className="text-lg font-bold text-steel-900 mb-2">
-                Expert Support
-              </h3>
-              <p className="text-steel-600 text-sm">
-                Our motorcycle experts are here to help you find the right parts.
-              </p>
             </div>
-
-            <div className="text-center group">
-              <div className="w-16 h-16 bg-orange-600 rounded-lg mx-auto mb-4 flex items-center justify-center group-hover:bg-orange-700 transition-colors duration-200">
-                <Star className="h-8 w-8 text-white" />
-              </div>
-              <h3 className="text-lg font-bold text-steel-900 mb-2">
-                Trusted by Riders
-              </h3>
-              <p className="text-steel-600 text-sm">
-                Over 50,000 satisfied customers and thousands of 5-star reviews.
-              </p>
-            </div>
-          </div>
-
-          {/* Simple CTA */}
-          <div className="text-center">
-            <Link
+            
+            <Link 
               href="/about"
-              className="inline-flex items-center gap-2 text-orange-600 font-semibold hover:text-orange-700 transition-colors duration-200"
+              className="group inline-flex items-center px-10 py-4 bg-steel-900 text-white text-lg font-bold rounded-full hover:bg-orange-600 transition-all duration-300 transform hover:scale-105"
             >
-              Learn More About Us
-              <ArrowRight className="h-4 w-4" />
+              Our Story
+              <ArrowRight className="ml-3 h-5 w-5 transform group-hover:translate-x-1 transition-transform duration-300" />
             </Link>
           </div>
         </div>
-      </section>
+      </div>
+
+      {/* FEATURED PRODUCTS */}
+      <FeaturedProducts />
+
+      {/* PERFORMANCE SECTION - Diagonal Layout */}
+      <div className="relative h-screen overflow-hidden bg-steel-900">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/assets/performance-harley-vintage-engine.JPG"
+            alt="Performance Engineering"
+            fill
+            className="object-cover opacity-40"
+            sizes="100vw"
+          />
+        </div>
+        
+        {/* Diagonal Content Overlay */}
+        <div className="absolute inset-0 flex items-end">
+          <div className="bg-white/95 backdrop-blur-sm w-full transform -skew-y-2 origin-bottom-left p-24 pb-32">
+            <div className="transform skew-y-2 max-w-4xl">
+              <div className="inline-block px-4 py-2 bg-orange-500 text-white text-sm font-bold uppercase tracking-wider mb-6">
+                Performance Driven
+              </div>
+              <h2 className="text-5xl lg:text-6xl font-display font-black text-steel-900 mb-6">
+                Built for the Track
+                <span className="block text-orange-600">Proven on the Street</span>
+              </h2>
+              <p className="text-xl text-steel-600 mb-8 max-w-3xl leading-relaxed">
+                From weekend warriors to professional racers, our parts deliver the performance 
+                you need when it matters most. Every component tested under real-world conditions.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-orange-600 mb-2">5000+</div>
+                  <div className="text-steel-600">Race Miles Tested</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-orange-600 mb-2">98%</div>
+                  <div className="text-steel-600">Performance Rating</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-orange-600 mb-2">24/7</div>
+                  <div className="text-steel-600">Support Available</div>
+                </div>
+              </div>
+              
+              <Link 
+                href="/products"
+                className="group inline-flex items-center px-10 py-4 border-2 border-steel-900 text-steel-900 text-lg font-bold rounded-full hover:bg-steel-900 hover:text-white transition-all duration-300"
+              >
+                Shop Performance Parts
+                <ArrowRight className="ml-3 h-5 w-5 transform group-hover:translate-x-1 transition-transform duration-300" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* FINAL CTA - Detail Focus */}
+      <div className="relative h-screen">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/assets/precision-handlebar-detail.JPG"
+            alt="Precision Details"
+            fill
+            className="object-cover"
+            sizes="100vw"
+          />
+        </div>
+        
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
+        
+        {/* Floating Content Card */}
+        <div className="relative h-full flex items-center justify-center">
+          <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-3xl p-16 max-w-2xl text-center">
+            <h2 className="text-5xl font-display font-black text-white mb-6">
+              Ready to Ride?
+            </h2>
+            <p className="text-white/90 text-xl mb-10 leading-relaxed">
+              Join thousands of riders who trust 4SpeedMotorcycle for their performance needs. 
+              Premium parts, expert support, unmatched quality.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link 
+                href="/categories"
+                className="group inline-flex items-center px-10 py-4 bg-orange-500 text-white font-bold rounded-full hover:bg-orange-600 transition-all duration-300 text-lg"
+              >
+                Start Shopping
+                <ArrowRight className="ml-3 h-5 w-5 transform group-hover:translate-x-1 transition-transform duration-300" />
+              </Link>
+              <Link 
+                href="/contact"
+                className="group inline-flex items-center px-10 py-4 bg-white/10 text-white font-bold rounded-full hover:bg-white/20 transition-all duration-300 border border-white/20 text-lg"
+              >
+                Get Expert Help
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

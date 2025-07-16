@@ -2,24 +2,25 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
-import { FALLBACK_CATEGORIES, getCategoryVisual, Category } from '@/lib/constants/categories'
+import { CustomCategory, getFeaturedCategories } from '@/lib/constants/custom-categories'
 
-// Show top 6 categories for homepage
-const fallbackCategories = FALLBACK_CATEGORIES.slice(0, 6)
+// Show featured categories for homepage
+const fallbackCategories = getFeaturedCategories()
 
 export default function FeaturedCategories() {
-  const [categories, setCategories] = useState<Category[]>([])
+  const [categories, setCategories] = useState<CustomCategory[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/categories?level=main')
+        const response = await fetch('/api/custom-categories?type=featured')
         const data = await response.json()
         
         if (data.success && data.data && data.data.length > 0) {
-          setCategories(data.data.slice(0, 6)) // Show top 6 categories
+          setCategories(data.data) // Show featured categories
         } else {
           // Use fallback categories if API doesn't return data
           setCategories(fallbackCategories)
@@ -39,7 +40,7 @@ export default function FeaturedCategories() {
 
   if (loading) {
     return (
-      <section className="py-16 bg-steel-50">
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <div className="h-8 bg-steel-200 rounded w-64 mx-auto mb-4 animate-pulse" />
@@ -47,7 +48,17 @@ export default function FeaturedCategories() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-48 bg-steel-200 rounded-lg animate-pulse" />
+              <div key={i} className="group relative bg-white rounded-2xl shadow-lg overflow-hidden animate-pulse">
+                <div className="h-48 bg-gradient-to-br from-steel-200 via-steel-300 to-steel-200" />
+                <div className="p-6">
+                  <div className="h-6 bg-steel-200 rounded w-3/4 mb-3" />
+                  <div className="h-4 bg-steel-200 rounded w-full mb-4" />
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 bg-orange-200 rounded w-16" />
+                    <div className="h-8 w-8 bg-steel-200 rounded-full" />
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -71,16 +82,29 @@ export default function FeaturedCategories() {
         {/* Clean Categories Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {categories.map((category, index) => {
-            const visual = getCategoryVisual(category.slug)
-            
             return (
               <Link
                 key={category.id}
                 href={`/category/${category.slug}`}
                 className="group relative overflow-hidden rounded-lg bg-white shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                {/* Clean Category Image */}
-                <div className="w-full h-48 bg-gray-400 relative">
+                {/* Category Image */}
+                <div className="w-full h-48 relative">
+                  {category.image ? (
+                    <Image
+                      src={category.image}
+                      alt={category.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  ) : (
+                    <div className={`w-full h-full bg-gradient-to-br ${category.gradient}`}>
+                      <div className="flex items-center justify-center h-full text-4xl">
+                        {category.icon}
+                      </div>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-300"></div>
                 </div>
                 
@@ -90,7 +114,7 @@ export default function FeaturedCategories() {
                     {category.name}
                   </h3>
                   <p className="text-steel-600 text-sm mb-4">
-                    {category.description || `Premium ${category.name.toLowerCase()} parts and accessories`}
+                    {category.description}
                   </p>
                   
                   <div className="flex items-center text-orange-600 font-semibold group-hover:text-orange-700">
