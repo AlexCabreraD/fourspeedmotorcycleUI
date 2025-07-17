@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { Package, Search, Filter, Calendar, Truck, CheckCircle, Clock, AlertCircle, MoreVertical, Eye, RotateCcw, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
-import { createWPSClient, WPSOrder } from '@/lib/api/wps-client'
+import { createWPSClient, WPSOrder, WPSItem, ImageUtils } from '@/lib/api/wps-client'
 // Define interfaces based on actual WPS API response structure
 interface WPSOrderItem {
   sku: string
@@ -12,6 +12,9 @@ interface WPSOrderItem {
   ship_quantity: number
   backorder_quantity: number
   price: number
+  // Enhanced with item details
+  item_details?: WPSItem
+  image_url?: string
 }
 
 interface WPSOrderDetail {
@@ -107,6 +110,95 @@ const transformWPSOrders = (wpsOrders: WPSOrderResponse[]): Order[] => {
   return orders
 }
 
+// Enhance orders with item details and images
+const enhanceOrdersWithItemDetails = async (orders: Order[]): Promise<Order[]> => {
+  const client = createWPSClient()
+  
+  // Collect all unique SKUs from all orders
+  const allSkus = new Set<string>()
+  orders.forEach(order => {
+    order.items.forEach(item => {
+      allSkus.add(item.sku)
+    })
+  })
+  
+  // Fetch item details for all SKUs in batches
+  const skuArray = Array.from(allSkus)
+  console.log('Fetching item details for SKUs:', skuArray)
+  const itemDetailsMap = new Map<string, WPSItem>()
+  
+  try {
+    // Process SKUs in batches of 20 to avoid overwhelming the API
+    const batchSize = 20
+    for (let i = 0; i < skuArray.length; i += batchSize) {
+      const batch = skuArray.slice(i, i + batchSize)
+      
+      // For each SKU in the batch, fetch item details
+      const batchPromises = batch.map(async (sku) => {
+        try {
+          const response = await client.getItems({
+            'filter[sku]': sku,
+            'include': 'images',
+            'page[size]': 1
+          })
+          
+          if (response.data && response.data.length > 0) {
+            itemDetailsMap.set(sku, response.data[0])
+            console.log(`Successfully fetched item details for SKU ${sku}`, {
+              hasImages: !!response.data[0].images,
+              imageCount: response.data[0].images?.data?.length || 0
+            })
+          } else {
+            console.log(`No item found for SKU ${sku}`)
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch details for SKU ${sku}:`, error)
+        }
+      })
+      
+      await Promise.all(batchPromises)
+      
+      // Add a small delay between batches to be respectful to the API
+      if (i + batchSize < skuArray.length) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching item details:', error)
+  }
+  
+  // Enhance orders with the fetched item details
+  return orders.map(order => ({
+    ...order,
+    items: order.items.map(item => {
+      const itemDetails = itemDetailsMap.get(item.sku)
+      let imageUrl = ''
+      
+      if (itemDetails && itemDetails.images?.data && itemDetails.images.data.length > 0) {
+        try {
+          imageUrl = ImageUtils.buildImageUrl(itemDetails.images.data[0], '200_max')
+          console.log(`Built image URL for SKU ${item.sku}:`, imageUrl)
+        } catch (error) {
+          console.warn(`Failed to build image URL for SKU ${item.sku}:`, error)
+        }
+      } else {
+        console.log(`No images found for SKU ${item.sku}`, {
+          hasItemDetails: !!itemDetails,
+          hasImages: !!itemDetails?.images,
+          hasImagesData: !!itemDetails?.images?.data,
+          imagesLength: itemDetails?.images?.data?.length
+        })
+      }
+      
+      return {
+        ...item,
+        item_details: itemDetails,
+        image_url: imageUrl
+      }
+    })
+  }))
+}
+
 export default function OrdersPage() {
   const { user, isLoaded } = useUser()
   const [orders, setOrders] = useState<Order[]>([])
@@ -147,7 +239,10 @@ export default function OrdersPage() {
         if (response.data && Array.isArray(response.data)) {
           // Transform the WPS API response to our flat structure
           const transformedOrders = transformWPSOrders(response.data as WPSOrderResponse[])
-          setOrders(transformedOrders)
+          
+          // Enhance orders with item details and images
+          const enhancedOrders = await enhanceOrdersWithItemDetails(transformedOrders)
+          setOrders(enhancedOrders)
         } else {
           console.error('API response error:', response)
           setError('Failed to fetch orders - no data received')
@@ -352,7 +447,7 @@ export default function OrdersPage() {
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-steel-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="w-full pl-3 pr-8 py-2 border border-steel-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="all">All Orders</option>
                 <option value="Invoiced">Invoiced</option>
@@ -406,9 +501,20 @@ export default function OrdersPage() {
                             {order.items.slice(0, 3).map((item, index) => (
                               <div
                                 key={index}
-                                className="w-10 h-10 rounded-lg border-2 border-white bg-steel-100 flex items-center justify-center"
+                                className="w-10 h-10 rounded-lg border-2 border-white bg-steel-100 flex items-center justify-center overflow-hidden"
                               >
-                                <Package className="h-5 w-5 text-steel-400" />
+                                {item.image_url ? (
+                                  <img
+                                    src={item.image_url}
+                                    alt={item.item_details?.name || `Item ${item.sku}`}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none'
+                                      e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                                    }}
+                                  />
+                                ) : null}
+                                <Package className={`h-5 w-5 text-steel-400 ${item.image_url ? 'hidden' : ''}`} />
                               </div>
                             ))}
                             {order.items.length > 3 && (
@@ -425,7 +531,7 @@ export default function OrdersPage() {
                     </div>
 
                     {/* Right Side - Price & Expand */}
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
                       <div className="text-right">
                         <p className="text-xl font-bold text-steel-900">
                           {formatPrice(order.order_total || '0')}
@@ -544,12 +650,23 @@ export default function OrdersPage() {
                           <div className="space-y-3">
                             {order.items.map((item, index) => (
                               <div key={index} className="flex items-center space-x-4 bg-white p-4 rounded-lg border border-steel-200">
-                                <div className="w-16 h-16 rounded-lg bg-steel-100 flex items-center justify-center">
-                                  <Package className="h-8 w-8 text-steel-400" />
+                                <div className="w-16 h-16 rounded-lg bg-steel-100 flex items-center justify-center overflow-hidden">
+                                  {item.image_url ? (
+                                    <img
+                                      src={item.image_url}
+                                      alt={item.item_details?.name || `Item ${item.sku}`}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none'
+                                        e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                                      }}
+                                    />
+                                  ) : null}
+                                  <Package className={`h-8 w-8 text-steel-400 ${item.image_url ? 'hidden' : ''}`} />
                                 </div>
                                 <div className="flex-1">
                                   <h5 className="font-medium text-steel-900">
-                                    {item.name || `Item ${item.sku}`}
+                                    {item.item_details?.name || `Item ${item.sku}`}
                                   </h5>
                                   <p className="text-sm text-steel-500">SKU: {item.sku}</p>
                                   <div className="flex items-center gap-4 mt-1">
