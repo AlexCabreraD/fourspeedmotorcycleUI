@@ -467,3 +467,61 @@ PATRIOT, BOLT, SHINDY, RASCAL GRAFIK, FLY RACING, RISK RACING, FIRE POWER, BEER 
 ```
 ## Full WPS API Documentation Claude File name
 - WPSAPIDocCLAUDE.pdf
+
+## Authentication Research & Implementation Plan
+
+### Research Date: 2025-01-16
+
+**Requirements:**
+- User accounts for order tracking
+- Wishlist functionality 
+- Future admin roles for blog management
+- Next.js 15 compatibility
+
+**Recommended Solution: Clerk Authentication**
+
+**Why Clerk:**
+- ✅ E-commerce focused with built-in order tracking
+- ✅ Next.js 15 native integration 
+- ✅ Role-based access control for admin features
+- ✅ Generous free tier: 10,000 MAUs free
+- ✅ Pro plan: $25/mo when needed
+- ✅ $25M funded company (stable long-term)
+- ✅ No charges for inactive users
+
+**Alternative Comparison:**
+- **NextAuth.js**: Open source but original dev abandoned, requires more dev work
+- **Auth0**: Enterprise-grade but expensive, overkill for current size
+- **Supabase**: Full backend solution but learning curve and database coupling
+
+**Implementation Phases:**
+1. **Phase 1 (Week 1-2)**: Basic accounts, registration/login, profile management
+2. **Phase 2 (Week 3-4)**: Wishlist, saved addresses, email preferences  
+3. **Phase 3 (Future)**: Admin roles, blog management, customer service tools
+
+**Integration Points:**
+- Connect with existing Zustand cart store
+- Integrate with WPS API for order history
+- Add account pages (profile, orders, wishlist)
+
+### Implementation Status: ✅ COMPLETED (Phase 1)
+
+**What's Been Implemented:**
+- ✅ Clerk authentication setup with Next.js 15
+- ✅ Sign-in, sign-up, and profile pages
+- ✅ Navigation integration with user menu
+- ✅ Protected routes middleware
+- ✅ Basic orders and wishlist pages
+
+**Authentication Features:**
+- Email, Google, and Apple sign-in options
+- User profile management
+- Protected routes for user-specific pages
+- Navigation shows user name when logged in
+- Sign out functionality
+
+**Next Steps (Phase 2):**
+- Integrate with Zustand cart store for persistent user carts
+- Add wishlist functionality to product pages
+- Implement order history integration with WPS API
+- Add user preferences and saved addresses

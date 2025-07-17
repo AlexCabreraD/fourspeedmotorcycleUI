@@ -8,7 +8,7 @@ import { ImageUtils } from '@/lib/api/wps-client'
 import ConfirmationModal from '@/components/ui/ConfirmationModal'
 
 export default function CartSidebar() {
-  const { items, isOpen, closeCart, updateQuantity, removeItem } = useCartStore()
+  const { items, isOpen, closeCart, updateQuantity, removeItem, isLoading } = useCartStore()
   const totalItems = useCartStore(selectTotalItems)
   const totalPrice = useCartStore(selectTotalPrice)
   const shippingTotal = useCartStore(selectShippingTotal)
@@ -96,7 +96,12 @@ export default function CartSidebar() {
 
         {/* Cart Items */}
         <div className="flex-1 overflow-y-auto">
-          {items.length === 0 ? (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4"></div>
+              <p className="text-steel-500">Syncing your cart...</p>
+            </div>
+          ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full p-8 text-center">
               <ShoppingBag className="h-16 w-16 text-steel-300 mb-4" />
               <h3 className="text-lg font-medium text-steel-900 mb-2">Your cart is empty</h3>

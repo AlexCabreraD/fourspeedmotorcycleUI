@@ -25,7 +25,8 @@
       "Bash(find:*)",
       "Bash(ss:*)",
       "Bash(mv:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": []
   }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import { 
@@ -10,6 +11,7 @@ import {
   Clock, MapPin, Phone, Mail, ExternalLink
 } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart'
+import { useWishlistStore, WishlistItem } from '@/lib/store/wishlist'
 import { WPSProduct, WPSItem, ImageUtils } from '@/lib/api/wps-client'
 
 interface ProductWithItems extends WPSProduct {
@@ -34,11 +36,17 @@ export default function ProductDetails({ params }: Props) {
   const [isAddingToCart, setIsAddingToCart] = useState(false)
   const [justAddedToCart, setJustAddedToCart] = useState(false)
   const { addItem } = useCartStore()
+  const { toggleItem, isInWishlist } = useWishlistStore()
+  
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     params.then(setResolvedParams)
   }, [params])
 
+  // Fetch product data only when product ID changes
   useEffect(() => {
     if (!resolvedParams?.id) return
 
@@ -49,9 +57,6 @@ export default function ProductDetails({ params }: Props) {
         
         if (data.success && data.data) {
           setProduct(data.data)
-          if (data.data.items && data.data.items.length > 0) {
-            setSelectedItem(data.data.items[0])
-          }
         } else {
           setError(data.error || 'Product not found')
         }
@@ -65,12 +70,60 @@ export default function ProductDetails({ params }: Props) {
     fetchProduct()
   }, [resolvedParams])
 
+  // Handle initial item selection and URL param changes separately
+  useEffect(() => {
+    if (!product?.items || product.items.length === 0) return
+
+    const itemId = searchParams.get('item')
+    let itemToSelect = product.items[0] // Default to first item
+    
+    if (itemId) {
+      const specificItem = product.items.find((item: WPSItem) => item.id.toString() === itemId)
+      if (specificItem) {
+        itemToSelect = specificItem
+      }
+    }
+    
+    // Only update if the selected item is actually different
+    if (!selectedItem || selectedItem.id !== itemToSelect.id) {
+      setSelectedItem(itemToSelect)
+    }
+  }, [product?.items, searchParams])
+
   const formatPrice = (price: string) => {
     const numPrice = parseFloat(price)
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
     }).format(numPrice)
+  }
+
+  const updateSelectedItem = (item: WPSItem) => {
+    // Only update if selecting a different item
+    if (selectedItem?.id === item.id) return
+    
+    setSelectedItem(item)
+    setCurrentImageIndex(0)
+    
+    // Update URL with the selected item ID only if it's different from current URL
+    const currentItemId = searchParams.get('item')
+    if (currentItemId !== item.id.toString()) {
+      const newSearchParams = new URLSearchParams(searchParams)
+      newSearchParams.set('item', item.id.toString())
+      router.replace(`${pathname}?${newSearchParams.toString()}`, { scroll: false })
+    }
+  }
+
+  const getSortedItems = () => {
+    if (!product?.items || !selectedItem) return product?.items || []
+    
+    // Sort items with selected item first, then all others in their original order
+    const sortedItems = [...product.items]
+    return sortedItems.sort((a, b) => {
+      if (a.id === selectedItem.id) return -1
+      if (b.id === selectedItem.id) return 1
+      return 0
+    })
   }
 
   const getProductImages = () => {
@@ -104,6 +157,22 @@ export default function ProductDetails({ params }: Props) {
     if (newQuantity >= 1) {
       setQuantity(newQuantity)
     }
+  }
+
+  const handleWishlist = () => {
+    if (!selectedItem) return
+    
+    const wishlistItem: WishlistItem = {
+      id: selectedItem.id.toString(),
+      name: selectedItem.name,
+      price: selectedItem.list_price,
+      image: currentItemImages[0] || '',
+      brand: selectedItem.brand?.name,
+      sku: selectedItem.sku,
+      slug: `/product/${selectedItem.product_id}?item=${selectedItem.id}`
+    }
+    
+    toggleItem(wishlistItem)
   }
 
   const nextImage = () => {
@@ -144,6 +213,8 @@ export default function ProductDetails({ params }: Props) {
     }
     return null
   }
+
+  const inWishlist = selectedItem ? isInWishlist(selectedItem.id.toString()) : false
 
   // Keyboard navigation
   useEffect(() => {
@@ -443,13 +514,10 @@ export default function ProductDetails({ params }: Props) {
                     </span>
                   </div>
                   <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
-                    {product.items.map((item) => (
+                    {getSortedItems().map((item) => (
                       <button
                         key={item.id}
-                        onClick={() => {
-                          setSelectedItem(item)
-                          setCurrentImageIndex(0)
-                        }}
+                        onClick={() => updateSelectedItem(item)}
                         className={`w-full p-3 border-2 rounded-xl text-left transition-all duration-200 hover:shadow-lg transform hover:scale-[1.02] ${
                           selectedItem?.id === item.id
                             ? 'border-primary-500 bg-gradient-to-r from-primary-50 to-blue-50 ring-2 ring-primary-200 shadow-md'
@@ -562,9 +630,16 @@ export default function ProductDetails({ params }: Props) {
                   </button>
                   
                   <div className="flex space-x-3">
-                    <button className="flex-1 btn btn-outline">
-                      <Heart className="h-5 w-5 mr-2" />
-                      Wishlist
+                    <button 
+                      onClick={handleWishlist}
+                      className={`flex-1 btn transition-colors ${
+                        inWishlist 
+                          ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' 
+                          : 'btn-outline hover:bg-red-50 hover:text-red-600 hover:border-red-200'
+                      }`}
+                    >
+                      <Heart className={`h-5 w-5 mr-2 ${inWishlist ? 'fill-current' : ''}`} />
+                      {inWishlist ? 'In Wishlist' : 'Add to Wishlist'}
                     </button>
                     <button className="flex-1 btn btn-outline">
                       <Share2 className="h-5 w-5 mr-2" />
@@ -746,12 +821,6 @@ export default function ProductDetails({ params }: Props) {
                         <span className="text-steel-600 font-medium">Product ID:</span>
                         <span className="font-mono">{selectedItem?.id}</span>
                       </div>
-                      <div className="flex justify-between py-3">
-                        <span className="text-steel-600 font-medium">Drop Ship Eligible:</span>
-                        <span className={selectedItem?.drop_ship_eligible ? 'text-green-600' : 'text-red-600'}>
-                          {selectedItem?.drop_ship_eligible ? 'Yes' : 'No'}
-                        </span>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -810,18 +879,6 @@ export default function ProductDetails({ params }: Props) {
                       <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-1" />
                       <span>Expected delivery: 2-5 business days</span>
                     </div>
-                    {selectedItem?.drop_ship_eligible && (
-                      <div className="flex items-start space-x-3">
-                        <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-1" />
-                        <span>Available for drop shipping</span>
-                      </div>
-                    )}
-                    {selectedItem?.drop_ship_fee && selectedItem.drop_ship_fee !== 'FR' && (
-                      <div className="flex items-start space-x-3">
-                        <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-1" />
-                        <span>Drop ship fee: ${selectedItem.drop_ship_fee}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
                 

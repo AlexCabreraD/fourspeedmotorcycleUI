@@ -10,6 +10,8 @@ export interface CartItem extends WPSItem {
 interface CartState {
   items: CartItem[]
   isOpen: boolean
+  userId: string | null
+  isLoading: boolean
   // Actions
   addItem: (item: WPSItem, quantity?: number) => void
   removeItem: (itemId: number) => void
@@ -17,6 +19,11 @@ interface CartState {
   clearCart: () => void
   toggleCart: () => void
   closeCart: () => void
+  // User-specific actions
+  setUser: (userId: string | null) => void
+  loadUserCart: (userId: string) => Promise<void>
+  saveUserCart: (userId: string) => Promise<void>
+  mergeGuestCart: (guestItems: CartItem[]) => void
 }
 
 // Selectors
@@ -47,6 +54,8 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       isOpen: false,
+      userId: null,
+      isLoading: false,
       
       addItem: (item: WPSItem, quantity = 1) => {
         set((state) => {
@@ -54,26 +63,36 @@ export const useCartStore = create<CartState>()(
           
           if (existingItem) {
             // Update quantity if item exists
-            return {
-              items: state.items.map(cartItem =>
-                cartItem.id === item.id
-                  ? { ...cartItem, quantity: cartItem.quantity + quantity }
-                  : cartItem
-              )
-            }
+            const newItems = state.items.map(cartItem =>
+              cartItem.id === item.id
+                ? { ...cartItem, quantity: cartItem.quantity + quantity }
+                : cartItem
+            )
+            return { items: newItems }
           } else {
             // Add new item
-            return {
-              items: [...state.items, { ...item, quantity, addedAt: new Date() }]
-            }
+            const newItems = [...state.items, { ...item, quantity, addedAt: new Date() }]
+            return { items: newItems }
           }
         })
+        
+        // Auto-save to user account if logged in
+        const state = get()
+        if (state.userId) {
+          state.saveUserCart(state.userId)
+        }
       },
       
       removeItem: (itemId: number) => {
         set((state) => ({
           items: state.items.filter(item => item.id !== itemId)
         }))
+        
+        // Auto-save to user account if logged in
+        const state = get()
+        if (state.userId) {
+          state.saveUserCart(state.userId)
+        }
       },
       
       updateQuantity: (itemId: number, quantity: number) => {
@@ -87,10 +106,22 @@ export const useCartStore = create<CartState>()(
             item.id === itemId ? { ...item, quantity } : item
           )
         }))
+        
+        // Auto-save to user account if logged in
+        const state = get()
+        if (state.userId) {
+          state.saveUserCart(state.userId)
+        }
       },
       
       clearCart: () => {
         set({ items: [] })
+        
+        // Auto-save to user account if logged in
+        const state = get()
+        if (state.userId) {
+          state.saveUserCart(state.userId)
+        }
       },
       
       toggleCart: () => {
@@ -99,11 +130,70 @@ export const useCartStore = create<CartState>()(
       
       closeCart: () => {
         set({ isOpen: false })
+      },
+      
+      setUser: (userId: string | null) => {
+        set({ userId })
+      },
+      
+      loadUserCart: async (userId: string) => {
+        set({ isLoading: true })
+        try {
+          const response = await fetch(`/api/cart/${userId}`)
+          if (response.ok) {
+            const userData = await response.json()
+            if (userData.cart) {
+              set({ items: userData.cart, userId })
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load user cart:', error)
+        } finally {
+          set({ isLoading: false })
+        }
+      },
+      
+      saveUserCart: async (userId: string) => {
+        const state = get()
+        try {
+          await fetch(`/api/cart/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cart: state.items })
+          })
+        } catch (error) {
+          console.error('Failed to save user cart:', error)
+        }
+      },
+      
+      mergeGuestCart: (guestItems: CartItem[]) => {
+        set((state) => {
+          const mergedItems = [...state.items]
+          
+          guestItems.forEach(guestItem => {
+            const existingItem = mergedItems.find(item => item.id === guestItem.id)
+            if (existingItem) {
+              existingItem.quantity += guestItem.quantity
+            } else {
+              mergedItems.push(guestItem)
+            }
+          })
+          
+          return { items: mergedItems }
+        })
+        
+        // Auto-save merged cart
+        const state = get()
+        if (state.userId) {
+          state.saveUserCart(state.userId)
+        }
       }
     }),
     {
       name: 'fourspeed-cart',
-      partialize: (state) => ({ items: state.items }), // Only persist cart items
+      partialize: (state) => ({ 
+        items: state.userId ? [] : state.items // Only persist guest cart items
+      }),
     }
   )
 )

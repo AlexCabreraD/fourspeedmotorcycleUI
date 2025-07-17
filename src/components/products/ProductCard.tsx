@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Star, ShoppingCart, Eye, Heart } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart'
+import { useWishlistStore, WishlistItem } from '@/lib/store/wishlist'
 import { WPSProduct, WPSItem, ImageUtils } from '@/lib/api/wps-client'
 import { useItemImage } from '@/hooks/useItemImages'
 import QuickView from './QuickView'
@@ -16,9 +17,11 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
   const { addItem } = useCartStore()
+  const { toggleItem, isInWishlist } = useWishlistStore()
   
   const { imageUrl, loading: imageLoading, hasImages } = useItemImage(product, 'card')
   const [showQuickView, setShowQuickView] = useState(false)
+  const inWishlist = isInWishlist(product.id.toString())
 
   const formatPrice = (price: string) => {
     const numPrice = parseFloat(price)
@@ -43,13 +46,24 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    // TODO: Implement wishlist functionality
-    console.log('Add to wishlist:', product.id)
+    
+    const wishlistItem: WishlistItem = {
+      id: product.id.toString(),
+      name: product.name,
+      price: product.list_price,
+      image: imageUrl || '',
+      brand: product.brand?.name,
+      sku: product.sku,
+      slug: `/product/${product.id}`,
+      productType: product.product_type
+    }
+    
+    toggleItem(wishlistItem)
   }
 
   if (viewMode === 'list') {
     return (
-      <Link href={`/product/${product.product_id}`} className="block">
+      <Link href={`/product/${product.product_id}?item=${product.id}`} className="block">
         <div className="bg-white border border-steel-200 rounded-lg overflow-hidden hover:shadow-card-hover transition-all duration-300 group cursor-pointer">
           <div className="flex">
           {/* Product Image */}
@@ -148,10 +162,14 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
               <div className="flex items-center space-x-2">
                 <button
                   onClick={handleWishlist}
-                  className="btn btn-sm btn-outline p-2"
-                  title="Add to Wishlist"
+                  className={`btn btn-sm p-2 transition-colors ${
+                    inWishlist 
+                      ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' 
+                      : 'btn-outline hover:bg-red-50 hover:text-red-600 hover:border-red-200'
+                  }`}
+                  title={inWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
                 >
-                  <Heart className="h-4 w-4" />
+                  <Heart className={`h-4 w-4 ${inWishlist ? 'fill-current' : ''}`} />
                 </button>
                 <button
                   onClick={handleQuickView}
@@ -178,7 +196,7 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
 
   // Grid view (default)
   return (
-    <Link href={`/product/${product.product_id}`} className="block">
+    <Link href={`/product/${product.product_id}?item=${product.id}`} className="block">
       <div className="bg-white border border-steel-200 rounded-lg overflow-hidden hover:shadow-card-hover transition-all duration-300 group cursor-pointer">
       {/* Product Image */}
       <div className="relative aspect-product bg-steel-50 overflow-hidden">
@@ -214,10 +232,14 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
             </button>
             <button
               onClick={handleWishlist}
-              className="btn btn-sm bg-white text-steel-900 hover:bg-steel-100 p-2"
-              title="Add to Wishlist"
+              className={`btn btn-sm p-2 transition-colors ${
+                inWishlist 
+                  ? 'bg-red-600 text-white hover:bg-red-700' 
+                  : 'bg-white text-steel-900 hover:bg-red-50 hover:text-red-600'
+              }`}
+              title={inWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
             >
-              <Heart className="h-4 w-4" />
+              <Heart className={`h-4 w-4 ${inWishlist ? 'fill-current' : ''}`} />
             </button>
             <button
               onClick={handleAddToCart}

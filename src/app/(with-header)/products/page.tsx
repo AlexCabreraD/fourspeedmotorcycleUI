@@ -793,7 +793,7 @@ export default function ProductsPage() {
                 <Filter className="h-4 w-4" />
                 Filters
                 {activeFiltersCount > 0 && (
-                  <span className="bg-primary-600 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                  <span className="bg-accent-600 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
                     {activeFiltersCount}
                   </span>
                 )}
@@ -1352,7 +1352,7 @@ export default function ProductsPage() {
             {displayProducts.map((product) => (
               <Link
                 key={product.id}
-                href={`/product/${product.product_id}`}
+                href={`/product/${product.product_id}?item=${product.id}`}
                 className="block"
               >
                 <div
@@ -1526,7 +1526,7 @@ export default function ProductsPage() {
       {showScrollToTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 bg-primary-600 text-white p-3 rounded-full shadow-lg hover:bg-primary-700 transition-all duration-300 transform hover:scale-110 z-50"
+          className="fixed bottom-6 right-6 bg-accent-600 text-white p-3 rounded-full shadow-lg hover:bg-accent-700 transition-all duration-300 transform hover:scale-110 z-50"
           aria-label="Scroll to top"
         >
           <ArrowUp className="h-6 w-6" />

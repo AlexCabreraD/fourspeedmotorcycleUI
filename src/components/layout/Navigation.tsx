@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { Search, ShoppingCart, Menu, X, User } from 'lucide-react'
+import { Search, ShoppingCart, Menu, X, User, LogOut } from 'lucide-react'
 import { useCartStore, selectTotalItems } from '@/lib/store/cart'
+import { useUser, useClerk, SignedIn, SignedOut } from '@clerk/nextjs'
 
 interface CategoryNode {
   id: number
@@ -20,11 +21,14 @@ export default function Navigation() {
   const [showCategories, setShowCategories] = useState(false)
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
   
   const router = useRouter()
   const pathname = usePathname()
   const toggleCart = useCartStore((state) => state.toggleCart)
   const totalItems = useCartStore(selectTotalItems)
+  const { user } = useUser()
+  const { signOut } = useClerk()
   
   // Check if we're on homepage or categories page to enable transparent navbar
   const isHomePage = pathname === '/'
@@ -126,7 +130,7 @@ export default function Navigation() {
                   {searchQuery && (
                     <button
                       type="submit"
-                      className="absolute right-2 top-1.5 bg-primary-600 text-white px-4 py-2 rounded-full text-sm hover:bg-primary-700 transition-colors font-medium"
+                      className="absolute right-2 top-1.5 bg-accent-600 text-white px-4 py-2 rounded-full text-sm hover:bg-accent-700 transition-colors font-medium"
                     >
                       Search
                     </button>
@@ -351,17 +355,75 @@ export default function Navigation() {
               </button>
 
               {/* Account */}
-              <button className={`hidden sm:block p-3 rounded-lg transition-colors ${
-                isHomePage
-                  ? (isScrolled 
-                      ? 'text-steel-600 hover:text-steel-900 hover:bg-steel-50' 
-                      : 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md')
-                  : isCategoriesPage
-                    ? 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md'
-                    : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
-              }`}>
-                <User className="h-5 w-5" />
-              </button>
+              <SignedIn>
+                <div className="relative">
+                  <button 
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className={`hidden sm:flex items-center space-x-2 p-3 rounded-lg transition-colors ${
+                      isHomePage
+                        ? (isScrolled 
+                            ? 'text-steel-600 hover:text-steel-900 hover:bg-steel-50' 
+                            : 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md')
+                        : isCategoriesPage
+                          ? 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md'
+                          : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
+                    }`}
+                  >
+                    <User className="h-5 w-5" />
+                    <span className="text-sm font-medium">{user?.firstName || 'Account'}</span>
+                  </button>
+                  
+                  {showUserMenu && (
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-steel-200 z-50">
+                      <Link
+                        href="/profile"
+                        className="block px-4 py-2 text-sm text-steel-700 hover:bg-steel-50 rounded-t-lg"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        Profile
+                      </Link>
+                      <Link
+                        href="/orders"
+                        className="block px-4 py-2 text-sm text-steel-700 hover:bg-steel-50"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        Orders
+                      </Link>
+                      <Link
+                        href="/wishlist"
+                        className="block px-4 py-2 text-sm text-steel-700 hover:bg-steel-50"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        Wishlist
+                      </Link>
+                      <button
+                        onClick={() => signOut()}
+                        className="w-full text-left px-4 py-2 text-sm text-steel-700 hover:bg-steel-50 rounded-b-lg flex items-center"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </SignedIn>
+              
+              <SignedOut>
+                <Link
+                  href="/sign-in"
+                  className={`hidden sm:block p-3 rounded-lg transition-colors ${
+                    isHomePage
+                      ? (isScrolled 
+                          ? 'text-steel-600 hover:text-steel-900 hover:bg-steel-50' 
+                          : 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md')
+                      : isCategoriesPage
+                        ? 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md'
+                        : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
+                  }`}
+                >
+                  <User className="h-5 w-5" />
+                </Link>
+              </SignedOut>
 
               {/* Cart */}
               <button 
@@ -416,7 +478,7 @@ export default function Navigation() {
                 <Search className="absolute left-4 top-3.5 h-5 w-5 text-steel-400" />
                 <button
                   type="submit"
-                  className="absolute right-2 top-1.5 bg-primary-600 text-white px-4 py-2 rounded-full text-sm hover:bg-primary-700 transition-colors font-medium"
+                  className="absolute right-2 top-1.5 bg-accent-600 text-white px-4 py-2 rounded-full text-sm hover:bg-accent-700 transition-colors font-medium"
                 >
                   Search
                 </button>
@@ -527,21 +589,114 @@ export default function Navigation() {
                     ? 'border-white/20'
                     : 'border-steel-200'
               }`}>
-                <Link
-                  href="/account"
-                  className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${
-                    isHomePage
-                      ? (isScrolled 
-                          ? 'text-steel-700 hover:text-steel-900 hover:bg-steel-50' 
-                          : 'text-white hover:text-primary-300 hover:bg-white/10')
-                      : isCategoriesPage
-                      ? 'text-white hover:text-primary-300 hover:bg-white/10'
-                      : 'text-steel-700 hover:text-steel-900 hover:bg-steel-50'
-                  }`}
-                  onClick={() => setIsOpen(false)}
-                >
-                  My Account
-                </Link>
+                <SignedIn>
+                  <div className="space-y-2">
+                    <div className={`px-4 py-2 text-sm font-medium ${
+                      isHomePage
+                        ? (isScrolled ? 'text-steel-500' : 'text-white/70')
+                        : isCategoriesPage
+                        ? 'text-white/70'
+                        : 'text-steel-500'
+                    }`}>
+                      Hello, {user?.firstName || 'User'}!
+                    </div>
+                    <Link
+                      href="/profile"
+                      className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${
+                        isHomePage
+                          ? (isScrolled 
+                              ? 'text-steel-700 hover:text-steel-900 hover:bg-steel-50' 
+                              : 'text-white hover:text-primary-300 hover:bg-white/10')
+                          : isCategoriesPage
+                          ? 'text-white hover:text-primary-300 hover:bg-white/10'
+                          : 'text-steel-700 hover:text-steel-900 hover:bg-steel-50'
+                      }`}
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Profile
+                    </Link>
+                    <Link
+                      href="/orders"
+                      className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${
+                        isHomePage
+                          ? (isScrolled 
+                              ? 'text-steel-700 hover:text-steel-900 hover:bg-steel-50' 
+                              : 'text-white hover:text-primary-300 hover:bg-white/10')
+                          : isCategoriesPage
+                          ? 'text-white hover:text-primary-300 hover:bg-white/10'
+                          : 'text-steel-700 hover:text-steel-900 hover:bg-steel-50'
+                      }`}
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Orders
+                    </Link>
+                    <Link
+                      href="/wishlist"
+                      className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${
+                        isHomePage
+                          ? (isScrolled 
+                              ? 'text-steel-700 hover:text-steel-900 hover:bg-steel-50' 
+                              : 'text-white hover:text-primary-300 hover:bg-white/10')
+                          : isCategoriesPage
+                          ? 'text-white hover:text-primary-300 hover:bg-white/10'
+                          : 'text-steel-700 hover:text-steel-900 hover:bg-steel-50'
+                      }`}
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Wishlist
+                    </Link>
+                    <button
+                      onClick={() => signOut()}
+                      className={`w-full text-left px-4 py-3 text-base font-medium rounded-xl transition-colors flex items-center ${
+                        isHomePage
+                          ? (isScrolled 
+                              ? 'text-steel-700 hover:text-steel-900 hover:bg-steel-50' 
+                              : 'text-white hover:text-primary-300 hover:bg-white/10')
+                          : isCategoriesPage
+                          ? 'text-white hover:text-primary-300 hover:bg-white/10'
+                          : 'text-steel-700 hover:text-steel-900 hover:bg-steel-50'
+                      }`}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </button>
+                  </div>
+                </SignedIn>
+                
+                <SignedOut>
+                  <div className="space-y-2">
+                    <Link
+                      href="/sign-in"
+                      className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${
+                        isHomePage
+                          ? (isScrolled 
+                              ? 'text-steel-700 hover:text-steel-900 hover:bg-steel-50' 
+                              : 'text-white hover:text-primary-300 hover:bg-white/10')
+                          : isCategoriesPage
+                          ? 'text-white hover:text-primary-300 hover:bg-white/10'
+                          : 'text-steel-700 hover:text-steel-900 hover:bg-steel-50'
+                      }`}
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/sign-up"
+                      className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${
+                        isHomePage
+                          ? (isScrolled 
+                              ? 'text-primary-600 hover:text-primary-700 hover:bg-primary-50' 
+                              : 'text-primary-300 hover:text-white hover:bg-white/10')
+                          : isCategoriesPage
+                          ? 'text-primary-300 hover:text-white hover:bg-white/10'
+                          : 'text-primary-600 hover:text-primary-700 hover:bg-primary-50'
+                      }`}
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Sign Up
+                    </Link>
+                  </div>
+                </SignedOut>
               </div>
             </div>
           </div>

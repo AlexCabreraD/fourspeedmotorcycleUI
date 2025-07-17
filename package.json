@@ -11,6 +11,7 @@
     "wps:endpoint": "node scripts/quick-endpoint-test.js"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.25.3",
     "@react-spring/web": "^10.0.1",
     "@stripe/react-stripe-js": "^3.7.0",
     "@stripe/stripe-js": "^7.4.0",

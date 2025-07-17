@@ -280,7 +280,7 @@ function PriceRangeFilter({ filter, value, onChange, priceRange, isExpanded, onT
               </div>
               <button
                 onClick={handleCustomRange}
-                className="w-full px-3 py-1 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors"
+                className="w-full px-3 py-1 text-sm bg-accent-600 text-white rounded hover:bg-accent-700 transition-colors"
               >
                 Apply Range
               </button>

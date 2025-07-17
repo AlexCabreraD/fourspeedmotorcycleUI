@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { X, ShoppingCart, Heart, Star, Package, Truck, Shield, ChevronLeft, ChevronRight } from 'lucide-react'
 import { WPSItem, ImageUtils, createWPSClient } from '@/lib/api/wps-client'
 import { useCartStore } from '@/lib/store/cart'
+import { useWishlistStore, WishlistItem } from '@/lib/store/wishlist'
 import { useItemImage } from '@/hooks/useItemImages'
 import ImagePlaceholder from '@/components/ui/ImagePlaceholder'
 
@@ -21,7 +22,10 @@ export default function QuickView({ isOpen, onClose, productId }: QuickViewProps
   const [quantity, setQuantity] = useState(1)
   
   const { addItem } = useCartStore()
+  const { toggleItem, isInWishlist } = useWishlistStore()
   const { imageUrl, loading: imageLoading, hasImages } = useItemImage(product, 'detail')
+  
+  const inWishlist = product ? isInWishlist(product.id.toString()) : false
 
   // Fetch product data when modal opens
   useEffect(() => {
@@ -87,6 +91,23 @@ export default function QuickView({ isOpen, onClose, productId }: QuickViewProps
       addItem(product, quantity)
       onClose()
     }
+  }
+
+  const handleWishlist = () => {
+    if (!product) return
+    
+    const wishlistItem: WishlistItem = {
+      id: product.id.toString(),
+      name: product.name,
+      price: product.list_price,
+      image: imageUrl || '',
+      brand: product.brand?.name,
+      sku: product.sku,
+      slug: `/product/${product.product_id}?item=${product.id}`,
+      productType: product.product_type
+    }
+    
+    toggleItem(wishlistItem)
   }
 
   const getImageUrls = () => {
@@ -315,8 +336,16 @@ export default function QuickView({ isOpen, onClose, productId }: QuickViewProps
                       <ShoppingCart className="h-4 w-4 mr-2" />
                       Add to Cart
                     </button>
-                    <button className="btn btn-outline p-3">
-                      <Heart className="h-4 w-4" />
+                    <button 
+                      onClick={handleWishlist}
+                      className={`btn p-3 transition-colors ${
+                        inWishlist 
+                          ? 'bg-red-600 text-white hover:bg-red-700' 
+                          : 'btn-outline hover:bg-red-50 hover:text-red-600 hover:border-red-200'
+                      }`}
+                      title={inWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
+                    >
+                      <Heart className={`h-4 w-4 ${inWishlist ? 'fill-current' : ''}`} />
                     </button>
                   </div>
                 </div>
