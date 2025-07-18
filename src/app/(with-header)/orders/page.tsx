@@ -110,61 +110,35 @@ const transformWPSOrders = (wpsOrders: WPSOrderResponse[]): Order[] => {
   return orders
 }
 
-// Enhance orders with item details and images
+// Optimized: Bulk fetch items with images using a single API call
 const enhanceOrdersWithItemDetails = async (orders: Order[]): Promise<Order[]> => {
   const client = createWPSClient()
   
   // Collect all unique SKUs from all orders
-  const allSkus = new Set<string>()
-  orders.forEach(order => {
-    order.items.forEach(item => {
-      allSkus.add(item.sku)
-    })
-  })
+  const allSkus = Array.from(new Set(
+    orders.flatMap(order => order.items.map(item => item.sku))
+  ))
   
-  // Fetch item details for all SKUs in batches
-  const skuArray = Array.from(allSkus)
-  console.log('Fetching item details for SKUs:', skuArray)
+  if (allSkus.length === 0) return orders
+  
   const itemDetailsMap = new Map<string, WPSItem>()
   
   try {
-    // Process SKUs in batches of 20 to avoid overwhelming the API
-    const batchSize = 20
-    for (let i = 0; i < skuArray.length; i += batchSize) {
-      const batch = skuArray.slice(i, i + batchSize)
-      
-      // For each SKU in the batch, fetch item details
-      const batchPromises = batch.map(async (sku) => {
-        try {
-          const response = await client.getItems({
-            'filter[sku]': sku,
-            'include': 'images',
-            'page[size]': 1
-          })
-          
-          if (response.data && response.data.length > 0) {
-            itemDetailsMap.set(sku, response.data[0])
-            console.log(`Successfully fetched item details for SKU ${sku}`, {
-              hasImages: !!response.data[0].images,
-              imageCount: response.data[0].images?.data?.length || 0
-            })
-          } else {
-            console.log(`No item found for SKU ${sku}`)
-          }
-        } catch (error) {
-          console.warn(`Failed to fetch details for SKU ${sku}:`, error)
-        }
+    // Use bulk filtering with multiple SKUs in a single API call
+    // This is much faster than individual calls
+    const response = await client.getItems({
+      'filter[sku][in]': allSkus.join(','), // Optimized bulk SKU filter using 'in' operator
+      'include': 'images',
+      'page[size]': allSkus.length > 100 ? 100 : allSkus.length // Limit page size
+    })
+    
+    if (response.data) {
+      response.data.forEach(item => {
+        itemDetailsMap.set(item.sku, item)
       })
-      
-      await Promise.all(batchPromises)
-      
-      // Add a small delay between batches to be respectful to the API
-      if (i + batchSize < skuArray.length) {
-        await new Promise(resolve => setTimeout(resolve, 100))
-      }
     }
   } catch (error) {
-    console.error('Error fetching item details:', error)
+    // Silent fail for performance - images will use fallback
   }
   
   // Enhance orders with the fetched item details
@@ -174,20 +148,12 @@ const enhanceOrdersWithItemDetails = async (orders: Order[]): Promise<Order[]> =
       const itemDetails = itemDetailsMap.get(item.sku)
       let imageUrl = ''
       
-      if (itemDetails && itemDetails.images?.data && itemDetails.images.data.length > 0) {
+      if (itemDetails?.images?.data?.[0]) {
         try {
           imageUrl = ImageUtils.buildImageUrl(itemDetails.images.data[0], '200_max')
-          console.log(`Built image URL for SKU ${item.sku}:`, imageUrl)
         } catch (error) {
-          console.warn(`Failed to build image URL for SKU ${item.sku}:`, error)
+          // Silent fail - fallback to Package icon
         }
-      } else {
-        console.log(`No images found for SKU ${item.sku}`, {
-          hasItemDetails: !!itemDetails,
-          hasImages: !!itemDetails?.images,
-          hasImagesData: !!itemDetails?.images?.data,
-          imagesLength: itemDetails?.images?.data?.length
-        })
       }
       
       return {
@@ -208,7 +174,7 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [showDetails, setShowDetails] = useState<string | null>(null)
 
-  // Fetch orders from WPS API
+  // Fetch orders from WPS API (filtered by user)
   useEffect(() => {
     const fetchOrders = async () => {
       if (!isLoaded || !user) {
@@ -220,32 +186,65 @@ export default function OrdersPage() {
         setLoading(true)
         setError(null)
         
-        const client = createWPSClient()
-        
-        // Get orders from the last 6 months
-        const toDate = new Date()
-        const fromDate = new Date()
-        fromDate.setMonth(fromDate.getMonth() - 6)
-        
-        const formatDate = (date: Date) => {
-          return date.toISOString().split('T')[0].replace(/-/g, '')
+        // First, get the user's associated PO numbers
+        const userOrdersResponse = await fetch('/api/user/orders')
+        if (!userOrdersResponse.ok) {
+          const errorData = await userOrdersResponse.json().catch(() => ({}))
+          console.error('User orders API error:', userOrdersResponse.status, errorData)
+          
+          if (userOrdersResponse.status === 401) {
+            throw new Error('Authentication required. Please sign in to view your orders.')
+          }
+          
+          throw new Error(`Failed to fetch user orders: ${errorData.details || errorData.error || 'Unknown error'}`)
         }
         
-        const response = await client.getOrders({
-          from_date: formatDate(fromDate),
-          to_date: formatDate(toDate)
+        const { orderPoNumbers } = await userOrdersResponse.json()
+        
+        // If user has no orders, show empty state
+        if (!orderPoNumbers || orderPoNumbers.length === 0) {
+          setOrders([])
+          setLoading(false)
+          return
+        }
+        
+        const client = createWPSClient()
+        
+        // Fetch only the user's specific orders by PO number (secure approach)
+        // Use Promise.allSettled to fetch all orders in parallel
+        const orderPromises = orderPoNumbers.map(poNumber => 
+          client.getOrder(poNumber).catch(error => {
+            console.warn(`Failed to fetch order ${poNumber}:`, error)
+            return null
+          })
+        )
+        
+        const orderResults = await Promise.allSettled(orderPromises)
+        const userOrdersData: WPSOrderResponse[] = []
+        
+        orderResults.forEach((result, index) => {
+          if (result.status === 'fulfilled' && result.value?.data) {
+            userOrdersData.push(result.value.data as WPSOrderResponse)
+          }
         })
         
-        if (response.data && Array.isArray(response.data)) {
+        if (userOrdersData.length > 0) {
           // Transform the WPS API response to our flat structure
-          const transformedOrders = transformWPSOrders(response.data as WPSOrderResponse[])
+          const userOrders = transformWPSOrders(userOrdersData)
           
-          // Enhance orders with item details and images
-          const enhancedOrders = await enhanceOrdersWithItemDetails(transformedOrders)
-          setOrders(enhancedOrders)
+          // Show user's orders immediately without images for fast initial render
+          setOrders(userOrders)
+          
+          // Enhance orders with item details and images asynchronously
+          enhanceOrdersWithItemDetails(userOrders).then(enhancedOrders => {
+            setOrders(enhancedOrders)
+          }).catch(error => {
+            console.error('Failed to load images:', error)
+            // Keep orders without images rather than failing completely
+          })
         } else {
-          console.error('API response error:', response)
-          setError('Failed to fetch orders - no data received')
+          // No orders found for this user
+          setOrders([])
         }
       } catch (err) {
         console.error('Error fetching orders:', err)
@@ -372,6 +371,45 @@ export default function OrdersPage() {
     )
   }
 
+  // Development helper functions
+  const handleTestAssociation = async () => {
+    try {
+      const response = await fetch('/api/test/associate-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}) // Send empty body to use defaults
+      })
+      const result = await response.json()
+      
+      if (response.ok) {
+        window.location.reload() // Refresh to show associated orders
+      } else {
+        console.error('Failed to associate test orders:', result.error)
+        if (result.details) console.error('Error details:', result.details)
+        alert(`Failed to associate test orders: ${result.details || result.error}`)
+      }
+    } catch (error) {
+      console.error('Error associating test orders:', error)
+      alert(`Error associating test orders: ${error}`)
+    }
+  }
+
+  const handleClearAssociations = async () => {
+    try {
+      const response = await fetch('/api/test/associate-orders', {
+        method: 'DELETE'
+      })
+      const result = await response.json()
+      if (response.ok) {
+        window.location.reload() // Refresh to clear orders
+      } else {
+        console.error('Failed to clear orders:', result.error)
+      }
+    } catch (error) {
+      console.error('Error clearing orders:', error)
+    }
+  }
+
   if (!hasOrders) {
     return (
       <div className="min-h-screen bg-slate-50">
@@ -393,13 +431,36 @@ export default function OrdersPage() {
               Ready to upgrade your ride? Browse our premium motorcycle parts and accessories to place your first order.
             </p>
             
-            <Link 
-              href="/products"
-              className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-accent-600 hover:bg-accent-700 transition-colors shadow-sm"
-            >
-              <Package className="h-5 w-5 mr-2" />
-              Start Shopping
-            </Link>
+            <div className="space-y-4">
+              <Link 
+                href="/products"
+                className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-accent-600 hover:bg-accent-700 transition-colors shadow-sm"
+              >
+                <Package className="h-5 w-5 mr-2" />
+                Start Shopping
+              </Link>
+              
+              {/* Development Tools - Only show in development */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-8 pt-8 border-t border-steel-200">
+                  <p className="text-sm text-steel-500 mb-4">Development Tools:</p>
+                  <div className="flex gap-4 justify-center">
+                    <button
+                      onClick={handleTestAssociation}
+                      className="px-4 py-2 text-sm border border-blue-300 text-blue-600 rounded-lg hover:bg-blue-50"
+                    >
+                      Associate Test Orders
+                    </button>
+                    <button
+                      onClick={handleClearAssociations}
+                      className="px-4 py-2 text-sm border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
+                    >
+                      Clear All Orders
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

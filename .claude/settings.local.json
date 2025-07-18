@@ -26,7 +26,9 @@
       "Bash(ss:*)",
       "Bash(mv:*)",
       "Bash(cp:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(npx eslint:*)",
+      "WebFetch(domain:clerk.com)"
     ],
     "deny": []
   }

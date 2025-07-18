@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
-import { Search, ShoppingCart, Menu, X, User, LogOut } from 'lucide-react'
+import { Search, ShoppingCart, Menu, X, User, LogOut, Heart } from 'lucide-react'
 import { useCartStore, selectTotalItems } from '@/lib/store/cart'
+import { useWishlistStore } from '@/lib/store/wishlist'
 import { useUser, useClerk, SignedIn, SignedOut } from '@clerk/nextjs'
 
 interface CategoryNode {
@@ -27,6 +28,7 @@ export default function Navigation() {
   const pathname = usePathname()
   const toggleCart = useCartStore((state) => state.toggleCart)
   const totalItems = useCartStore(selectTotalItems)
+  const wishlistItems = useWishlistStore((state) => state.items)
   const { user } = useUser()
   const { signOut } = useClerk()
   
@@ -389,13 +391,6 @@ export default function Navigation() {
                       >
                         Orders
                       </Link>
-                      <Link
-                        href="/wishlist"
-                        className="block px-4 py-2 text-sm text-steel-700 hover:bg-steel-50"
-                        onClick={() => setShowUserMenu(false)}
-                      >
-                        Wishlist
-                      </Link>
                       <button
                         onClick={() => signOut()}
                         className="w-full text-left px-4 py-2 text-sm text-steel-700 hover:bg-steel-50 rounded-b-lg flex items-center"
@@ -424,6 +419,27 @@ export default function Navigation() {
                   <User className="h-5 w-5" />
                 </Link>
               </SignedOut>
+
+              {/* Wishlist */}
+              <Link
+                href="/wishlist"
+                className={`relative p-3 rounded-lg transition-colors ${
+                  isHomePage
+                    ? (isScrolled 
+                        ? 'text-steel-600 hover:text-steel-900 hover:bg-steel-50' 
+                        : 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md')
+                    : isCategoriesPage
+                      ? 'text-white hover:text-primary-300 hover:bg-white/10 drop-shadow-md'
+                      : 'text-steel-600 hover:text-steel-900 hover:bg-steel-50'
+                }`}
+              >
+                <Heart className="h-5 w-5" />
+                {wishlistItems.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-gradient-to-r from-red-500 to-pink-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium shadow-lg">
+                    {wishlistItems.length}
+                  </span>
+                )}
+              </Link>
 
               {/* Cart */}
               <button 
@@ -629,21 +645,6 @@ export default function Navigation() {
                       onClick={() => setIsOpen(false)}
                     >
                       Orders
-                    </Link>
-                    <Link
-                      href="/wishlist"
-                      className={`block px-4 py-3 text-base font-medium rounded-xl transition-colors ${
-                        isHomePage
-                          ? (isScrolled 
-                              ? 'text-steel-700 hover:text-steel-900 hover:bg-steel-50' 
-                              : 'text-white hover:text-primary-300 hover:bg-white/10')
-                          : isCategoriesPage
-                          ? 'text-white hover:text-primary-300 hover:bg-white/10'
-                          : 'text-steel-700 hover:text-steel-900 hover:bg-steel-50'
-                      }`}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      Wishlist
                     </Link>
                     <button
                       onClick={() => signOut()}

@@ -104,35 +104,84 @@ export default function CheckoutForm({ onSuccess, onError }: CheckoutFormProps) 
   }
 
   // Handle successful payment
-  const handlePaymentSuccess = (paymentIntentId: string) => {
-    // Store order info for confirmation page
-    localStorage.setItem('lastOrder', JSON.stringify({
-      paymentIntentId,
-      customerInfo: {
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        phone: formData.phone,
-        address: {
-          line1: formData.address1,
-          line2: formData.address2,
+  const handlePaymentSuccess = async (paymentIntentId: string) => {
+    try {
+      // Prepare order data for WPS submission
+      const orderData = {
+        items: items.map(item => ({
+          id: item.id,
+          sku: item.sku,
+          quantity: item.quantity,
+          price: parseFloat(item.list_price)
+        })),
+        customerInfo: {
+          email: formData.email,
+          name: `${formData.firstName} ${formData.lastName}`,
+          phone: formData.phone
+        },
+        shippingInfo: {
+          address: formData.address1 + (formData.address2 ? ` ${formData.address2}` : ''),
           city: formData.city,
           state: formData.state,
-          zip: formData.zip,
+          zipCode: formData.zip,
+          country: 'US'
         },
-      },
-      items: items.map(item => ({
-        id: item.id,
-        name: item.name,
-        sku: item.sku,
-        quantity: item.quantity,
-        price: item.list_price
-      })),
-      totals: { subtotal, shipping, tax, total },
-      timestamp: new Date().toISOString(),
-    }))
+        paymentIntentId,
+        totals: { subtotal, shipping, tax, total },
+        notes: formData.notes
+      }
 
-    onSuccess?.(paymentIntentId)
-    router.push(`/order-confirmation?payment_intent=${paymentIntentId}`)
+      // Submit order to WPS and associate with user
+      const orderResponse = await fetch('/api/orders/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      })
+
+      const orderResult = await orderResponse.json()
+
+      if (!orderResponse.ok) {
+        console.error('Order submission failed:', orderResult.error)
+        // Still proceed to confirmation but show warning
+        onError?.(`Payment successful but order processing failed: ${orderResult.error}`)
+      }
+
+      // Store order info for confirmation page
+      localStorage.setItem('lastOrder', JSON.stringify({
+        paymentIntentId,
+        poNumber: orderResult.po_number || null,
+        orderNumber: orderResult.order_number || null,
+        customerInfo: {
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          phone: formData.phone,
+          address: {
+            line1: formData.address1,
+            line2: formData.address2,
+            city: formData.city,
+            state: formData.state,
+            zip: formData.zip,
+          },
+        },
+        items: items.map(item => ({
+          id: item.id,
+          name: item.name,
+          sku: item.sku,
+          quantity: item.quantity,
+          price: item.list_price
+        })),
+        totals: { subtotal, shipping, tax, total },
+        timestamp: new Date().toISOString(),
+      }))
+
+      onSuccess?.(paymentIntentId)
+      router.push(`/order-confirmation?payment_intent=${paymentIntentId}`)
+    } catch (error) {
+      console.error('Error processing order:', error)
+      onError?.('Payment successful but order processing failed. Please contact support.')
+    }
   }
 
   // Handle payment error

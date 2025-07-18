@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useUser, useClerk } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
-import { User, Package, Heart, Settings, CreditCard, MapPin, Phone, Mail, Calendar, LogOut, Edit3, Plus } from 'lucide-react'
+import { User, Package, Heart, Settings, CreditCard, MapPin, Phone, Mail, Calendar, LogOut, Edit3, Plus, Key } from 'lucide-react'
 
 export default function ProfilePage() {
   const { user } = useUser()
@@ -23,6 +23,15 @@ export default function ProfilePage() {
     smsNotifications: false,
     marketingCommunications: true
   })
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
 
   // Initialize form data when user loads
   useEffect(() => {
@@ -31,6 +40,14 @@ export default function ProfilePage() {
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         phoneNumber: user.primaryPhoneNumber?.phoneNumber || ''
+      })
+      
+      // Load preferences from Clerk metadata
+      const metadata = user.unsafeMetadata as any
+      setPreferences({
+        emailNotifications: metadata?.preferences?.emailNotifications ?? true,
+        smsNotifications: metadata?.preferences?.smsNotifications ?? false,
+        marketingCommunications: metadata?.preferences?.marketingCommunications ?? true
       })
     }
   }, [user])
@@ -111,13 +128,92 @@ export default function ProfilePage() {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handlePreferenceChange = (key: string) => {
-    setPreferences(prev => ({
-      ...prev,
-      [key]: !prev[key as keyof typeof prev]
-    }))
-    setShowSuccessMessage('Preferences updated!')
-    setTimeout(() => setShowSuccessMessage(''), 2000)
+  const handlePreferenceChange = async (key: string) => {
+    if (!user) return
+    
+    setIsLoadingPreferences(true)
+    try {
+      const newPreferences = {
+        ...preferences,
+        [key]: !preferences[key as keyof typeof preferences]
+      }
+      
+      // Update Clerk metadata using unsafeMetadata
+      await user.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          preferences: newPreferences
+        }
+      })
+      
+      setPreferences(newPreferences)
+      setShowSuccessMessage('Preferences updated successfully!')
+      setTimeout(() => setShowSuccessMessage(''), 2000)
+    } catch (error) {
+      console.error('Failed to update preferences:', error)
+      setShowSuccessMessage('Failed to update preferences. Please try again.')
+      setTimeout(() => setShowSuccessMessage(''), 3000)
+    } finally {
+      setIsLoadingPreferences(false)
+    }
+  }
+
+  const handlePasswordChange = async () => {
+    if (!user) return
+    
+    setPasswordError('')
+    
+    // Validate form
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordError('All fields are required')
+      return
+    }
+    
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New passwords do not match')
+      return
+    }
+    
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters long')
+      return
+    }
+    
+    setIsChangingPassword(true)
+    try {
+      // Use Clerk's updatePassword method with current password verification
+      await user.updatePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+        signOutOfOtherSessions: false
+      })
+      
+      // If successful, close modal and show success
+      setShowPasswordModal(false)
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      })
+      setShowSuccessMessage('Password changed successfully!')
+      setTimeout(() => setShowSuccessMessage(''), 3000)
+    } catch (error: any) {
+      console.error('Password change error:', error)
+      setPasswordError(error.errors?.[0]?.message || 'Failed to change password. Please check your current password and try again.')
+    } finally {
+      setIsChangingPassword(false)
+    }
+  }
+
+
+  const handlePasswordModalClose = () => {
+    setShowPasswordModal(false)
+    setPasswordForm({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    })
+    setPasswordError('')
   }
 
   const navigationItems = [
@@ -315,8 +411,9 @@ export default function ProfilePage() {
                       className="sr-only peer" 
                       checked={preferences.emailNotifications}
                       onChange={() => handlePreferenceChange('emailNotifications')}
+                      disabled={isLoadingPreferences}
                     />
-                    <div className="w-11 h-6 bg-steel-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-steel-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-600"></div>
+                    <div className={`w-11 h-6 bg-steel-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-steel-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-600 ${isLoadingPreferences ? 'opacity-50 cursor-not-allowed' : ''}`}></div>
                   </label>
                 </div>
                 
@@ -331,8 +428,9 @@ export default function ProfilePage() {
                       className="sr-only peer"
                       checked={preferences.smsNotifications}
                       onChange={() => handlePreferenceChange('smsNotifications')}
+                      disabled={isLoadingPreferences}
                     />
-                    <div className="w-11 h-6 bg-steel-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-steel-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-600"></div>
+                    <div className={`w-11 h-6 bg-steel-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-steel-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-600 ${isLoadingPreferences ? 'opacity-50 cursor-not-allowed' : ''}`}></div>
                   </label>
                 </div>
                 
@@ -347,8 +445,9 @@ export default function ProfilePage() {
                       className="sr-only peer"
                       checked={preferences.marketingCommunications}
                       onChange={() => handlePreferenceChange('marketingCommunications')}
+                      disabled={isLoadingPreferences}
                     />
-                    <div className="w-11 h-6 bg-steel-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-steel-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-600"></div>
+                    <div className={`w-11 h-6 bg-steel-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-steel-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-600 ${isLoadingPreferences ? 'opacity-50 cursor-not-allowed' : ''}`}></div>
                   </label>
                 </div>
               </div>
@@ -359,30 +458,21 @@ export default function ProfilePage() {
               
               <div className="space-y-4">
                 <button 
-                  onClick={() => window.open('https://clerk.com/change-password', '_blank')}
+                  onClick={() => setShowPasswordModal(true)}
                   className="w-full text-left p-4 border border-steel-200 rounded-lg hover:bg-steel-50 hover:border-accent-300 transition-colors group"
                 >
                   <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium text-steel-900">Change Password</h3>
-                      <p className="text-sm text-steel-600">Update your account password</p>
+                    <div className="flex items-center">
+                      <Key className="h-5 w-5 text-steel-400 mr-3" />
+                      <div>
+                        <h3 className="font-medium text-steel-900">Change Password</h3>
+                        <p className="text-sm text-steel-600">Update your account password securely</p>
+                      </div>
                     </div>
                     <div className="text-accent-600 group-hover:translate-x-1 transition-transform">→</div>
                   </div>
                 </button>
                 
-                <button 
-                  onClick={() => window.open('https://clerk.com/security', '_blank')}
-                  className="w-full text-left p-4 border border-steel-200 rounded-lg hover:bg-steel-50 hover:border-accent-300 transition-colors group"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium text-steel-900">Two-Factor Authentication</h3>
-                      <p className="text-sm text-steel-600">Add an extra layer of security to your account</p>
-                    </div>
-                    <div className="text-accent-600 group-hover:translate-x-1 transition-transform">→</div>
-                  </div>
-                </button>
                 
                 <button 
                   onClick={() => signOut()}
@@ -477,6 +567,102 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+      
+      {/* Password Change Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-steel-900">Change Password</h3>
+              <button
+                onClick={handlePasswordModalClose}
+                className="text-steel-400 hover:text-steel-600 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {passwordError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm">
+                  {passwordError}
+                </div>
+              )}
+              
+              <div>
+                <label className="block text-sm font-medium text-steel-700 mb-2">
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                  className="w-full p-3 border border-steel-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+                  placeholder="Enter your current password"
+                  disabled={isChangingPassword}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-steel-700 mb-2">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                  className="w-full p-3 border border-steel-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+                  placeholder="Enter your new password"
+                  disabled={isChangingPassword}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-steel-700 mb-2">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  className="w-full p-3 border border-steel-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+                  placeholder="Confirm your new password"
+                  disabled={isChangingPassword}
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={handlePasswordChange}
+                  disabled={isChangingPassword}
+                  className="flex-1 bg-accent-600 text-white px-4 py-2 rounded-lg hover:bg-accent-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {isChangingPassword ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Changing...
+                    </>
+                  ) : (
+                    'Change Password'
+                  )}
+                </button>
+                <button
+                  onClick={handlePasswordModalClose}
+                  disabled={isChangingPassword}
+                  className="flex-1 bg-steel-100 text-steel-600 px-4 py-2 rounded-lg hover:bg-steel-200 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
