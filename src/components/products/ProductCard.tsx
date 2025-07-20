@@ -2,12 +2,11 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Star, ShoppingCart, Eye, Heart } from 'lucide-react'
+import { Star, ShoppingCart, Heart } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart'
 import { useWishlistStore, WishlistItem } from '@/lib/store/wishlist'
 import { WPSProduct, WPSItem, ImageUtils } from '@/lib/api/wps-client'
 import { useItemImage } from '@/hooks/useItemImages'
-import QuickView from './QuickView'
 import ImagePlaceholder from '@/components/ui/ImagePlaceholder'
 
 interface ProductCardProps {
@@ -20,7 +19,6 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
   const { toggleItem, isInWishlist } = useWishlistStore()
   
   const { imageUrl, loading: imageLoading, hasImages } = useItemImage(product, 'card')
-  const [showQuickView, setShowQuickView] = useState(false)
   const inWishlist = isInWishlist(product.id.toString())
 
   const formatPrice = (price: string) => {
@@ -37,11 +35,6 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
     addItem(product, 1)
   }
 
-  const handleQuickView = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setShowQuickView(true)
-  }
 
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -172,13 +165,6 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
                   <Heart className={`h-4 w-4 ${inWishlist ? 'fill-current' : ''}`} />
                 </button>
                 <button
-                  onClick={handleQuickView}
-                  className="btn btn-sm btn-outline p-2"
-                  title="Quick View"
-                >
-                  <Eye className="h-4 w-4" />
-                </button>
-                <button
                   onClick={handleAddToCart}
                   className="btn btn-sm btn-primary flex items-center"
                 >
@@ -223,13 +209,6 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
         {/* Overlay actions */}
         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex space-x-2">
-            <button
-              onClick={handleQuickView}
-              className="btn btn-sm bg-white text-steel-900 hover:bg-steel-100 p-2"
-              title="Quick View"
-            >
-              <Eye className="h-4 w-4" />
-            </button>
             <button
               onClick={handleWishlist}
               className={`btn btn-sm p-2 transition-colors ${
@@ -328,12 +307,6 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
         </button>
       </div>
 
-        {/* Quick View Modal */}
-        <QuickView 
-          isOpen={showQuickView}
-          onClose={() => setShowQuickView(false)}
-          productId={product.product_id}
-        />
       </div>
     </Link>
   )

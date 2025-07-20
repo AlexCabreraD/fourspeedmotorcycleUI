@@ -69,6 +69,16 @@ export default function CartSidebar() {
     setItemToRemove(null)
   }
 
+  const handleMinusClick = (item: any) => {
+    if (item.quantity > 1) {
+      updateQuantity(item.id, item.quantity - 1)
+    } else {
+      // Show confirmation modal when trying to reduce quantity to 0
+      setItemToRemove(item)
+      setShowConfirmModal(true)
+    }
+  }
+
   if (!isOpen) return null
 
   return (
@@ -146,17 +156,8 @@ export default function CartSidebar() {
                       {/* Quantity Controls */}
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => {
-                            if (item.quantity > 1) {
-                              updateQuantity(item.id, item.quantity - 1)
-                            }
-                          }}
-                          disabled={item.quantity <= 1}
-                          className={`w-6 h-6 flex items-center justify-center bg-white border border-steel-300 rounded transition-colors ${
-                            item.quantity <= 1 
-                              ? 'text-steel-300' 
-                              : 'text-steel-600 hover:bg-steel-50'
-                          }`}
+                          onClick={() => handleMinusClick(item)}
+                          className="w-6 h-6 flex items-center justify-center bg-white border border-steel-300 rounded transition-colors text-steel-600 hover:bg-steel-50"
                         >
                           <Minus className="h-3 w-3" />
                         </button>

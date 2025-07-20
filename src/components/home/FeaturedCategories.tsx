@@ -16,21 +16,20 @@ export default function FeaturedCategories() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
+        // Use fallback categories immediately for instant load
+        setCategories(fallbackCategories)
+        setLoading(false)
+        
+        // Optionally fetch fresh data in background for future updates
         const response = await fetch('/api/custom-categories?type=featured')
         const data = await response.json()
         
         if (data.success && data.data && data.data.length > 0) {
-          setCategories(data.data) // Show featured categories
-        } else {
-          // Use fallback categories if API doesn't return data
-          setCategories(fallbackCategories)
+          setCategories(data.data) // Update if API returns better data
         }
       } catch (error) {
         console.error('Failed to fetch categories:', error)
-        // Use fallback categories on error
-        setCategories(fallbackCategories)
-      } finally {
-        setLoading(false)
+        // Already using fallback categories
       }
     }
 

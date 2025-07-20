@@ -1,10 +1,26 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, Shield, Truck, Phone, Star, ChevronDown } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 import HeroSection from '@/components/home/HeroSection'
-import FeaturedCategories from '@/components/home/FeaturedCategories'
-import FeaturedProducts from '@/components/home/FeaturedProducts'
-import TrustBadges from '@/components/home/TrustBadges'
+import dynamic from 'next/dynamic'
+import type { Metadata } from 'next'
+
+// Lazy load below-the-fold components
+const FeaturedCategories = dynamic(() => import('@/components/home/FeaturedCategories'), {
+  loading: () => <div className="h-96 bg-white animate-pulse" />
+})
+const FeaturedProducts = dynamic(() => import('@/components/home/FeaturedProducts'), {
+  loading: () => <div className="h-96 bg-steel-50 animate-pulse" />
+})
+const TrustBadges = dynamic(() => import('@/components/home/TrustBadges'), {
+  loading: () => <div className="h-24 bg-steel-900 animate-pulse" />
+})
+
+// Metadata for the home page
+export const metadata: Metadata = {
+  title: 'Four Speed Motorcycle - Premium Parts & Accessories',
+  description: 'Discover high-quality motorcycle parts from leading brands. Performance parts, accessories, and expert support.',
+}
 
 export default function Home() {
   return (
@@ -28,6 +44,9 @@ export default function Home() {
             fill
             className="object-cover"
             sizes="50vw"
+            priority={false}
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
           />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-black/30"></div>
         </div>
@@ -86,6 +105,9 @@ export default function Home() {
             fill
             className="object-cover opacity-40"
             sizes="100vw"
+            priority={false}
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
           />
         </div>
         
@@ -142,6 +164,9 @@ export default function Home() {
             fill
             className="object-cover"
             sizes="100vw"
+            priority={false}
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
           />
         </div>
         

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import { heroConfig } from '@/config/hero'
 
@@ -12,6 +13,25 @@ export default function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [isAutoPlaying, setIsAutoPlaying] = useState(heroConfig.autoPlay)
   const [scrollY, setScrollY] = useState(0)
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set())
+  const [isTransitioning, setIsTransitioning] = useState(false)
+
+  // Preload all hero images on component mount
+  useEffect(() => {
+    const preloadImages = () => {
+      heroSlides.forEach((slide, index) => {
+        if (slide.image) {
+          const img = new window.Image()
+          img.onload = () => {
+            setLoadedImages(prev => new Set(prev).add(index))
+          }
+          img.src = slide.image
+        }
+      })
+    }
+    
+    preloadImages()
+  }, [])
 
   // Auto-advance slides
   useEffect(() => {
@@ -24,10 +44,18 @@ export default function HeroSection() {
     return () => clearInterval(timer)
   }, [isAutoPlaying])
 
-  // Parallax scroll effect
+  // Optimized parallax scroll effect with throttling
   useEffect(() => {
+    let ticking = false
+    
     const handleScroll = () => {
-      setScrollY(window.scrollY)
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrollY(window.scrollY)
+          ticking = false
+        })
+        ticking = true
+      }
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
@@ -35,18 +63,26 @@ export default function HeroSection() {
   }, [])
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % heroSlides.length)
-    setIsAutoPlaying(false)
+    const nextIndex = (currentSlide + 1) % heroSlides.length
+    if (loadedImages.has(nextIndex)) {
+      setCurrentSlide(nextIndex)
+      setIsAutoPlaying(false)
+    }
   }
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length)
-    setIsAutoPlaying(false)
+    const prevIndex = (currentSlide - 1 + heroSlides.length) % heroSlides.length
+    if (loadedImages.has(prevIndex)) {
+      setCurrentSlide(prevIndex)
+      setIsAutoPlaying(false)
+    }
   }
 
   const goToSlide = (index: number) => {
-    setCurrentSlide(index)
-    setIsAutoPlaying(false)
+    if (loadedImages.has(index)) {
+      setCurrentSlide(index)
+      setIsAutoPlaying(false)
+    }
   }
 
   const currentSlideData = heroSlides[currentSlide]
@@ -56,27 +92,42 @@ export default function HeroSection() {
 
   return (
     <section className="relative h-screen overflow-hidden">
-      {/* Background Image with Parallax */}
-      {currentSlideData.image && (
-        <div className="absolute inset-0 overflow-hidden">
-          <img
-            src={currentSlideData.image}
-            alt={currentSlideData.title}
-            className="w-full h-[120%] object-cover object-right"
-            style={{ 
-              objectPosition: 'right center',
-              transform: `translate3d(0, ${parallaxOffset}px, 0)`,
-              willChange: 'transform'
-            }}
-          />
-        </div>
-      )}
+      {/* Background Images with Crossfade Transition */}
+      <div className="absolute inset-0 overflow-hidden">
+        {heroSlides.map((slide, index) => (
+          slide.image && (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                index === currentSlide && loadedImages.has(index)
+                  ? 'opacity-100' 
+                  : 'opacity-0'
+              }`}
+            >
+              <Image
+                src={slide.image}
+                alt={slide.title}
+                fill
+                className="object-cover object-right"
+                style={{ 
+                  objectPosition: 'right center',
+                  transform: `translate3d(0, ${parallaxOffset}px, 0)`,
+                  willChange: 'transform'
+                }}
+                priority={index === 0}
+                quality={85}
+                sizes="100vw"
+              />
+            </div>
+          )
+        ))}
+      </div>
       
       {/* Subtle overlay */}
       <div className="absolute inset-0 bg-black/30" />
       
-      {/* Fallback gradient background */}
-      <div className={`absolute inset-0 ${currentSlideData.background} transition-all duration-1000 ${currentSlideData.image ? 'opacity-30' : 'opacity-100'}`} />
+      {/* Fallback gradient background - only show when no image available */}
+      <div className={`absolute inset-0 ${currentSlideData.background} transition-all duration-1000 ${currentSlideData.image ? 'opacity-0' : 'opacity-100'}`} />
 
       {/* Minimal Clean Content - Bottom Left Positioning */}
       <div className="relative h-full flex items-end">
