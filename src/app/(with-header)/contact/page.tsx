@@ -3,38 +3,54 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Mail, Phone, MapPin, Clock, ChevronRight } from 'lucide-react'
+import { Mail, Phone, MapPin, Clock, ChevronRight, AlertCircle } from 'lucide-react'
+import { useContactForm } from '@/hooks/useContactForm'
+import FormMessage from '@/components/ui/FormMessage'
 
 export default function ContactPage() {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-  })
   const [scrollY, setScrollY] = useState(0)
+  const {
+    data: formData,
+    errors,
+    isSubmitting,
+    isSubmitted,
+    submitError,
+    updateField,
+    validateFieldOnBlur,
+    submitForm,
+    resetForm,
+    isFormValid
+  } = useContactForm()
 
-  // Parallax scroll tracking
+  // Optimized parallax scroll tracking with throttling
   useEffect(() => {
+    let ticking = false
+    
     const handleScroll = () => {
-      setScrollY(window.scrollY)
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrollY(window.scrollY)
+          ticking = false
+        })
+        ticking = true
+      }
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle form submission
-    console.log('Form submitted:', formData)
+    await submitForm()
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
+    updateField(e.target.name as keyof typeof formData, e.target.value)
+  }
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    validateFieldOnBlur(e.target.name as keyof typeof formData)
   }
 
   return (
@@ -192,79 +208,165 @@ export default function ContactPage() {
                 Send us a Message
               </h3>
               
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label htmlFor="name" className="block text-steel-700 font-semibold mb-3">
-                    Your Name
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full px-6 py-4 bg-white border border-steel-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                    placeholder="Enter your full name"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="email" className="block text-steel-700 font-semibold mb-3">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full px-6 py-4 bg-white border border-steel-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                    placeholder="your.email@example.com"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="subject" className="block text-steel-700 font-semibold mb-3">
-                    Subject
-                  </label>
-                  <input
-                    type="text"
-                    id="subject"
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleChange}
-                    className="w-full px-6 py-4 bg-white border border-steel-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
-                    placeholder="What can we help you with?"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="message" className="block text-steel-700 font-semibold mb-3">
-                    Message
-                  </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    rows={6}
-                    value={formData.message}
-                    onChange={handleChange}
-                    className="w-full px-6 py-4 bg-white border border-steel-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 resize-none"
-                    placeholder="Tell us about your project, the parts you need, or any questions you have..."
-                    required
-                  />
-                </div>
-                
-                <button
-                  type="submit"
-                  className="group w-full bg-orange-500 text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-orange-600 transition-all duration-300 flex items-center justify-center"
-                >
-                  Send Message
-                  <ChevronRight className="ml-2 h-5 w-5 transform group-hover:translate-x-1 transition-transform duration-300" />
-                </button>
-              </form>
+              {/* Show success/error message */}
+              {isSubmitted && (
+                <FormMessage
+                  type="success"
+                  title="Message Sent!"
+                  message="Thank you for contacting us. We'll get back to you within 24 hours."
+                  onReset={resetForm}
+                />
+              )}
+              
+              {submitError && (
+                <FormMessage
+                  type="error"
+                  title="Sending Failed"
+                  message={submitError}
+                  onRetry={submitForm}
+                  onReset={resetForm}
+                />
+              )}
+              
+              {isSubmitting && (
+                <FormMessage
+                  type="loading"
+                  title="Sending Message..."
+                  message="Please wait while we send your message."
+                />
+              )}
+              
+              {!isSubmitted && !isSubmitting && (
+                <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+                  <div>
+                    <label htmlFor="name" className="block text-steel-700 font-semibold mb-3">
+                      Your Name *
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      className={`w-full px-6 py-4 bg-white border rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 ${
+                        errors.name ? 'border-red-500' : 'border-steel-200'
+                      }`}
+                      placeholder="Enter your full name"
+                      aria-describedby={errors.name ? 'name-error' : undefined}
+                      aria-invalid={errors.name ? 'true' : 'false'}
+                    />
+                    {errors.name && (
+                      <div id="name-error" className="mt-2 flex items-center text-red-600 text-sm">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        {errors.name}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="email" className="block text-steel-700 font-semibold mb-3">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      className={`w-full px-6 py-4 bg-white border rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 ${
+                        errors.email ? 'border-red-500' : 'border-steel-200'
+                      }`}
+                      placeholder="your.email@example.com"
+                      aria-describedby={errors.email ? 'email-error' : undefined}
+                      aria-invalid={errors.email ? 'true' : 'false'}
+                    />
+                    {errors.email && (
+                      <div id="email-error" className="mt-2 flex items-center text-red-600 text-sm">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        {errors.email}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="subject" className="block text-steel-700 font-semibold mb-3">
+                      Subject *
+                    </label>
+                    <input
+                      type="text"
+                      id="subject"
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      className={`w-full px-6 py-4 bg-white border rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 ${
+                        errors.subject ? 'border-red-500' : 'border-steel-200'
+                      }`}
+                      placeholder="What can we help you with?"
+                      aria-describedby={errors.subject ? 'subject-error' : undefined}
+                      aria-invalid={errors.subject ? 'true' : 'false'}
+                    />
+                    {errors.subject && (
+                      <div id="subject-error" className="mt-2 flex items-center text-red-600 text-sm">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        {errors.subject}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="message" className="block text-steel-700 font-semibold mb-3">
+                      Message *
+                    </label>
+                    <textarea
+                      id="message"
+                      name="message"
+                      rows={6}
+                      value={formData.message}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      className={`w-full px-6 py-4 bg-white border rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 resize-none ${
+                        errors.message ? 'border-red-500' : 'border-steel-200'
+                      }`}
+                      placeholder="Tell us about your project, the parts you need, or any questions you have..."
+                      aria-describedby={errors.message ? 'message-error' : undefined}
+                      aria-invalid={errors.message ? 'true' : 'false'}
+                    />
+                    {errors.message && (
+                      <div id="message-error" className="mt-2 flex items-center text-red-600 text-sm">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        {errors.message}
+                      </div>
+                    )}
+                    <div className="mt-2 text-steel-500 text-sm">
+                      {formData.message.length}/2000 characters
+                    </div>
+                  </div>
+                  
+                  <button
+                    type="submit"
+                    disabled={!isFormValid || isSubmitting}
+                    className={`group w-full px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center ${
+                      isFormValid && !isSubmitting
+                        ? 'bg-orange-500 text-white hover:bg-orange-600'
+                        : 'bg-steel-300 text-steel-500 cursor-not-allowed'
+                    }`}
+                  >
+                    {isSubmitting ? 'Sending...' : 'Send Message'}
+                    {!isSubmitting && (
+                      <ChevronRight className="ml-2 h-5 w-5 transform group-hover:translate-x-1 transition-transform duration-300" />
+                    )}
+                  </button>
+                  
+                  {Object.values(formData).some(value => value.trim().length > 0) && (
+                    <p className="text-steel-500 text-sm text-center">
+                      💾 Your message is automatically saved as you type
+                    </p>
+                  )}
+                </form>
+              )}
             </div>
           </div>
         </div>

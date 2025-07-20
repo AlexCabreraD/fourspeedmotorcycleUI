@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { heroConfig } from '@/config/hero'
 
 // Get enabled slides only
@@ -14,7 +14,6 @@ export default function HeroSection() {
   const [isAutoPlaying, setIsAutoPlaying] = useState(heroConfig.autoPlay)
   const [scrollY, setScrollY] = useState(0)
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set())
-  const [isTransitioning, setIsTransitioning] = useState(false)
 
   // Preload all hero images on component mount
   useEffect(() => {

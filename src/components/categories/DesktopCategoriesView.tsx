@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight, Package } from 'lucide-react'
 import { CustomCategory, CUSTOM_CATEGORIES } from '@/lib/constants/custom-categories'
+import OptimizedCategoryImage from './OptimizedCategoryImage'
 
 // Enhanced smooth scroll with snap behavior
 const smoothScrollCSS = `
@@ -313,6 +314,9 @@ export default function DesktopCategoriesView() {
             className="object-cover"
             sizes="100vw"
             priority
+            quality={85}
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
           />
         </div>
         
@@ -356,10 +360,10 @@ export default function DesktopCategoriesView() {
           {/* Image Side */}
           <div className="w-1/2 relative overflow-hidden">
             {categories.find(cat => cat.slug === 'engine-performance')?.image ? (
-              <Image
+              <OptimizedCategoryImage
                 src={categories.find(cat => cat.slug === 'engine-performance')!.image!}
                 alt={categories.find(cat => cat.slug === 'engine-performance')!.name}
-                fill
+                quality={75}
                 className="object-cover"
                 sizes="50vw"
               />
@@ -404,10 +408,10 @@ export default function DesktopCategoriesView() {
           {/* Background Image */}
           <div className="absolute inset-0">
             {categories.find(cat => cat.slug === 'suspension-handling')?.image ? (
-              <Image
+              <OptimizedCategoryImage
                 src={categories.find(cat => cat.slug === 'suspension-handling')!.image!}
                 alt={categories.find(cat => cat.slug === 'suspension-handling')!.name}
-                fill
+                quality={75}
                 className="object-cover"
                 sizes="100vw"
               />
@@ -454,10 +458,10 @@ export default function DesktopCategoriesView() {
           {/* Background Image */}
           <div className="absolute inset-0">
             {categories.find(cat => cat.slug === 'wheels-tires')?.image ? (
-              <Image
+              <OptimizedCategoryImage
                 src={categories.find(cat => cat.slug === 'wheels-tires')!.image!}
                 alt={categories.find(cat => cat.slug === 'wheels-tires')!.name}
-                fill
+                quality={75}
                 className="object-cover"
                 sizes="100vw"
               />
@@ -521,10 +525,10 @@ export default function DesktopCategoriesView() {
           
           {/* Image Side */}
           <div className="w-1/2 relative overflow-hidden">
-            <Image
+            <OptimizedCategoryImage
               src="/images/assets/protective-gear-female-rider-harley.JPG"
               alt="Protective Gear - Female Rider with Harley"
-              fill
+              quality={75}
               className="object-cover"
               sizes="50vw"
             />
@@ -538,10 +542,10 @@ export default function DesktopCategoriesView() {
         <div className="section-snap relative h-screen">
           {/* Background Image */}
           <div className="absolute inset-0">
-            <Image
+            <OptimizedCategoryImage
               src="/images/assets/riding-apparel-sport-rider-gear.JPG"
               alt="Riding Apparel - Sport Rider Gear"
-              fill
+              quality={75}
               className="object-cover"
               sizes="100vw"
             />
@@ -578,10 +582,10 @@ export default function DesktopCategoriesView() {
           {/* Background Image */}
           <div className="absolute inset-0">
             {categories.find(cat => cat.slug === 'brakes-drivetrain')?.image ? (
-              <Image
+              <OptimizedCategoryImage
                 src={categories.find(cat => cat.slug === 'brakes-drivetrain')!.image!}
                 alt={categories.find(cat => cat.slug === 'brakes-drivetrain')!.name}
-                fill
+                quality={75}
                 className="object-cover"
                 sizes="100vw"
               />
@@ -627,10 +631,10 @@ export default function DesktopCategoriesView() {
         <div className="section-snap relative h-screen">
           {/* Background Image */}
           <div className="absolute inset-0">
-            <Image
+            <OptimizedCategoryImage
               src="/images/assets/controls-accessories-red-footpegs.JPG"
               alt="Controls & Accessories - Precision Engineering"
-              fill
+              quality={75}
               className="object-cover"
               sizes="100vw"
             />
@@ -688,10 +692,10 @@ export default function DesktopCategoriesView() {
           
           {/* Image Side */}
           <div className="w-1/2 relative overflow-hidden">
-            <Image
+            <OptimizedCategoryImage
               src="/images/assets/maintenance-tools-workshop-gear.JPG"
               alt="Maintenance & Tools - Workshop Setup"
-              fill
+              quality={75}
               className="object-cover"
               sizes="50vw"
             />
@@ -710,10 +714,10 @@ export default function DesktopCategoriesView() {
             <div className="group w-1/2 relative overflow-hidden cursor-pointer transition-all duration-700 hover:w-3/5">
               {/* Background Image */}
               <div className="absolute inset-0">
-                <Image
+                <OptimizedCategoryImage
                   src="/images/assets/specialty-vehicles-utv-rock-crawling.JPG"
                   alt="Specialty Vehicles - UTV Rock Crawling"
-                  fill
+                  quality={75}
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                   sizes="60vw"
                 />
@@ -760,10 +764,10 @@ export default function DesktopCategoriesView() {
             <div className="group w-1/2 relative overflow-hidden cursor-pointer transition-all duration-700 hover:w-3/5">
               {/* Background Image */}
               <div className="absolute inset-0">
-                <Image
+                <OptimizedCategoryImage
                   src="/images/assets/electrical-lighting-extreme-wall-ride.JPG"
                   alt="Electrical & Lighting - Extreme Performance"
-                  fill
+                  quality={75}
                   className="object-cover transition-transform duration-700 group-hover:scale-110"
                   sizes="60vw"
                 />
@@ -836,10 +840,10 @@ export default function DesktopCategoriesView() {
       <div className="section-snap relative h-screen overflow-hidden">
         {/* Background Image */}
         <div className="absolute inset-0">
-          <Image
+          <OptimizedCategoryImage
             src="/images/assets/utv-action-dust-dramatic.JPG"
             alt="Extreme Off-Road Action"
-            fill
+            quality={75}
             className="object-cover"
             sizes="100vw"
           />

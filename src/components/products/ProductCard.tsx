@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Star, ShoppingCart, Heart } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart'
 import { useWishlistStore, WishlistItem } from '@/lib/store/wishlist'
@@ -12,9 +13,10 @@ import ImagePlaceholder from '@/components/ui/ImagePlaceholder'
 interface ProductCardProps {
   product: WPSItem
   viewMode?: 'grid' | 'list'
+  priority?: boolean // For above-the-fold images
 }
 
-export default function ProductCard({ product, viewMode = 'grid' }: ProductCardProps) {
+function ProductCard({ product, viewMode = 'grid', priority = false }: ProductCardProps) {
   const { addItem } = useCartStore()
   const { toggleItem, isInWishlist } = useWishlistStore()
   
@@ -66,14 +68,23 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
               </div>
             ) : hasImages ? (
-              <img
-                src={imageUrl}
-                alt={product.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                onError={(e) => {
-                  e.currentTarget.src = '/placeholder-product.svg'
-                }}
-              />
+              <div className="relative w-full h-full">
+                <Image
+                  src={imageUrl}
+                  alt={product.name}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  sizes="192px"
+                  priority={priority}
+                  quality={80}
+                  placeholder="blur"
+                  blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    target.src = '/placeholder-product.svg'
+                  }}
+                />
+              </div>
             ) : (
               <ImagePlaceholder 
                 message="Image coming soon"
@@ -191,14 +202,23 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
           </div>
         ) : hasImages ? (
-          <img
-            src={imageUrl}
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={(e) => {
-              e.currentTarget.src = '/placeholder-product.svg'
-            }}
-          />
+          <div className="relative w-full h-full">
+            <Image
+              src={imageUrl}
+              alt={product.name}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+              priority={priority}
+              quality={80}
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                target.src = '/placeholder-product.svg'
+              }}
+            />
+          </div>
         ) : (
           <ImagePlaceholder 
             message="Image coming soon"
@@ -311,3 +331,15 @@ export default function ProductCard({ product, viewMode = 'grid' }: ProductCardP
     </Link>
   )
 }
+
+// Memoize component to prevent unnecessary re-renders
+export default memo(ProductCard, (prevProps, nextProps) => {
+  return (
+    prevProps.product.id === nextProps.product.id &&
+    prevProps.viewMode === nextProps.viewMode &&
+    prevProps.priority === nextProps.priority &&
+    prevProps.product.list_price === nextProps.product.list_price &&
+    prevProps.product.name === nextProps.product.name &&
+    prevProps.product.status === nextProps.product.status
+  )
+})

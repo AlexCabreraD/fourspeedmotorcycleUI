@@ -28,7 +28,9 @@
       "Bash(cp:*)",
       "Bash(npm uninstall:*)",
       "Bash(npx eslint:*)",
-      "WebFetch(domain:clerk.com)"
+      "WebFetch(domain:clerk.com)",
+      "Bash(cat:*)",
+      "Bash(timeout 30s npm run build:*)"
     ],
     "deny": []
   }

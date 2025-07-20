@@ -1,35 +1,69 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight, Package } from 'lucide-react'
 import { CustomCategory, CUSTOM_CATEGORIES } from '@/lib/constants/custom-categories'
+import OptimizedCategoryImage from './OptimizedCategoryImage'
 
 export default function MobileCategoriesView() {
   const [categories, setCategories] = useState<CustomCategory[]>([])
   const [loading, setLoading] = useState(true)
 
+  // OPTIMIZED: Cached API call with request deduplication
   useEffect(() => {
+    let isMounted = true
+    
     const fetchCategories = async () => {
       try {
+        // Check for cached data first
+        const cacheKey = 'categories-data'
+        const cachedData = sessionStorage.getItem(cacheKey)
+        
+        if (cachedData) {
+          const parsed = JSON.parse(cachedData)
+          if (Date.now() - parsed.timestamp < 5 * 60 * 1000) { // 5 minute cache
+            if (isMounted) {
+              setCategories(parsed.data)
+              setLoading(false)
+            }
+            return
+          }
+        }
+        
         const response = await fetch('/api/custom-categories?include_counts=true')
         const data = await response.json()
         
-        if (data.success && data.data && data.data.length > 0) {
-          setCategories(data.data)
-        } else {
-          setCategories(CUSTOM_CATEGORIES)
+        if (isMounted) {
+          if (data.success && data.data && data.data.length > 0) {
+            setCategories(data.data)
+            // Cache successful response
+            sessionStorage.setItem(cacheKey, JSON.stringify({
+              data: data.data,
+              timestamp: Date.now()
+            }))
+          } else {
+            setCategories(CUSTOM_CATEGORIES)
+          }
         }
       } catch (error) {
         console.error('Failed to fetch categories:', error)
-        setCategories(CUSTOM_CATEGORIES)
+        if (isMounted) {
+          setCategories(CUSTOM_CATEGORIES)
+        }
       } finally {
-        setLoading(false)
+        if (isMounted) {
+          setLoading(false)
+        }
       }
     }
 
     fetchCategories()
+    
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   if (loading) {
@@ -91,6 +125,10 @@ export default function MobileCategoriesView() {
             fill
             className="object-cover opacity-40"
             sizes="100vw"
+            priority
+            quality={85}
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
           />
         </div>
         
@@ -125,10 +163,11 @@ export default function MobileCategoriesView() {
         {/* Hero Section (matches desktop hero) */}
         <Link href="/categories" className="group block">
           <div className="relative h-96 sm:h-112 overflow-hidden">
-            <Image
+            <OptimizedCategoryImage
               src="/images/assets/categories-hero-air-filter-dramatic.JPG"
               alt="Every Detail Matters"
-              fill
+              priority={true}
+              quality={80}
               className="object-cover group-hover:scale-105 transition-transform duration-500"
               sizes="100vw"
             />
@@ -160,10 +199,10 @@ export default function MobileCategoriesView() {
         {categories.find(cat => cat.slug === 'engine-performance') && (
           <Link href={`/category/${categories.find(cat => cat.slug === 'engine-performance')?.slug}`} className="group block">
             <div className="relative h-96 sm:h-112 overflow-hidden">
-              <Image
+              <OptimizedCategoryImage
                 src={categories.find(cat => cat.slug === 'engine-performance')?.image || "/images/assets/engine-performance-placeholder.jpg"}
                 alt={categories.find(cat => cat.slug === 'engine-performance')?.name || "Engine & Performance"}
-                fill
+                quality={75}
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="100vw"
               />
@@ -194,10 +233,10 @@ export default function MobileCategoriesView() {
         {categories.find(cat => cat.slug === 'suspension-handling') && (
           <Link href={`/category/${categories.find(cat => cat.slug === 'suspension-handling')?.slug}`} className="group block">
             <div className="relative h-96 sm:h-112 overflow-hidden">
-              <Image
+              <OptimizedCategoryImage
                 src={categories.find(cat => cat.slug === 'suspension-handling')?.image || "/images/assets/suspension-handling-placeholder.jpg"}
                 alt={categories.find(cat => cat.slug === 'suspension-handling')?.name || "Suspension & Handling"}
-                fill
+                quality={75}
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="100vw"
               />
@@ -228,10 +267,10 @@ export default function MobileCategoriesView() {
         {categories.find(cat => cat.slug === 'wheels-tires') && (
           <Link href={`/category/${categories.find(cat => cat.slug === 'wheels-tires')?.slug}`} className="group block">
             <div className="relative h-96 sm:h-112 overflow-hidden">
-              <Image
+              <OptimizedCategoryImage
                 src={categories.find(cat => cat.slug === 'wheels-tires')?.image || "/images/assets/wheels-tires-placeholder.jpg"}
                 alt={categories.find(cat => cat.slug === 'wheels-tires')?.name || "Wheels & Tires"}
-                fill
+                quality={75}
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="100vw"
               />
@@ -262,10 +301,10 @@ export default function MobileCategoriesView() {
         {categories.find(cat => cat.slug === 'protective-gear') && (
           <Link href={`/category/${categories.find(cat => cat.slug === 'protective-gear')?.slug}`} className="group block">
             <div className="relative h-96 sm:h-112 overflow-hidden">
-              <Image
+              <OptimizedCategoryImage
                 src="/images/assets/protective-gear-female-rider-harley.JPG"
                 alt="Protective Gear - Female Rider with Harley"
-                fill
+                quality={75}
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="100vw"
               />
@@ -296,10 +335,10 @@ export default function MobileCategoriesView() {
         {categories.find(cat => cat.slug === 'riding-apparel') && (
           <Link href={`/category/${categories.find(cat => cat.slug === 'riding-apparel')?.slug}`} className="group block">
             <div className="relative h-96 sm:h-112 overflow-hidden">
-              <Image
+              <OptimizedCategoryImage
                 src="/images/assets/riding-apparel-sport-rider-gear.JPG"
                 alt="Riding Apparel - Sport Rider Gear"
-                fill
+                quality={75}
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="100vw"
               />
@@ -330,10 +369,10 @@ export default function MobileCategoriesView() {
         {categories.find(cat => cat.slug === 'brakes-drivetrain') && (
           <Link href={`/category/${categories.find(cat => cat.slug === 'brakes-drivetrain')?.slug}`} className="group block">
             <div className="relative h-96 sm:h-112 overflow-hidden">
-              <Image
+              <OptimizedCategoryImage
                 src={categories.find(cat => cat.slug === 'brakes-drivetrain')?.image || "/images/assets/brakes-drivetrain-placeholder.jpg"}
                 alt={categories.find(cat => cat.slug === 'brakes-drivetrain')?.name || "Brakes & Drivetrain"}
-                fill
+                quality={75}
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="100vw"
               />
@@ -364,10 +403,10 @@ export default function MobileCategoriesView() {
         {categories.find(cat => cat.slug === 'controls-accessories') && (
           <Link href={`/category/${categories.find(cat => cat.slug === 'controls-accessories')?.slug}`} className="group block">
             <div className="relative h-96 sm:h-112 overflow-hidden">
-              <Image
+              <OptimizedCategoryImage
                 src="/images/assets/controls-accessories-red-footpegs.JPG"
                 alt="Controls & Accessories - Precision Engineering"
-                fill
+                quality={75}
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="100vw"
               />
@@ -398,10 +437,10 @@ export default function MobileCategoriesView() {
         {categories.find(cat => cat.slug === 'maintenance-tools') && (
           <Link href={`/category/${categories.find(cat => cat.slug === 'maintenance-tools')?.slug}`} className="group block">
             <div className="relative h-96 sm:h-112 overflow-hidden">
-              <Image
+              <OptimizedCategoryImage
                 src="/images/assets/maintenance-tools-workshop-gear.JPG"
                 alt="Maintenance & Tools - Workshop Setup"
-                fill
+                quality={75}
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="100vw"
               />
@@ -432,10 +471,10 @@ export default function MobileCategoriesView() {
         {categories.find(cat => cat.slug === 'specialty-vehicles') && (
           <Link href={`/category/${categories.find(cat => cat.slug === 'specialty-vehicles')?.slug}`} className="group block">
             <div className="relative h-96 sm:h-112 overflow-hidden">
-              <Image
+              <OptimizedCategoryImage
                 src="/images/assets/specialty-vehicles-utv-rock-crawling.JPG"
                 alt="Specialty Vehicles - UTV Rock Crawling"
-                fill
+                quality={75}
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="100vw"
               />
@@ -466,10 +505,10 @@ export default function MobileCategoriesView() {
         {categories.find(cat => cat.slug === 'electrical-lighting') && (
           <Link href={`/category/${categories.find(cat => cat.slug === 'electrical-lighting')?.slug}`} className="group block">
             <div className="relative h-96 sm:h-112 overflow-hidden">
-              <Image
+              <OptimizedCategoryImage
                 src="/images/assets/electrical-lighting-extreme-wall-ride.JPG"
                 alt="Electrical & Lighting - Extreme Performance"
-                fill
+                quality={75}
                 className="object-cover group-hover:scale-105 transition-transform duration-500"
                 sizes="100vw"
               />
@@ -499,10 +538,10 @@ export default function MobileCategoriesView() {
         {/* Final CTA Section */}
         <Link href="/products" className="group block">
           <div className="relative h-96 sm:h-112 overflow-hidden">
-            <Image
+            <OptimizedCategoryImage
               src="/images/assets/utv-action-dust-dramatic.JPG"
               alt="Extreme Off-Road Action"
-              fill
+              quality={75}
               className="object-cover group-hover:scale-105 transition-transform duration-500"
               sizes="100vw"
             />

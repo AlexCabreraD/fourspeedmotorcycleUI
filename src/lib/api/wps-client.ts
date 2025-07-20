@@ -708,6 +708,7 @@ export class WPSApiClient {
     private defaultTimeout = 30000; // 30 seconds
     private cache: ApiCache;
     private enableCaching: boolean;
+    private requestCache: Map<string, Promise<any>> = new Map(); // Request deduplication
 
     constructor(config: WPSConfig & { enableCaching?: boolean }) {
         if (!config.baseUrl || !config.token) {
@@ -748,6 +749,37 @@ export class WPSApiClient {
             });
         }
 
+        // Request deduplication - create cache key from URL and method
+        const method = options.method || 'GET';
+        const requestKey = `${method}:${url.toString()}`;
+        
+        // If this exact request is already in flight, return the same promise
+        if (this.requestCache.has(requestKey)) {
+            console.log('Request deduplicated:', requestKey);
+            return this.requestCache.get(requestKey);
+        }
+
+        // Create the request promise
+        const requestPromise = this.executeRequest<T>(url, options);
+        
+        // Cache the promise
+        this.requestCache.set(requestKey, requestPromise);
+        
+        // Clean up cache after request completes (success or failure)
+        requestPromise.finally(() => {
+            // Remove from cache after 5 seconds to allow for brief deduplication
+            setTimeout(() => {
+                this.requestCache.delete(requestKey);
+            }, 5000);
+        });
+
+        return requestPromise;
+    }
+
+    private async executeRequest<T>(
+        url: URL,
+        options: RequestInit = {}
+    ): Promise<ApiResponse<T>> {
         console.log('Making request to:', url.toString());
 
         const controller = new AbortController();

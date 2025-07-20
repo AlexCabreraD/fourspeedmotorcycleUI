@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { WPSItem } from '@/lib/api/wps-client'
 import ProductCard from '@/components/products/ProductCard'
+import ProductErrorBoundary from '@/components/ui/ProductErrorBoundary'
 
 export default function FeaturedProducts() {
   const [products, setProducts] = useState<WPSItem[]>([])
@@ -41,12 +42,15 @@ export default function FeaturedProducts() {
 
   // Memoize product grid to prevent unnecessary re-renders
   const productGrid = useMemo(() => 
-    products.map((product) => (
+    products.map((product, index) => (
       <div key={product.id} className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden">
-        <ProductCard 
-          product={product} 
-          viewMode="grid"
-        />
+        <ProductErrorBoundary>
+          <ProductCard 
+            product={product} 
+            viewMode="grid"
+            priority={index < 2} // First 2 featured products get priority
+          />
+        </ProductErrorBoundary>
       </div>
     )), 
     [products]
