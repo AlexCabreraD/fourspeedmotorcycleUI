@@ -173,24 +173,25 @@ const ThumbnailGrid = memo(({
   if (images.length <= 1) return null
 
   return (
-    <div className="p-4 bg-steel-50">
-      <div className="flex space-x-3 overflow-x-auto pb-2 custom-scrollbar">
+    <div className="p-3 bg-steel-50">
+      <div className="flex space-x-2 overflow-x-auto pb-1 custom-scrollbar">
         {images.map((image, index) => (
           <button
             key={index}
             onClick={() => onIndexChange(index)}
-            className={`relative flex-shrink-0 w-20 h-20 rounded-lg border-2 overflow-hidden transition-all transform hover:scale-105 ${
+            className={`relative flex-shrink-0 w-16 h-16 rounded border overflow-hidden transition-all duration-200 ${
               currentIndex === index 
-                ? 'border-primary-500 ring-2 ring-primary-200' 
-                : 'border-steel-200 hover:border-steel-300'
+                ? 'border-primary-500 ring-1 ring-primary-200' 
+                : 'border-steel-200 hover:border-primary-300'
             }`}
           >
+            <div className="absolute inset-0 bg-white"></div>
             <Image
               src={image}
               alt={`${productName} thumbnail ${index + 1}`}
               fill
-              className="object-contain p-1"
-              sizes="80px"
+              className="object-contain p-1 relative z-10"
+              sizes="96px"
               loading="lazy"
             />
           </button>
@@ -213,15 +214,15 @@ const ProductBadges = memo(({
   if (!savingsAmount && status !== 'STK') return null
 
   return (
-    <div className="absolute top-6 left-6 space-y-2">
+    <div className="absolute top-6 left-6 space-y-3 z-10">
       {savingsAmount && (
-        <div className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-          Save ${savingsAmount.toFixed(2)}
+        <div className="bg-accent-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-card">
+          Save ${savingsAmount.toFixed(0)}
         </div>
       )}
       {status === 'STK' && (
-        <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-          In Stock
+        <div className="bg-primary-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-card">
+          ✓ In Stock
         </div>
       )}
     </div>
@@ -237,6 +238,7 @@ const OptimizedProductImageGallery = memo(function OptimizedProductImageGallery(
 }: OptimizedProductImageGalleryProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
+  const [imageLoadError, setImageLoadError] = useState<Set<number>>(new Set())
 
   // Memoized image URLs
   const images = useMemo(() => {
@@ -261,9 +263,10 @@ const OptimizedProductImageGallery = memo(function OptimizedProductImageGallery(
     return ['/placeholder-product.svg']
   }, [selectedItem])
 
-  // Reset image index when item changes
+  // Reset image index and load errors when item changes
   useEffect(() => {
     setCurrentImageIndex(0)
+    setImageLoadError(new Set())
   }, [selectedItem?.id])
 
   // Navigation handlers
@@ -293,31 +296,39 @@ const OptimizedProductImageGallery = memo(function OptimizedProductImageGallery(
   return (
     <>
       {/* Main Image Gallery */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div 
-          className="relative aspect-square bg-steel-50 group cursor-pointer"
-          onClick={openModal}
-        >
-          <Image
-            src={images[currentImageIndex]}
-            alt={`${productName} main image`}
-            fill
-            className="object-contain transition-all duration-500 group-hover:scale-105 p-4"
-            priority
-            quality={85}
-            placeholder="blur"
-            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            onError={(e) => {
-              console.error('Main image failed to load:', images[currentImageIndex])
-              const target = e.target as HTMLImageElement
-              target.src = '/placeholder-product.svg'
-            }}
-          />
+      <div className="relative group">
+        {/* Product image container */}
+        <div className="card overflow-hidden transition-all duration-200 group-hover:shadow-card-hover">
+          <div 
+            className="relative aspect-square bg-steel-50 group cursor-pointer overflow-hidden"
+            onClick={openModal}
+          >
+            <Image
+              src={images[currentImageIndex]}
+              alt={`${productName} main image`}
+              fill
+              className="object-contain transition-all duration-300 group-hover:scale-105 p-4"
+              priority
+              quality={85}
+              placeholder="blur"
+              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              onError={(e) => {
+                console.error('Main image failed to load:', images[currentImageIndex])
+                setImageLoadError(prev => new Set([...prev, currentImageIndex]))
+                const target = e.target as HTMLImageElement
+                target.src = '/placeholder-product.svg'
+              }}
+            />
           
-          {/* Enhanced zoom hint */}
-          <div className="absolute top-6 right-6 bg-black/70 text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110">
+          {/* Zoom hint */}
+          <div className="absolute top-4 right-4 bg-white/90 text-steel-600 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-card">
             <ZoomIn className="h-5 w-5" />
+          </div>
+          
+          {/* Click to enlarge text */}
+          <div className="absolute bottom-4 left-4 bg-white/90 text-steel-600 px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 text-sm">
+            Click to enlarge
           </div>
           
           {/* Navigation arrows */}
@@ -328,26 +339,26 @@ const OptimizedProductImageGallery = memo(function OptimizedProductImageGallery(
                   e.stopPropagation()
                   prevImage()
                 }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg transition-all opacity-0 group-hover:opacity-100 hover:scale-110"
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white hover:bg-steel-50 p-3 rounded-lg shadow-card transition-all duration-200 opacity-0 group-hover:opacity-100 border border-steel-200"
               >
-                <ChevronLeft className="h-6 w-6 text-steel-700" />
+                <ChevronLeft className="h-5 w-5 text-steel-600" />
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation()
                   nextImage()
                 }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white p-3 rounded-full shadow-lg transition-all opacity-0 group-hover:opacity-100 hover:scale-110"
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white hover:bg-steel-50 p-3 rounded-lg shadow-card transition-all duration-200 opacity-0 group-hover:opacity-100 border border-steel-200"
               >
-                <ChevronRight className="h-6 w-6 text-steel-700" />
+                <ChevronRight className="h-5 w-5 text-steel-600" />
               </button>
             </>
           )}
           
-          {/* Enhanced image counter */}
+          {/* Image counter */}
           {images.length > 1 && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-full text-sm font-medium">
-              {currentImageIndex + 1} of {images.length}
+            <div className="absolute bottom-4 right-4 bg-white text-steel-600 px-3 py-1.5 rounded-lg text-sm font-medium shadow-card border border-steel-200">
+              {currentImageIndex + 1} / {images.length}
             </div>
           )}
 
@@ -356,6 +367,7 @@ const OptimizedProductImageGallery = memo(function OptimizedProductImageGallery(
             savingsAmount={savingsAmount} 
             status={selectedItem?.status} 
           />
+          </div>
         </div>
 
         {/* Thumbnail Images */}

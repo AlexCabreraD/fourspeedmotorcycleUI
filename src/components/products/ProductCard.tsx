@@ -3,7 +3,7 @@
 import { useState, memo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Star, ShoppingCart, Heart } from 'lucide-react'
+import { ShoppingCart, Heart } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart'
 import { useWishlistStore, WishlistItem } from '@/lib/store/wishlist'
 import { WPSProduct, WPSItem, ImageUtils } from '@/lib/api/wps-client'
@@ -130,18 +130,6 @@ function ProductCard({ product, viewMode = 'grid', priority = false }: ProductCa
                 <span>SKU: {product.sku}</span>
               </div>
 
-              {/* Rating */}
-              <div className="flex items-center mb-3">
-                <div className="flex text-yellow-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`h-4 w-4 ${i < 4 ? 'fill-current' : 'fill-gray-200'}`}
-                    />
-                  ))}
-                </div>
-                <span className="text-sm text-steel-500 ml-2">(23 reviews)</span>
-              </div>
 
               {/* Description snippet */}
               <p className="text-steel-600 text-sm line-clamp-2 mb-4">
@@ -286,18 +274,6 @@ function ProductCard({ product, viewMode = 'grid', priority = false }: ProductCa
           </p>
         )}
 
-        {/* Rating */}
-        <div className="flex items-center mb-2">
-          <div className="flex text-yellow-400">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`h-3 w-3 ${i < 4 ? 'fill-current' : 'fill-gray-200'}`}
-              />
-            ))}
-          </div>
-          <span className="text-xs text-steel-500 ml-1">(23)</span>
-        </div>
 
         {/* Price */}
         <div className="flex items-center justify-between mb-3">

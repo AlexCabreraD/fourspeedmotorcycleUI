@@ -45,18 +45,24 @@ const ProductBreadcrumb = React.memo(({
   productName: string
   selectedItem: WPSItem | null
 }) => (
-  <nav className="flex items-center space-x-2 text-sm text-steel-600 mb-8 p-4 bg-white rounded-lg shadow-sm">
-    <Link href="/" className="hover:text-primary-600 transition-colors font-medium">Home</Link>
-    <ChevronRight className="h-4 w-4" />
-    <Link href="/products" className="hover:text-primary-600 transition-colors font-medium">Products</Link>
-    <ChevronRight className="h-4 w-4" />
+  <nav className="flex items-center space-x-3 text-sm py-4">
+    <Link href="/" className="text-steel-600 hover:text-primary-600 transition-colors font-medium px-3 py-1.5 rounded-lg hover:bg-primary-50">
+      Home
+    </Link>
+    <ChevronRight className="h-4 w-4 text-steel-400" />
+    <Link href="/products" className="text-steel-600 hover:text-primary-600 transition-colors font-medium px-3 py-1.5 rounded-lg hover:bg-primary-50">
+      Products
+    </Link>
+    <ChevronRight className="h-4 w-4 text-slate-400" />
     {selectedItem?.product_type && (
       <>
-        <span className="text-steel-500">{selectedItem.product_type}</span>
-        <ChevronRight className="h-4 w-4" />
+        <span className="text-steel-500 px-3 py-1.5 bg-steel-100 rounded-lg text-xs font-medium uppercase tracking-wider">
+          {selectedItem.product_type}
+        </span>
+        <ChevronRight className="h-4 w-4 text-steel-400" />
       </>
     )}
-    <span className="text-steel-900 font-medium truncate">{productName}</span>
+    <span className="text-steel-900 font-semibold truncate">{productName}</span>
   </nav>
 ))
 
@@ -196,7 +202,7 @@ export default function OptimizedProductPage({ params }: OptimizedProductPagePro
     fetchProduct()
   }, [resolvedParams])
 
-  // Optimized item selection with URL sync
+  // Handle initial item selection and URL param changes separately
   useEffect(() => {
     if (!product?.items || product.items.length === 0) return
 
@@ -214,10 +220,9 @@ export default function OptimizedProductPage({ params }: OptimizedProductPagePro
     if (!selectedItem || selectedItem.id !== itemToSelect.id) {
       setSelectedItem(itemToSelect)
     }
-  }, [product?.items, searchParams, selectedItem])
+  }, [product?.items, searchParams])
 
-  // Optimized item selection handler
-  const handleItemSelect = useCallback((item: WPSItem) => {
+  const updateSelectedItem = (item: WPSItem) => {
     // Only update if selecting a different item
     if (selectedItem?.id === item.id) return
     
@@ -230,18 +235,15 @@ export default function OptimizedProductPage({ params }: OptimizedProductPagePro
       newSearchParams.set('item', item.id.toString())
       router.replace(`${pathname}?${newSearchParams.toString()}`, { scroll: false })
     }
-  }, [selectedItem, searchParams, router, pathname])
+  }
 
-  // Memoized savings calculation
-  const savingsAmount = useMemo(() => {
-    if (!selectedItem?.mapp_price || !selectedItem?.list_price) return null
-    const mapp = parseFloat(selectedItem.mapp_price)
-    const list = parseFloat(selectedItem.list_price)
-    if (mapp > list) {
-      return mapp - list
-    }
-    return null
-  }, [selectedItem?.mapp_price, selectedItem?.list_price])
+  // Simplified savings calculation
+  const savingsAmount = selectedItem?.mapp_price && selectedItem?.list_price ? 
+    (() => {
+      const mapp = parseFloat(selectedItem.mapp_price)
+      const list = parseFloat(selectedItem.list_price)
+      return mapp > list ? mapp - list : null
+    })() : null
 
   // Early returns for loading and error states
   if (loading) {
@@ -253,17 +255,30 @@ export default function OptimizedProductPage({ params }: OptimizedProductPagePro
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-steel-50 to-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Breadcrumb */}
-        <ProductBreadcrumb 
-          productName={product.name}
-          selectedItem={selectedItem}
-        />
+    <div className="min-h-screen bg-steel-50">
+      {/* Hero Section with Breadcrumb */}
+      <div className="bg-white border-b border-steel-200 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ProductBreadcrumb 
+            productName={product.name}
+            selectedItem={selectedItem}
+          />
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Product Images */}
-          <div className="xl:col-span-2 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Main Product Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Product Images - Enhanced Visual Hierarchy */}
+          <div className="relative">
+            {/* Floating badge */}
+            {savingsAmount && (
+              <div className="absolute -top-2 -left-2 z-10">
+                <div className="bg-accent-600 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-card transform rotate-2">
+                  Save ${savingsAmount.toFixed(0)}
+                </div>
+              </div>
+            )}
             <OptimizedProductImageGallery
               selectedItem={selectedItem}
               productName={product.name}
@@ -272,20 +287,22 @@ export default function OptimizedProductPage({ params }: OptimizedProductPagePro
           </div>
 
           {/* Product Details */}
-          <div className="space-y-6">
+          <div className="lg:pl-4">
             <OptimizedProductDetails
               product={product}
               selectedItem={selectedItem}
-              onItemSelect={handleItemSelect}
+              onItemSelect={updateSelectedItem}
             />
           </div>
         </div>
 
-        {/* Product Information Tabs - Lazy loaded */}
-        <OptimizedProductTabs
-          product={product}
-          selectedItem={selectedItem}
-        />
+        {/* Product Information Tabs */}
+        <div>
+          <OptimizedProductTabs
+            product={product}
+            selectedItem={selectedItem}
+          />
+        </div>
       </div>
     </div>
   )

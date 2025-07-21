@@ -1,8 +1,8 @@
 'use client'
 
-import { memo, useState, useCallback, useMemo } from 'react'
+import { memo, useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { 
-  Star, ShoppingCart, Heart, Share2, Truck, Shield, RotateCcw, 
+  ShoppingCart, Heart, Truck, Shield, RotateCcw, 
   Plus, Minus, CheckCircle, Award, Clock
 } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart'
@@ -38,20 +38,20 @@ const PriceDisplay = memo(({
   if (!selectedItem) return null
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center space-x-3">
-        <span className="text-3xl font-bold text-primary-600">
+    <div className="flex flex-col space-y-1">
+      <div className="flex items-baseline space-x-2">
+        <span className="text-lg font-bold text-primary-600">
           {formatPrice(selectedItem.list_price)}
         </span>
         {selectedItem.mapp_price && parseFloat(selectedItem.mapp_price) > 0 && (
-          <span className="text-xl text-steel-400 line-through">
+          <span className="text-xs text-steel-400 line-through">
             {formatPrice(selectedItem.mapp_price)}
           </span>
         )}
       </div>
       {savingsAmount && (
-        <div className="text-green-600 font-semibold">
-          You save {formatPrice(savingsAmount.toString())}
+        <div className="inline-flex items-center bg-accent-600 text-white px-1.5 py-0.5 rounded text-xs font-medium w-fit">
+          Save {formatPrice(savingsAmount.toString())}
         </div>
       )}
     </div>
@@ -60,34 +60,39 @@ const PriceDisplay = memo(({
 
 PriceDisplay.displayName = 'PriceDisplay'
 
-// Memoized stock status component
+
+// Simplified stock status component
 const StockStatus = memo(({ selectedItem }: { selectedItem: WPSItem | null }) => {
-  const stockStatus = useMemo(() => {
-    if (!selectedItem) return { status: 'unknown', text: 'Unknown', color: 'text-steel-500' }
-    
-    switch (selectedItem.status) {
-      case 'STK':
-        return { status: 'in-stock', text: 'In Stock', color: 'text-green-600' }
-      case 'LTD':
-        return { status: 'limited', text: 'Limited Stock', color: 'text-yellow-600' }
-      case 'OOS':
-        return { status: 'out-of-stock', text: 'Out of Stock', color: 'text-red-600' }
-      default:
-        return { status: 'check', text: 'Check Availability', color: 'text-steel-500' }
-    }
-  }, [selectedItem?.status])
+  if (!selectedItem) {
+    return (
+      <div className="flex items-center space-x-2 p-2 bg-gradient-to-r from-slate-100 to-slate-200 rounded border border-steel-200">
+        <span className="text-sm">❓</span>
+        <span className="font-medium text-sm text-slate-500">Unknown</span>
+      </div>
+    )
+  }
+
+  let stockConfig
+  switch (selectedItem.status) {
+    case 'STK':
+      stockConfig = { text: 'In Stock', color: 'text-emerald-700', bgGradient: 'from-emerald-100 to-green-100', icon: '✅' }
+      break
+    case 'LTD':
+      stockConfig = { text: 'Limited Stock', color: 'text-amber-700', bgGradient: 'from-amber-100 to-yellow-100', icon: '⚠️' }
+      break
+    case 'OOS':
+      stockConfig = { text: 'Out of Stock', color: 'text-red-700', bgGradient: 'from-red-100 to-rose-100', icon: '❌' }
+      break
+    default:
+      stockConfig = { text: 'Check Availability', color: 'text-slate-700', bgGradient: 'from-slate-100 to-gray-100', icon: '🔍' }
+  }
 
   return (
-    <div className="flex items-center space-x-2 p-3 bg-steel-50 rounded-lg">
-      <CheckCircle className={`h-5 w-5 ${stockStatus.color}`} />
-      <span className={`font-semibold ${stockStatus.color}`}>
-        {stockStatus.text}
+    <div className={`flex items-center space-x-2 p-2 bg-gradient-to-r ${stockConfig.bgGradient} rounded border border-steel-200`}>
+      <span className="text-sm">{stockConfig.icon}</span>
+      <span className={`font-medium text-sm ${stockConfig.color}`}>
+        {stockConfig.text}
       </span>
-      {selectedItem?.status === 'STK' && (
-        <span className="text-steel-600 text-sm">
-          • Ready to ship
-        </span>
-      )}
     </div>
   )
 })
@@ -112,70 +117,73 @@ const ItemSelector = memo(({
     }).format(numPrice)
   }, [])
 
-  const sortedItems = useMemo(() => {
+  // Sort items with selected item first to prevent flickering
+  const getSortedItems = () => {
     if (!product?.items || !selectedItem) return product?.items || []
     
     // Sort items with selected item first, then all others in their original order
-    const items = [...product.items]
-    return items.sort((a, b) => {
+    const sortedItems = [...product.items]
+    return sortedItems.sort((a, b) => {
       if (a.id === selectedItem.id) return -1
       if (b.id === selectedItem.id) return 1
       return 0
     })
-  }, [product.items, selectedItem?.id])
+  }
+
+  const items = getSortedItems()
 
   if (!product.items || product.items.length <= 1) return null
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-bold text-steel-900">Available Options</h3>
-        <span className="text-sm text-steel-500 bg-steel-100 px-3 py-1 rounded-full">
-          {product.items.length} options
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-sm font-medium text-steel-900">Available Options</h4>
+        <span className="text-xs text-steel-500 bg-steel-100 px-2 py-0.5 rounded">
+          {product.items.length}
         </span>
       </div>
-      <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
-        {sortedItems.map((item) => (
+      <div className="space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+        {items.map((item) => (
           <button
             key={item.id}
             onClick={() => onItemSelect(item)}
-            className={`w-full p-3 border-2 rounded-xl text-left transition-all duration-200 hover:shadow-lg transform hover:scale-[1.02] ${
+            className={`w-full p-2 border rounded text-left transition-all duration-200 text-sm ${
               selectedItem?.id === item.id
-                ? 'border-primary-500 bg-gradient-to-r from-primary-50 to-blue-50 ring-2 ring-primary-200 shadow-md'
+                ? 'border-primary-500 bg-primary-50 ring-1 ring-primary-200'
                 : 'border-steel-200 hover:border-primary-300 bg-white hover:bg-primary-25'
             }`}
           >
-            <div className="flex justify-between items-center">
-              <div className="flex-1 pr-4">
-                <div className="flex items-center space-x-2 mb-2">
+            <div className="flex justify-between items-start">
+              <div className="flex-1 pr-2">
+                <div className="flex items-center space-x-1 mb-1">
                   {selectedItem?.id === item.id && (
-                    <div className="w-3 h-3 bg-primary-500 rounded-full flex-shrink-0 animate-pulse"></div>
+                    <div className="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0"></div>
                   )}
-                  <p className="font-semibold text-steel-900 text-base leading-tight">{item.name}</p>
+                  <p className="font-medium text-steel-900 text-sm leading-tight truncate">{item.name}</p>
                 </div>
-                <div className="flex items-center space-x-3 text-sm">
-                  <span className="text-steel-600 bg-steel-100 px-2 py-1 rounded-md font-mono">
-                    SKU: {item.sku}
+                <div className="flex items-center space-x-2 text-xs">
+                  <span className="text-steel-500 font-mono">
+                    {item.sku}
                   </span>
                   {item.status && (
-                    <span className={`px-2 py-1 rounded-md text-xs font-semibold ${
+                    <span className={`px-1 py-0.5 rounded text-xs ${
                       item.status === 'STK' 
-                        ? 'bg-green-100 text-green-700' 
+                        ? 'bg-green-100 text-green-600' 
                         : item.status === 'LTD'
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : 'bg-red-100 text-red-700'
+                        ? 'bg-yellow-100 text-yellow-600'
+                        : 'bg-red-100 text-red-600'
                     }`}>
-                      {item.status === 'STK' ? 'In Stock' : item.status === 'LTD' ? 'Limited' : 'Out of Stock'}
+                      {item.status === 'STK' ? '✓' : item.status === 'LTD' ? '!' : '✗'}
                     </span>
                   )}
                 </div>
               </div>
               <div className="text-right">
-                <span className="text-xl font-bold text-primary-600 block">
+                <span className="text-sm font-bold text-primary-600 block">
                   {formatPrice(item.list_price)}
                 </span>
                 {item.mapp_price && parseFloat(item.mapp_price) > parseFloat(item.list_price) && (
-                  <span className="text-sm text-steel-400 line-through">
+                  <span className="text-xs text-steel-400 line-through">
                     {formatPrice(item.mapp_price)}
                   </span>
                 )}
@@ -185,9 +193,8 @@ const ItemSelector = memo(({
         ))}
       </div>
       
-      {/* Helper text */}
-      <div className="text-xs text-steel-500 text-center bg-steel-50 rounded-lg p-2">
-        Click on an option above to view details and pricing
+      <div className="text-xs text-steel-500 text-center pt-1">
+        Click option to select
       </div>
     </div>
   )
@@ -230,22 +237,25 @@ QuantitySelector.displayName = 'QuantitySelector'
 
 // Memoized trust badges component
 const TrustBadges = memo(() => (
-  <div className="border-t border-steel-200 pt-6 space-y-3">
-    <div className="flex items-center space-x-3 text-sm text-steel-600">
-      <Truck className="h-5 w-5 text-green-600" />
-      <span>Free shipping on orders over $99</span>
-    </div>
-    <div className="flex items-center space-x-3 text-sm text-steel-600">
-      <Shield className="h-5 w-5 text-blue-600" />
-      <span>Secure checkout with SSL encryption</span>
-    </div>
-    <div className="flex items-center space-x-3 text-sm text-steel-600">
-      <RotateCcw className="h-5 w-5 text-purple-600" />
-      <span>30-day return policy</span>
-    </div>
-    <div className="flex items-center space-x-3 text-sm text-steel-600">
-      <Clock className="h-5 w-5 text-orange-600" />
-      <span>Ships same day if ordered by 3 PM EST</span>
+  <div className="space-y-2">
+    <h4 className="text-sm font-medium text-steel-700 mb-2">Why Shop With Us</h4>
+    <div className="grid grid-cols-2 gap-2 text-xs">
+      <div className="flex items-center space-x-1 text-steel-600">
+        <Truck className="h-3 w-3 text-accent-600" />
+        <span>Free Ship $99+</span>
+      </div>
+      <div className="flex items-center space-x-1 text-steel-600">
+        <Shield className="h-3 w-3 text-primary-600" />
+        <span>Secure Checkout</span>
+      </div>
+      <div className="flex items-center space-x-1 text-steel-600">
+        <RotateCcw className="h-3 w-3 text-steel-600" />
+        <span>30-Day Returns</span>
+      </div>
+      <div className="flex items-center space-x-1 text-steel-600">
+        <Clock className="h-3 w-3 text-accent-600" />
+        <span>Same Day Ship</span>
+      </div>
     </div>
   </div>
 ))
@@ -264,21 +274,24 @@ const OptimizedProductDetails = memo(function OptimizedProductDetails({
   const { addItem } = useCartStore()
   const { toggleItem, isInWishlist } = useWishlistStore()
 
-  // Memoized calculations
-  const savingsAmount = useMemo(() => {
-    if (!selectedItem?.mapp_price || !selectedItem?.list_price) return null
-    const mapp = parseFloat(selectedItem.mapp_price)
-    const list = parseFloat(selectedItem.list_price)
-    if (mapp > list) {
-      return mapp - list
-    }
-    return null
-  }, [selectedItem?.mapp_price, selectedItem?.list_price])
+  // Simplified calculations
+  const savingsAmount = selectedItem?.mapp_price && selectedItem?.list_price ? 
+    (() => {
+      const mapp = parseFloat(selectedItem.mapp_price)
+      const list = parseFloat(selectedItem.list_price)
+      return mapp > list ? mapp - list : null
+    })() : null
 
-  const inWishlist = useMemo(() => 
-    selectedItem ? isInWishlist(selectedItem.id.toString()) : false,
-    [selectedItem?.id, isInWishlist]
-  )
+  const inWishlist = selectedItem ? isInWishlist(selectedItem.id.toString()) : false
+
+  // Reset quantity when item changes
+  const prevSelectedItemId = useRef(selectedItem?.id)
+  useEffect(() => {
+    if (selectedItem?.id !== prevSelectedItemId.current) {
+      setQuantity(1)
+      prevSelectedItemId.current = selectedItem?.id
+    }
+  }, [selectedItem?.id])
 
   // Optimized handlers
   const handleQuantityChange = useCallback((delta: number) => {
@@ -325,123 +338,134 @@ const OptimizedProductDetails = memo(function OptimizedProductDetails({
   }, [selectedItem, toggleItem])
 
   return (
-    <div className="sticky top-8 bg-white rounded-2xl shadow-lg p-6 space-y-6">
-      {/* Brand & Title */}
-      <div className="space-y-3">
-        {selectedItem?.brand?.data && (
-          <div className="flex items-center space-x-2">
-            <Award className="h-4 w-4 text-primary-600" />
-            <span className="text-sm text-primary-600 font-semibold uppercase tracking-wider">
-              {selectedItem.brand.data.name}
-            </span>
-          </div>
-        )}
-        <h1 className="text-2xl lg:text-3xl font-bold text-steel-900 leading-tight">
-          {product.name}
-        </h1>
-        {selectedItem && selectedItem.name !== product.name && (
-          <p className="text-lg text-steel-700 font-medium">{selectedItem.name}</p>
-        )}
-      </div>
-
-      {/* Rating */}
-      <div className="flex items-center space-x-3">
-        <div className="flex text-yellow-400">
-          {[...Array(5)].map((_, i) => (
-            <Star
-              key={i}
-              className={`h-5 w-5 ${i < 4 ? 'fill-current' : 'fill-steel-200'}`}
-            />
-          ))}
+    <div className="space-y-4">
+      {/* Essential Purchase Info - Compact */}
+      <div className="card p-4 space-y-4">
+        {/* Header with Brand & SKU */}
+        <div className="flex items-center justify-between">
+          {selectedItem?.brand?.data && (
+            <div className="inline-flex items-center space-x-1 bg-primary-600 text-white px-2 py-1 rounded text-xs font-medium">
+              <Award className="h-3 w-3" />
+              <span className="uppercase tracking-wide">
+                {selectedItem.brand.data.name}
+              </span>
+            </div>
+          )}
+          {selectedItem && (
+            <div className="text-xs text-steel-500 font-mono">
+              SKU: {selectedItem.sku}
+            </div>
+          )}
         </div>
-        <span className="text-steel-600 font-medium">4.0</span>
-        <span className="text-steel-500">(23 reviews)</span>
+        
+        {/* Product Title - Compact */}
+        <div>
+          <h1 className="text-lg lg:text-xl font-display font-bold text-steel-900 leading-tight">
+            {product.name}
+          </h1>
+          {selectedItem && selectedItem.name !== product.name && (
+            <p className="text-sm text-steel-600 mt-1">{selectedItem.name}</p>
+          )}
+        </div>
+        
+        {/* Price & Stock - Side by Side */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-baseline space-x-2">
+            <PriceDisplay selectedItem={selectedItem} savingsAmount={savingsAmount} />
+          </div>
+          <StockStatus selectedItem={selectedItem} />
+        </div>
       </div>
 
-      {/* Price & Savings */}
-      <PriceDisplay selectedItem={selectedItem} savingsAmount={savingsAmount} />
-
-      {/* Stock Status */}
-      <StockStatus selectedItem={selectedItem} />
-
-      {/* SKU */}
-      {selectedItem && (
-        <div className="text-sm text-steel-600">
-          <span className="font-medium">SKU:</span> 
-          <span className="font-mono ml-1">{selectedItem.sku}</span>
+      {/* Item Selection - Compact */}
+      {product.items && product.items.length > 1 && (
+        <div className="card p-3">
+          <ItemSelector 
+            product={product}
+            selectedItem={selectedItem}
+            onItemSelect={onItemSelect}
+          />
         </div>
       )}
 
-      {/* Item Selection */}
-      <ItemSelector 
-        product={product}
-        selectedItem={selectedItem}
-        onItemSelect={onItemSelect}
-      />
-
-      {/* Quantity & Add to Cart */}
-      <div className="space-y-4">
-        <QuantitySelector 
-          quantity={quantity}
-          onQuantityChange={handleQuantityChange}
-        />
-
-        <div className="space-y-3">
-          <button
-            onClick={handleAddToCart}
-            disabled={!selectedItem || isAddingToCart || selectedItem?.status === 'OOS'}
-            className={`w-full btn btn-lg font-semibold transition-all duration-300 transform hover:scale-105 ${
-              justAddedToCart
-                ? 'btn-success'
-                : isAddingToCart
-                ? 'btn-primary opacity-75'
-                : selectedItem?.status === 'OOS'
-                ? 'btn-outline cursor-not-allowed'
-                : 'btn-primary'
-            }`}
-          >
-            {justAddedToCart ? (
-              <>
-                <CheckCircle className="h-5 w-5 mr-2" />
-                Added to Cart!
-              </>
-            ) : isAddingToCart ? (
-              <>
-                <div className="animate-spin h-5 w-5 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
-                Adding...
-              </>
-            ) : selectedItem?.status === 'OOS' ? (
-              'Out of Stock'
-            ) : (
-              <>
-                <ShoppingCart className="h-5 w-5 mr-2" />
-                Add to Cart
-              </>
-            )}
-          </button>
-          
-          <div className="flex space-x-3">
-            <button 
-              onClick={handleWishlist}
-              className={`flex-1 btn transition-colors ${
-                inWishlist 
-                  ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' 
-                  : 'btn-outline hover:bg-red-50 hover:text-red-600 hover:border-red-200'
-              }`}
-            >
-              <Heart className={`h-5 w-5 mr-2 ${inWishlist ? 'fill-current' : ''}`} />
-              {inWishlist ? 'In Wishlist' : 'Add to Wishlist'}
-            </button>
-            <button className="flex-1 btn btn-outline">
-              <Share2 className="h-5 w-5 mr-2" />
-              Share
-            </button>
+      {/* Purchase Actions - Compact */}
+      <div className="card p-4 space-y-3">
+        {/* Quantity & Actions in Grid */}
+        <div className="grid grid-cols-2 gap-3 items-center">
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium text-steel-700">Qty:</label>
+            <div className="flex items-center border border-steel-200 rounded">
+              <button
+                onClick={() => handleQuantityChange(-1)}
+                className="p-1 hover:bg-steel-50 transition-colors disabled:opacity-50"
+                disabled={quantity <= 1}
+              >
+                <Minus className="h-3 w-3" />
+              </button>
+              <span className="px-2 py-1 border-x border-steel-200 text-sm font-medium min-w-[40px] text-center">
+                {quantity}
+              </span>
+              <button
+                onClick={() => handleQuantityChange(1)}
+                className="p-1 hover:bg-steel-50 transition-colors"
+              >
+                <Plus className="h-3 w-3" />
+              </button>
+            </div>
           </div>
+          
+          <button 
+            onClick={handleWishlist}
+            className={`p-2 rounded border transition-all duration-200 ${
+              inWishlist 
+                ? 'bg-red-50 text-red-600 border-red-300' 
+                : 'bg-white text-steel-600 border-steel-300 hover:bg-red-50 hover:text-red-600'
+            }`}
+            title={inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+          >
+            <Heart className={`h-4 w-4 ${inWishlist ? 'fill-current' : ''}`} />
+          </button>
         </div>
+        
+        {/* Add to Cart Button */}
+        <button
+          onClick={handleAddToCart}
+          disabled={!selectedItem || isAddingToCart || selectedItem?.status === 'OOS'}
+          className={`w-full py-2.5 px-4 rounded font-medium transition-all duration-200 text-sm ${
+            justAddedToCart
+              ? 'bg-accent-600 text-white'
+              : isAddingToCart
+              ? 'bg-primary-600 text-white opacity-75'
+              : selectedItem?.status === 'OOS'
+              ? 'bg-steel-300 text-steel-500 cursor-not-allowed'
+              : 'btn-primary'
+          }`}
+        >
+          {justAddedToCart ? (
+            <>
+              <CheckCircle className="h-4 w-4 mr-2 inline" />
+              Added to Cart!
+            </>
+          ) : isAddingToCart ? (
+            <>
+              <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full inline-block"></div>
+              Adding...
+            </>
+          ) : selectedItem?.status === 'OOS' ? (
+            'Out of Stock'
+          ) : (
+            <>
+              <ShoppingCart className="h-4 w-4 mr-2 inline" />
+              Add to Cart
+            </>
+          )}
+        </button>
       </div>
 
-      {/* Trust Badges */}
-      <TrustBadges />
+      {/* Trust Badges - Compact */}
+      <div className="card p-3">
+        <TrustBadges />
+      </div>
     </div>
   )
 })

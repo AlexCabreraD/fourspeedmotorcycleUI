@@ -15,7 +15,7 @@ interface OptimizedProductTabsProps {
   selectedItem: WPSItem | null
 }
 
-type TabId = 'overview' | 'specifications' | 'shipping' | 'reviews'
+type TabId = 'overview' | 'specifications' | 'shipping'
 
 interface Tab {
   id: TabId
@@ -47,13 +47,13 @@ const OverviewTab = memo(({
   }, [selectedItem?.status])
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Product Description */}
       {product.description && (
         <div>
-          <h3 className="text-xl font-bold text-steel-900 mb-4">Product Description</h3>
+          <h3 className="text-base font-display font-semibold text-steel-900 mb-2">Product Description</h3>
           <div className="prose prose-steel max-w-none">
-            <p className="text-steel-700 leading-relaxed text-lg">{product.description}</p>
+            <p className="text-steel-700 leading-relaxed">{product.description}</p>
           </div>
         </div>
       )}
@@ -61,16 +61,16 @@ const OverviewTab = memo(({
       {/* Key Features */}
       {selectedItem?.features && selectedItem.features.length > 0 && (
         <div>
-          <h3 className="text-xl font-bold text-steel-900 mb-6">Key Features</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <h3 className="text-base font-display font-semibold text-steel-900 mb-3">Key Features</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {selectedItem.features.map((feature, index) => (
-              <div key={index} className="bg-gradient-to-br from-primary-50 to-blue-50 p-6 rounded-xl border border-primary-100">
-                <div className="flex items-start space-x-3">
-                  <CheckCircle className="h-6 w-6 text-primary-600 flex-shrink-0 mt-1" />
+              <div key={index} className="bg-primary-50 p-3 rounded border border-primary-100">
+                <div className="flex items-start space-x-2">
+                  <CheckCircle className="h-4 w-4 text-primary-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h4 className="font-semibold text-steel-900 mb-2">{feature.name}</h4>
+                    <h4 className="font-medium text-steel-900 text-sm mb-1">{feature.name}</h4>
                     {feature.description && (
-                      <p className="text-steel-600 text-sm leading-relaxed">{feature.description}</p>
+                      <p className="text-steel-600 text-xs leading-relaxed">{feature.description}</p>
                     )}
                   </div>
                 </div>
@@ -82,36 +82,36 @@ const OverviewTab = memo(({
 
       {/* Product Details Grid */}
       <div>
-        <h3 className="text-xl font-bold text-steel-900 mb-6">Product Details</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-steel-50 p-6 rounded-xl">
-            <h4 className="font-semibold text-steel-900 mb-4">General Information</h4>
+        <h3 className="text-base font-display font-semibold text-steel-900 mb-3">Product Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="bg-steel-50 p-3 rounded border border-steel-200">
+            <h4 className="font-medium text-steel-900 text-sm mb-2">General Information</h4>
             <div className="space-y-3">
               {selectedItem?.brand?.data && (
-                <div className="flex justify-between py-2 border-b border-steel-200">
-                  <span className="text-steel-600">Brand:</span>
-                  <span className="font-medium">{selectedItem.brand.data.name}</span>
+                <div className="flex justify-between py-1.5 border-b border-steel-200">
+                  <span className="text-steel-600 text-sm">Brand:</span>
+                  <span className="font-medium text-sm">{selectedItem.brand.data.name}</span>
                 </div>
               )}
               {selectedItem?.product_type && (
-                <div className="flex justify-between py-2 border-b border-steel-200">
-                  <span className="text-steel-600">Category:</span>
-                  <span className="font-medium">{selectedItem.product_type}</span>
+                <div className="flex justify-between py-1.5 border-b border-steel-200">
+                  <span className="text-steel-600 text-sm">Category:</span>
+                  <span className="font-medium text-sm">{selectedItem.product_type}</span>
                 </div>
               )}
-              <div className="flex justify-between py-2 border-b border-steel-200">
-                <span className="text-steel-600">SKU:</span>
-                <span className="font-medium font-mono">{selectedItem?.sku}</span>
+              <div className="flex justify-between py-1.5 border-b border-steel-200">
+                <span className="text-steel-600 text-sm">SKU:</span>
+                <span className="font-medium font-mono text-sm">{selectedItem?.sku}</span>
               </div>
-              <div className="flex justify-between py-2">
-                <span className="text-steel-600">Availability:</span>
-                <span className={`font-medium ${stockStatus.color}`}>{stockStatus.text}</span>
+              <div className="flex justify-between py-1.5">
+                <span className="text-steel-600 text-sm">Availability:</span>
+                <span className={`font-medium text-sm ${stockStatus.color}`}>{stockStatus.text}</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-steel-50 p-6 rounded-xl">
-            <h4 className="font-semibold text-steel-900 mb-4">Physical Specifications</h4>
+          <div className="bg-steel-50 p-3 rounded border border-steel-200">
+            <h4 className="font-medium text-steel-900 text-sm mb-2">Physical Specifications</h4>
             <div className="space-y-3">
               {selectedItem?.length && (
                 <div className="flex justify-between py-2 border-b border-steel-200">
@@ -151,8 +151,8 @@ OverviewTab.displayName = 'OverviewTab'
 const SpecificationsTab = memo(({ selectedItem }: { selectedItem: WPSItem | null }) => (
   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
     <div className="space-y-6">
-      <h3 className="text-xl font-bold text-steel-900">Technical Specifications</h3>
-      <div className="bg-steel-50 p-6 rounded-xl">
+      <h3 className="text-lg font-display font-semibold text-steel-900">Technical Specifications</h3>
+      <div className="bg-steel-50 p-4 rounded-lg">
         <div className="space-y-4">
           {selectedItem?.supplier_product_id && (
             <div className="flex justify-between py-3 border-b border-steel-200">
@@ -175,8 +175,8 @@ const SpecificationsTab = memo(({ selectedItem }: { selectedItem: WPSItem | null
     </div>
 
     <div className="space-y-6">
-      <h3 className="text-xl font-bold text-steel-900">Dimensions & Weight</h3>
-      <div className="bg-steel-50 p-6 rounded-xl">
+      <h3 className="text-lg font-display font-semibold text-steel-900">Dimensions & Weight</h3>
+      <div className="bg-steel-50 p-4 rounded-lg">
         <div className="space-y-4">
           {selectedItem?.length && (
             <div className="flex justify-between py-3 border-b border-steel-200">
@@ -213,47 +213,47 @@ SpecificationsTab.displayName = 'SpecificationsTab'
 // Memoized shipping tab content
 const ShippingTab = memo(() => (
   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-    <div className="bg-gradient-to-br from-blue-50 to-primary-50 p-8 rounded-xl border border-blue-200">
-      <h3 className="text-xl font-bold text-steel-900 mb-6 flex items-center">
-        <Truck className="h-6 w-6 text-blue-600 mr-3" />
+    <div className="bg-primary-50 p-6 rounded-lg border border-primary-200">
+      <h3 className="text-lg font-display font-semibold text-steel-900 mb-4 flex items-center">
+        <Truck className="h-5 w-5 text-primary-600 mr-2" />
         Shipping Information
       </h3>
-      <div className="space-y-4 text-steel-700">
-        <div className="flex items-start space-x-3">
-          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-1" />
+      <div className="space-y-3 text-steel-700 text-sm">
+        <div className="flex items-start space-x-2">
+          <CheckCircle className="h-3 w-3 text-accent-600 flex-shrink-0 mt-0.5" />
           <span>Free shipping on orders over $99</span>
         </div>
-        <div className="flex items-start space-x-3">
-          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-1" />
+        <div className="flex items-start space-x-2">
+          <CheckCircle className="h-3 w-3 text-accent-600 flex-shrink-0 mt-0.5" />
           <span>Most orders ship same day when ordered before 3 PM EST</span>
         </div>
-        <div className="flex items-start space-x-3">
-          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-1" />
+        <div className="flex items-start space-x-2">
+          <CheckCircle className="h-3 w-3 text-accent-600 flex-shrink-0 mt-0.5" />
           <span>Expected delivery: 2-5 business days</span>
         </div>
       </div>
     </div>
     
-    <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-8 rounded-xl border border-green-200">
-      <h3 className="text-xl font-bold text-steel-900 mb-6 flex items-center">
-        <RotateCcw className="h-6 w-6 text-green-600 mr-3" />
+    <div className="bg-accent-50 p-6 rounded-lg border border-accent-200">
+      <h3 className="text-lg font-display font-semibold text-steel-900 mb-4 flex items-center">
+        <RotateCcw className="h-5 w-5 text-accent-600 mr-2" />
         Return Policy
       </h3>
-      <div className="space-y-4 text-steel-700">
-        <div className="flex items-start space-x-3">
-          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-1" />
+      <div className="space-y-3 text-steel-700 text-sm">
+        <div className="flex items-start space-x-2">
+          <CheckCircle className="h-3 w-3 text-accent-600 flex-shrink-0 mt-0.5" />
           <span>30-day return policy</span>
         </div>
-        <div className="flex items-start space-x-3">
-          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-1" />
+        <div className="flex items-start space-x-2">
+          <CheckCircle className="h-3 w-3 text-accent-600 flex-shrink-0 mt-0.5" />
           <span>Items must be in original condition</span>
         </div>
-        <div className="flex items-start space-x-3">
-          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-1" />
+        <div className="flex items-start space-x-2">
+          <CheckCircle className="h-3 w-3 text-accent-600 flex-shrink-0 mt-0.5" />
           <span>Free return shipping on defective items</span>
         </div>
-        <div className="flex items-start space-x-3">
-          <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-1" />
+        <div className="flex items-start space-x-2">
+          <Info className="h-4 w-4 text-primary-600 flex-shrink-0 mt-0.5" />
           <span>Restocking fee may apply to special orders</span>
         </div>
       </div>
@@ -263,89 +263,6 @@ const ShippingTab = memo(() => (
 
 ShippingTab.displayName = 'ShippingTab'
 
-// Memoized reviews tab content
-const ReviewsTab = memo(() => (
-  <div className="space-y-8">
-    {/* Review Summary */}
-    <div className="bg-steel-50 p-8 rounded-xl">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div>
-          <h3 className="text-2xl font-bold text-steel-900 mb-4">Customer Reviews</h3>
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="flex text-yellow-400">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className={`h-6 w-6 ${i < 4 ? 'fill-current' : 'fill-steel-200'}`} />
-              ))}
-            </div>
-            <span className="text-2xl font-bold text-steel-900">4.0</span>
-            <span className="text-steel-600">Based on 23 reviews</span>
-          </div>
-          <button className="btn btn-outline">Write a Review</button>
-        </div>
-        
-        <div className="space-y-3">
-          {[5, 4, 3, 2, 1].map((rating) => (
-            <div key={rating} className="flex items-center space-x-3">
-              <span className="text-sm font-medium text-steel-600 w-8">{rating}★</span>
-              <div className="flex-1 bg-steel-200 rounded-full h-2">
-                <div 
-                  className="bg-yellow-400 h-2 rounded-full"
-                  style={{ width: `${rating === 4 ? 60 : rating === 5 ? 30 : rating === 3 ? 10 : 0}%` }}
-                ></div>
-              </div>
-              <span className="text-sm text-steel-600 w-8">
-                {rating === 4 ? '14' : rating === 5 ? '7' : rating === 3 ? '2' : '0'}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-
-    {/* Sample Reviews */}
-    <div className="space-y-6">
-      {[
-        {
-          name: 'Mike Rodriguez',
-          rating: 5,
-          date: '2 weeks ago',
-          title: 'Excellent quality and fast shipping',
-          review: 'This part exceeded my expectations. Perfect fit and excellent build quality. Shipping was fast and packaging was secure.'
-        },
-        {
-          name: 'Sarah Chen',
-          rating: 4,
-          date: '1 month ago',
-          title: 'Good value for money',
-          review: 'Solid product at a competitive price. Installation was straightforward with the included instructions.'
-        }
-      ].map((review, index) => (
-        <div key={index} className="bg-white border border-steel-200 p-6 rounded-xl">
-          <div className="flex items-start space-x-4">
-            <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-              <span className="font-bold text-primary-600">{review.name[0]}</span>
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center space-x-3 mb-2">
-                <span className="font-semibold text-steel-900">{review.name}</span>
-                <div className="flex text-yellow-400">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className={`h-4 w-4 ${i < review.rating ? 'fill-current' : 'fill-steel-200'}`} />
-                  ))}
-                </div>
-                <span className="text-steel-500 text-sm">{review.date}</span>
-              </div>
-              <h4 className="font-semibold text-steel-900 mb-2">{review.title}</h4>
-              <p className="text-steel-700">{review.review}</p>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-))
-
-ReviewsTab.displayName = 'ReviewsTab'
 
 // Memoized tab navigation
 const TabNavigation = memo(({ 
@@ -357,19 +274,19 @@ const TabNavigation = memo(({
   activeTab: TabId
   onTabChange: (tab: TabId) => void
 }) => (
-  <div className="border-b border-steel-200">
-    <nav className="flex space-x-8 px-6">
+  <div className="bg-steel-50 border-b border-steel-200">
+    <nav className="flex space-x-1 px-6 py-4">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
-          className={`flex items-center space-x-2 py-4 border-b-2 font-medium transition-colors ${
+          className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
             activeTab === tab.id
-              ? 'border-primary-500 text-primary-600'
-              : 'border-transparent text-steel-600 hover:text-steel-900'
+              ? 'bg-primary-600 text-white shadow-card'
+              : 'bg-white text-steel-600 hover:text-steel-900 hover:bg-steel-100 border border-steel-200'
           }`}
         >
-          <tab.icon className="h-5 w-5" />
+          <tab.icon className="h-4 w-4" />
           <span>{tab.label}</span>
         </button>
       ))}
@@ -388,8 +305,7 @@ const OptimizedProductTabs = memo(function OptimizedProductTabs({
   const tabs: Tab[] = useMemo(() => [
     { id: 'overview', label: 'Overview', icon: Info },
     { id: 'specifications', label: 'Specifications', icon: Package },
-    { id: 'shipping', label: 'Shipping & Returns', icon: Truck },
-    { id: 'reviews', label: 'Reviews', icon: Star }
+    { id: 'shipping', label: 'Shipping & Returns', icon: Truck }
   ], [])
 
   const handleTabChange = useCallback((tab: TabId) => {
@@ -404,22 +320,20 @@ const OptimizedProductTabs = memo(function OptimizedProductTabs({
         return <SpecificationsTab selectedItem={selectedItem} />
       case 'shipping':
         return <ShippingTab />
-      case 'reviews':
-        return <ReviewsTab />
       default:
         return <OverviewTab product={product} selectedItem={selectedItem} />
     }
   }, [activeTab, product, selectedItem])
 
   return (
-    <div className="mt-16 bg-white rounded-2xl shadow-lg overflow-hidden">
+    <div className="card overflow-hidden">
       <TabNavigation 
         tabs={tabs}
         activeTab={activeTab}
         onTabChange={handleTabChange}
       />
       
-      <div className="p-6">
+      <div className="p-4">
         {renderTabContent()}
       </div>
     </div>
