@@ -3,8 +3,9 @@
 import { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { Grid, List, Search, Package, Filter, X, ChevronLeft, ChevronRight, ArrowUp } from 'lucide-react'
+import { Grid, List, Search, Package, Filter, X, ChevronLeft, ChevronRight, ArrowUp, Heart } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart'
+import { useWishlistStore, WishlistItem } from '@/lib/store/wishlist'
 import { WPSItem, ImageUtils } from '@/lib/api/wps-client'
 import ImagePlaceholder from '@/components/ui/ImagePlaceholder'
 
@@ -144,6 +145,7 @@ function ProductsContent() {
   
   const itemsPerPage = 20 // Changed to multiple of 4 (4x5)
   const { addItem } = useCartStore()
+  const { toggleItem, isInWishlist } = useWishlistStore()
   
   // Search cache and debounce
   const searchCache = useRef<Map<string, {
@@ -596,6 +598,24 @@ function ProductsContent() {
 
   const handleAddToCart = (product: WPSItem) => {
     addItem(product, 1)
+  }
+
+  const handleWishlist = (e: React.MouseEvent, product: WPSItem) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    const wishlistItem: WishlistItem = {
+      id: product.id.toString(),
+      name: product.name,
+      price: product.list_price,
+      image: getProductImage(product),
+      brand: product.brand?.data?.name,
+      sku: product.sku,
+      slug: `/product/${product.product_id}?item=${product.id}`,
+      productType: product.product_type
+    }
+    
+    toggleItem(wishlistItem)
   }
 
   const clearAllFilters = () => {
@@ -1383,6 +1403,23 @@ function ProductsContent() {
                     />
                   )}
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300" />
+                  
+                  {/* Wishlist Button - Grid View Only */}
+                  {viewMode === 'grid' && (
+                    <div className="absolute top-2 right-2">
+                      <button
+                        onClick={(e) => handleWishlist(e, product)}
+                        className={`btn btn-sm p-2 transition-all duration-300 opacity-0 group-hover:opacity-100 ${
+                          isInWishlist(product.id.toString())
+                            ? 'bg-red-600 text-white hover:bg-red-700' 
+                            : 'bg-white text-steel-900 hover:bg-red-50 hover:text-red-600'
+                        }`}
+                        title={isInWishlist(product.id.toString()) ? "Remove from Wishlist" : "Add to Wishlist"}
+                      >
+                        <Heart className={`h-4 w-4 ${isInWishlist(product.id.toString()) ? 'fill-current' : ''}`} />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Product Info */}
@@ -1431,19 +1468,43 @@ function ProductsContent() {
                     SKU: {product.sku}
                   </p>
 
-                  {/* Add to Cart Button */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      handleAddToCart(product)
-                    }}
-                    className={`btn btn-primary ${
-                      viewMode === 'list' ? 'btn-lg' : 'btn-sm w-full'
-                    }`}
-                  >
-                    Add to Cart
-                  </button>
+                  {/* Action Buttons */}
+                  {viewMode === 'list' ? (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={(e) => handleWishlist(e, product)}
+                        className={`btn btn-sm p-2 transition-colors ${
+                          isInWishlist(product.id.toString())
+                            ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' 
+                            : 'btn-outline hover:bg-red-50 hover:text-red-600 hover:border-red-200'
+                        }`}
+                        title={isInWishlist(product.id.toString()) ? "Remove from Wishlist" : "Add to Wishlist"}
+                      >
+                        <Heart className={`h-4 w-4 ${isInWishlist(product.id.toString()) ? 'fill-current' : ''}`} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleAddToCart(product)
+                        }}
+                        className="btn btn-lg btn-primary flex items-center"
+                      >
+                        Add to Cart
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleAddToCart(product)
+                      }}
+                      className="btn btn-primary btn-sm w-full"
+                    >
+                      Add to Cart
+                    </button>
+                  )}
                 </div>
                 </div>
               </Link>

@@ -34,8 +34,8 @@ export default function DesktopCategoriesView() {
   const [scrollProgress, setScrollProgress] = useState(0)
   const [currentSection, setCurrentSection] = useState(0)
 
-  // Number of sections (hero + 10 categories + final CTA = 12 total)
-  const totalSections = 12
+  // Number of sections (hero + 9 category sections + final CTA = 11 total)
+  const totalSections = 11
 
   // Add custom CSS for smooth scrolling
   useEffect(() => {
@@ -80,65 +80,36 @@ export default function DesktopCategoriesView() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [totalSections])
 
-  // Wheel-based section navigation
+  // Optional keyboard navigation (non-intrusive)
   useEffect(() => {
-    let wheelTimeout: NodeJS.Timeout
-    let lastWheelTime = 0
-
-    const handleWheel = (e: WheelEvent) => {
-      const now = Date.now()
-      
-      // Throttle wheel events to prevent rapid firing
-      if (now - lastWheelTime < 100) return
-      lastWheelTime = now
-      
-      // Only intercept if this is a significant scroll
-      if (Math.abs(e.deltaY) < 10) return
-      
-      e.preventDefault()
-      
-      clearTimeout(wheelTimeout)
-      wheelTimeout = setTimeout(() => {
-        const direction = e.deltaY > 0 ? 1 : -1
-        const nextSection = currentSection + direction
-        
-        if (nextSection >= 0 && nextSection < totalSections) {
-          scrollToSection(nextSection)
-        }
-      }, 10)
-    }
-
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle keyboard navigation when user explicitly uses page navigation keys
       switch (e.key) {
-        case 'ArrowDown':
         case 'PageDown':
           e.preventDefault()
           scrollToSection(currentSection + 1)
           break
-        case 'ArrowUp':
         case 'PageUp':
           e.preventDefault()
           scrollToSection(currentSection - 1)
           break
         case 'Home':
-          e.preventDefault()
-          scrollToSection(0)
+          if (e.ctrlKey) { // Ctrl+Home
+            e.preventDefault()
+            scrollToSection(0)
+          }
           break
         case 'End':
-          e.preventDefault()
-          scrollToSection(totalSections - 1)
+          if (e.ctrlKey) { // Ctrl+End
+            e.preventDefault()
+            scrollToSection(totalSections - 1)
+          }
           break
       }
     }
 
-    window.addEventListener('wheel', handleWheel, { passive: false })
     window.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      window.removeEventListener('wheel', handleWheel)
-      window.removeEventListener('keydown', handleKeyDown)
-      clearTimeout(wheelTimeout)
-    }
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [currentSection, scrollToSection, totalSections])
 
 

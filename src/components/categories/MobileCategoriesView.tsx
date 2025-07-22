@@ -568,26 +568,26 @@ export default function MobileCategoriesView() {
         </Link>
       </div>
 
-      {/* Bottom CTA Section */}
-      <div className="px-4 pb-8">
-        <div className="mt-8 text-center bg-steel-50 rounded-2xl p-8">
-          <h2 className="text-2xl sm:text-3xl font-display font-bold text-steel-900 mb-4">
+      {/* Can't Find What You're Looking For? Section */}
+      <div className="relative bg-steel-50 py-16 sm:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-steel-900 mb-6">
             Can't Find What You're Looking For?
           </h2>
-          <p className="text-steel-600 mb-6 max-w-2xl mx-auto">
+          <p className="text-steel-600 text-lg mb-8 max-w-3xl mx-auto">
             Browse our complete catalog of motorcycle parts and accessories, or get expert help finding the perfect components for your ride.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/products"
-              className="inline-flex items-center justify-center px-8 py-3 bg-orange-500 text-white font-bold rounded-full hover:bg-orange-600 transition-colors duration-300"
+              className="inline-flex items-center justify-center px-8 py-4 bg-orange-500 text-white font-bold rounded-full hover:bg-orange-600 transition-colors duration-300 text-lg"
             >
               View All Products
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
             <Link
               href="/contact"
-              className="inline-flex items-center justify-center px-8 py-3 border-2 border-steel-300 text-steel-900 font-bold rounded-full hover:border-steel-400 transition-colors duration-300"
+              className="inline-flex items-center justify-center px-8 py-4 border-2 border-steel-300 text-steel-900 font-bold rounded-full hover:border-steel-400 transition-colors duration-300 text-lg"
             >
               Get Expert Help
             </Link>
