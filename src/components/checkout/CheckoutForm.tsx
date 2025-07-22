@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useCartStore } from '@/lib/store/cart'
+import { useCartStore, type ShippingAddress, type ShippingRate } from '@/lib/store/cart'
 import { formatCurrency } from '@/lib/utils'
 import StripeCheckout from '@/components/payments/StripeCheckout'
 
@@ -39,8 +39,18 @@ const US_STATES = [
 
 export default function CheckoutForm({ onSuccess, onError }: CheckoutFormProps) {
   const router = useRouter()
-  const { items, getTotalPrice } = useCartStore()
-  const [formStep, setFormStep] = useState<'info' | 'payment'>('info')
+  const { 
+    items, 
+    getTotalPrice, 
+    getShippingTotal,
+    setShippingAddress, 
+    calculateShippingRates,
+    availableShippingRates,
+    selectedShippingRate,
+    selectShippingRate,
+    shippingCalculating
+  } = useCartStore()
+  const [formStep, setFormStep] = useState<'info' | 'shipping' | 'payment'>('info')
   const [formData, setFormData] = useState<FormData>({
     email: '',
     phone: '',
@@ -58,7 +68,7 @@ export default function CheckoutForm({ onSuccess, onError }: CheckoutFormProps) 
 
   // Calculate totals
   const subtotal = getTotalPrice()
-  const shipping = subtotal >= 99 ? 0 : 12.99 // Free shipping over $99
+  const shipping = getShippingTotal()
   const tax = subtotal * 0.08 // 8% tax rate
   const total = subtotal + shipping + tax
 
@@ -86,7 +96,7 @@ export default function CheckoutForm({ onSuccess, onError }: CheckoutFormProps) 
     return Object.keys(newErrors).length === 0
   }
 
-  // Handle form submission (proceed to payment)
+  // Handle form submission (proceed to shipping)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -99,7 +109,34 @@ export default function CheckoutForm({ onSuccess, onError }: CheckoutFormProps) 
       return
     }
 
-    // Move to payment step
+    // Set shipping address and calculate rates
+    const shippingAddress: ShippingAddress = {
+      name: `${formData.firstName} ${formData.lastName}`,
+      street1: formData.address1,
+      street2: formData.address2 || undefined,
+      city: formData.city,
+      state: formData.state,
+      zip: formData.zip,
+      country: 'US',
+      phone: formData.phone,
+      email: formData.email,
+    }
+
+    setShippingAddress(shippingAddress)
+    
+    // Move to shipping step
+    setFormStep('shipping')
+    
+    // Calculate shipping rates
+    await calculateShippingRates()
+  }
+
+  // Handle shipping selection
+  const handleShippingContinue = () => {
+    if (!selectedShippingRate) {
+      onError?.('Please select a shipping option')
+      return
+    }
     setFormStep('payment')
   }
 
@@ -244,9 +281,20 @@ export default function CheckoutForm({ onSuccess, onError }: CheckoutFormProps) 
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
                 formStep === 'info' ? 'bg-orange-600' : 'bg-green-600'
               }`}>
-                {formStep === 'payment' ? '✓' : '1'}
+                {formStep !== 'info' ? '✓' : '1'}
               </div>
               <span className="font-medium">Customer Info</span>
+            </div>
+            <div className="h-px w-16 bg-steel-300"></div>
+            <div className={`flex items-center space-x-2 ${
+              formStep === 'shipping' ? 'text-orange-600' : formStep === 'payment' ? 'text-green-600' : 'text-steel-400'
+            }`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
+                formStep === 'shipping' ? 'bg-orange-600' : formStep === 'payment' ? 'bg-green-600' : 'bg-steel-400'
+              }`}>
+                {formStep === 'payment' ? '✓' : '2'}
+              </div>
+              <span className="font-medium">Shipping</span>
             </div>
             <div className="h-px w-16 bg-steel-300"></div>
             <div className={`flex items-center space-x-2 ${
@@ -255,7 +303,7 @@ export default function CheckoutForm({ onSuccess, onError }: CheckoutFormProps) 
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
                 formStep === 'payment' ? 'bg-orange-600' : 'bg-steel-400'
               }`}>
-                2
+                3
               </div>
               <span className="font-medium">Payment</span>
             </div>
@@ -444,10 +492,89 @@ export default function CheckoutForm({ onSuccess, onError }: CheckoutFormProps) 
                 type="submit"
                 className="flex-1 bg-orange-600 text-white py-4 rounded-lg font-bold text-lg hover:bg-orange-700 transition-colors"
               >
-                Continue to Payment
+                Continue to Shipping
               </button>
             </div>
           </form>
+        ) : formStep === 'shipping' ? (
+          <div className="space-y-6">
+            {/* Back button */}
+            <button
+              onClick={() => setFormStep('info')}
+              className="flex items-center text-steel-600 hover:text-steel-900 transition-colors"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Customer Info
+            </button>
+
+            {/* Shipping Options */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h3 className="text-lg font-bold text-steel-900 mb-4">Choose Shipping Method</h3>
+              
+              {shippingCalculating ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-4"></div>
+                  <p className="text-steel-600">Calculating shipping rates...</p>
+                </div>
+              ) : availableShippingRates.length > 0 ? (
+                <div className="space-y-3">
+                  {availableShippingRates.map((rate) => (
+                    <label key={rate.id} className="block">
+                      <div className={`border-2 rounded-lg p-4 cursor-pointer transition-colors ${
+                        selectedShippingRate?.id === rate.id 
+                          ? 'border-orange-600 bg-orange-50' 
+                          : 'border-steel-200 hover:border-steel-300'
+                      }`}>
+                        <div className="flex items-center">
+                          <input
+                            type="radio"
+                            name="shipping"
+                            value={rate.id}
+                            checked={selectedShippingRate?.id === rate.id}
+                            onChange={() => selectShippingRate(rate)}
+                            className="mr-3 text-orange-600"
+                          />
+                          <div className="flex-1">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <h4 className="font-semibold text-steel-900">{rate.service}</h4>
+                                <p className="text-sm text-steel-600">{rate.carrier}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-lg">{rate.rate === 0 ? 'FREE' : formatCurrency(rate.rate)}</p>
+                                {rate.delivery_days && (
+                                  <p className="text-sm text-steel-600">
+                                    {rate.delivery_days} business day{rate.delivery_days !== 1 ? 's' : ''}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-steel-600">No shipping rates available for this address.</p>
+                </div>
+              )}
+
+              {/* Continue Button */}
+              <div className="mt-6">
+                <button
+                  onClick={handleShippingContinue}
+                  disabled={!selectedShippingRate}
+                  className="w-full bg-orange-600 text-white py-3 rounded-lg font-bold text-lg hover:bg-orange-700 transition-colors disabled:bg-steel-300 disabled:cursor-not-allowed"
+                >
+                  Continue to Payment
+                </button>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="space-y-6">
             {/* Back button */}
@@ -500,7 +627,10 @@ export default function CheckoutForm({ onSuccess, onError }: CheckoutFormProps) 
               </div>
               <div className="flex justify-between text-sm">
                 <span>Shipping</span>
-                <span>{shipping === 0 ? 'FREE' : formatCurrency(shipping)}</span>
+                <span>
+                  {!selectedShippingRate ? 'TBD' : 
+                   shipping === 0 ? 'FREE' : formatCurrency(shipping)}
+                </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>Tax</span>
@@ -509,12 +639,14 @@ export default function CheckoutForm({ onSuccess, onError }: CheckoutFormProps) 
               <div className="border-t border-steel-200 pt-2">
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>{formatCurrency(total)}</span>
+                  <span>
+                    {!selectedShippingRate ? 'TBD' : formatCurrency(total)}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {shipping === 0 && (
+            {selectedShippingRate && shipping === 0 && (
               <p className="text-green-600 text-sm mt-3 font-medium">
                 🎉 You qualify for free shipping!
               </p>

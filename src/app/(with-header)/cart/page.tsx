@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react'
-import { useCartStore, selectTotalItems, selectTotalPrice, selectShippingTotal, selectTaxTotal, selectGrandTotal } from '@/lib/store/cart'
+import { useCartStore } from '@/lib/store/cart'
 import { useItemImage } from '@/hooks/useItemImages'
 import ConfirmationModal from '@/components/ui/ConfirmationModal'
 
@@ -121,12 +121,12 @@ function CartItem({ item, updateQuantity, onRemoveClick }: {
 }
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem } = useCartStore()
-  const totalItems = useCartStore(selectTotalItems)
-  const totalPrice = useCartStore(selectTotalPrice)
-  const shippingTotal = useCartStore(selectShippingTotal)
-  const taxTotal = useCartStore(selectTaxTotal)
-  const grandTotal = useCartStore(selectGrandTotal)
+  const { items, updateQuantity, removeItem, getTotalItems, getTotalPrice, getShippingTotal, getTaxTotal, getGrandTotal, selectedShippingRate } = useCartStore()
+  const totalItems = getTotalItems()
+  const totalPrice = getTotalPrice()
+  const shippingTotal = getShippingTotal()
+  const taxTotal = getTaxTotal()
+  const grandTotal = getGrandTotal()
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [itemToRemove, setItemToRemove] = useState<any>(null)
 
@@ -238,7 +238,8 @@ export default function CartPage() {
                 <div className="flex justify-between">
                   <span className="text-steel-600">Shipping</span>
                   <span className="font-medium">
-                    {shippingTotal === 0 ? (
+                    {!selectedShippingRate ? 'TBD' : 
+                     shippingTotal === 0 ? (
                       <span className="text-green-600 font-semibold">FREE</span>
                     ) : (
                       formatPrice(shippingTotal)
@@ -247,9 +248,14 @@ export default function CartPage() {
                 </div>
 
                 {/* Free shipping notice */}
-                {shippingTotal > 0 && (
+                {!selectedShippingRate && totalPrice < 99 && (
                   <div className="text-xs text-steel-500 bg-steel-50 p-3 rounded-lg">
                     Add {formatPrice(99 - totalPrice)} more for free shipping!
+                  </div>
+                )}
+                {!selectedShippingRate && (
+                  <div className="text-xs text-steel-500 bg-blue-50 p-3 rounded-lg">
+                    Shipping calculated at checkout
                   </div>
                 )}
 
@@ -264,7 +270,7 @@ export default function CartPage() {
                   <div className="flex justify-between">
                     <span className="text-lg font-semibold text-steel-900">Total</span>
                     <span className="text-2xl font-bold text-primary-600">
-                      {formatPrice(grandTotal)}
+                      {!selectedShippingRate ? 'TBD' : formatPrice(grandTotal)}
                     </span>
                   </div>
                 </div>

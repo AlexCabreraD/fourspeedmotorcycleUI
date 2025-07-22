@@ -1,12 +1,15 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Grid, List, Search, Package, Filter, X, ChevronLeft, ChevronRight, ArrowUp } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart'
 import { WPSItem, ImageUtils } from '@/lib/api/wps-client'
 import ImagePlaceholder from '@/components/ui/ImagePlaceholder'
+
+// Force dynamic rendering to avoid prerendering issues
+export const dynamic = 'force-dynamic'
 
 // All available brands from documentation
 const ALL_BRANDS = [
@@ -105,7 +108,7 @@ const SORT_OPTIONS = [
   { value: 'created_asc', label: 'Oldest First' },
 ]
 
-export default function ProductsPage() {
+function ProductsContent() {
   const searchParams = useSearchParams()
   const [allProducts, setAllProducts] = useState<WPSItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -1533,5 +1536,27 @@ export default function ProductsPage() {
         </button>
       )}
     </div>
+  )
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="animate-pulse">
+            <div className="h-8 bg-steel-200 rounded w-64 mb-6" />
+            <div className="h-16 bg-steel-200 rounded w-full mb-8" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(20)].map((_, i) => (
+                <div key={i} className="h-80 bg-steel-200 rounded" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <ProductsContent />
+    </Suspense>
   )
 }

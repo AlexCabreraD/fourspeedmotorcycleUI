@@ -1,7 +1,8 @@
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { createWPSClient } from '@/lib/api/wps-client'
 
-// GET: Retrieve user's order PO numbers
+// GET: Retrieve user's orders with full details from WPS
 export async function GET() {
   try {
     const { userId } = await auth()
@@ -14,16 +15,63 @@ export async function GET() {
     const client = await clerkClient()
     const user = await client.users.getUser(userId)
     
-    // Get user's PO numbers from metadata (using privateMetadata like wishlist)
-    const userOrders = user.privateMetadata?.orderPoNumbers as string[] || []
+    // Get user's PO numbers from metadata
+    const orderPoNumbers = user.privateMetadata?.orderPoNumbers as string[] || []
     
-    return NextResponse.json({ 
-      success: true, 
-      orderPoNumbers: userOrders 
+    if (orderPoNumbers.length === 0) {
+      return NextResponse.json({
+        success: true,
+        orders: [],
+        meta: {
+          totalOrders: 0,
+          lastOrderDate: null
+        }
+      })
+    }
+
+    // Fetch order details from WPS for each PO number
+    const wpsClient = createWPSClient()
+    const orderPromises = orderPoNumbers.map(async (poNumber) => {
+      try {
+        const orderResponse = await wpsClient.getOrder(poNumber)
+        return {
+          poNumber,
+          ...orderResponse.data,
+          status: 'found'
+        }
+      } catch (error) {
+        console.error(`Failed to fetch order ${poNumber}:`, error)
+        return {
+          poNumber,
+          status: 'not_found',
+          error: 'Order not found in WPS system'
+        }
+      }
     })
+
+    const orders = await Promise.all(orderPromises)
+
+    // Sort orders by date (newest first)
+    const sortedOrders = orders.sort((a, b) => {
+      if (a.order_date && b.order_date) {
+        return new Date(b.order_date).getTime() - new Date(a.order_date).getTime()
+      }
+      return 0
+    })
+
+    return NextResponse.json({
+      success: true,
+      orders: sortedOrders,
+      meta: {
+        totalOrders: orderPoNumbers.length,
+        lastOrderDate: user.privateMetadata?.lastOrderDate || null,
+        foundOrders: orders.filter(o => o.status === 'found').length,
+        notFoundOrders: orders.filter(o => o.status === 'not_found').length
+      }
+    })
+    
   } catch (error) {
     console.error('Error retrieving user orders:', error)
-    console.error('Error details:', error)
     return NextResponse.json(
       { 
         error: 'Failed to retrieve user orders',

@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { Elements } from '@stripe/react-stripe-js'
 import { stripePromise, stripeAppearance, paymentElementOptions, type PaymentIntentData } from '@/lib/stripe/config'
 import PaymentForm from './PaymentForm'
-import { useCartStore, selectTotalPrice } from '@/lib/store/cart'
+import { useCartStore } from '@/lib/store/cart'
+import { useUser } from '@clerk/nextjs'
 
 interface StripeCheckoutProps {
   onSuccess?: (paymentIntentId: string) => void
@@ -33,12 +34,13 @@ export default function StripeCheckout({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  const { items, clearCart } = useCartStore()
-  const totalPrice = useCartStore(selectTotalPrice)
+  const { items, clearCart, getTotalPrice } = useCartStore()
+  const totalPrice = getTotalPrice()
+  const { user } = useUser() // Get current Clerk user
 
   useEffect(() => {
     createPaymentIntent()
-  }, [items, totalPrice])
+  }, [items, totalPrice]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const createPaymentIntent = async () => {
     try {
@@ -54,8 +56,10 @@ export default function StripeCheckout({
       // Prepare order metadata
       const metadata = {
         orderId: `order_${Date.now()}`,
-        customerEmail: customerInfo?.email || '',
-        customerName: customerInfo?.name || '',
+        customerEmail: customerInfo?.email || user?.emailAddresses[0]?.emailAddress || '',
+        customerName: customerInfo?.name || user?.fullName || '',
+        customerPhone: customerInfo?.phone || user?.phoneNumbers[0]?.phoneNumber || '',
+        clerkUserId: user?.id || '',
         items: JSON.stringify(items.map(item => ({
           id: item.id,
           name: item.name,
@@ -64,8 +68,11 @@ export default function StripeCheckout({
           price: item.list_price
         }))),
         itemCount: items.length.toString(),
+        shippingAddress: shippingInfo?.address || '',
         shippingCity: shippingInfo?.city || '',
         shippingState: shippingInfo?.state || '',
+        shippingZip: shippingInfo?.zipCode || '',
+        shippingCountry: shippingInfo?.country || 'US',
       }
 
       const paymentData: PaymentIntentData = {
@@ -89,8 +96,8 @@ export default function StripeCheckout({
       }
 
       setClientSecret(data.clientSecret)
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to initialize payment'
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to initialize payment'
       setError(errorMessage)
       onError?.(errorMessage)
     } finally {

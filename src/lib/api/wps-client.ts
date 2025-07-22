@@ -339,18 +339,35 @@ export interface WPSInventory {
     updated_at: string;
 }
 
-export interface WPSCart {
-    cart_number: string;
-    po_number: string;
-    shipment_type: string;
+// Customer information interfaces for order creation
+export interface CustomerInfo {
+    clerkUserId: string;
+    email: string;
+    name: string;
+    phone?: string;
 }
 
-export interface WPSOrder {
-    order_number: string;
-    status?: string;
-    total?: number;
-    created_at?: string;
-    updated_at?: string;
+export interface ShippingInfo {
+    name: string;
+    address1: string;
+    address2?: string;
+    city: string;
+    state: string;
+    zipCode: string;
+    phone?: string;
+}
+
+export interface OrderCreationData {
+    customerInfo: CustomerInfo;
+    shippingInfo: ShippingInfo;
+    cartItems: Array<{
+        sku: string;
+        quantity: number;
+        name: string;
+        price: string;
+    }>;
+    paymentIntentId: string;
+    totalAmount: number;
 }
 
 export interface WPSPricing {
@@ -597,6 +614,8 @@ export class ImageUtils {
 
         const protocol = image.domain.startsWith('http') ? '' : 'https://';
         // The WPS CDN doesn't support dynamic sizing, use the original image
+        // Style parameter preserved for future CDN improvements
+        void style; // Mark as used
         return `${protocol}${image.domain}${image.path}${image.filename}`;
     }
 
@@ -962,6 +981,63 @@ export class WPSApiClient {
         return this.get<WPSOrder[]>('orders', cleanParams);
     }
 
+    // Enhanced method to create a complete WPS order from Stripe payment with customer data
+    async createOrderFromStripePayment(orderData: OrderCreationData): Promise<ApiResponse<WPSOrder>> {
+        const { customerInfo, shippingInfo, cartItems, paymentIntentId, totalAmount } = orderData;
+        
+        // Generate unique PO number with timestamp and payment intent ID
+        const poNumber = `FS_${Date.now()}_${paymentIntentId.slice(-6)}`;
+        
+        // Create the cart with customer and shipping information
+        const cartData: WPSCart = {
+            po_number: poNumber,
+            ship_name: shippingInfo.name,
+            ship_address1: shippingInfo.address1,
+            ship_address2: shippingInfo.address2,
+            ship_city: shippingInfo.city,
+            ship_state: shippingInfo.state,
+            ship_zip: shippingInfo.zipCode,
+            ship_phone: shippingInfo.phone || customerInfo.phone,
+            email: customerInfo.email,
+            pay_type: 'CC', // Credit card payment
+            comment1: `Customer: ${customerInfo.name} | Clerk ID: ${customerInfo.clerkUserId}`,
+            comment2: `Stripe Payment: ${paymentIntentId} | Total: $${totalAmount.toFixed(2)}`,
+            items: cartItems.map(item => ({
+                sku: item.sku,
+                quantity: item.quantity,
+                notes: `${item.name} - $${item.price}`.slice(0, 30) // WPS limits notes to 30 chars
+            }))
+        };
+
+        try {
+            // Step 1: Create the cart
+            await this.createCart(cartData);
+            
+            // Step 2: Add items to the cart (if cart creation doesn't include items)
+            for (const item of cartItems) {
+                await this.addItemToCart(poNumber, {
+                    sku: item.sku,
+                    quantity: item.quantity,
+                    notes: `${item.name} - $${item.price}`.slice(0, 30)
+                });
+            }
+            
+            // Step 3: Submit cart as order
+            const orderResponse = await this.createOrder(poNumber);
+            
+            return orderResponse;
+            
+        } catch (error) {
+            // If order creation fails, try to clean up the cart
+            try {
+                await this.deleteCart(poNumber);
+            } catch (deleteError) {
+                console.warn('Failed to cleanup cart after order creation error:', deleteError);
+            }
+            throw error;
+        }
+    }
+
     // Images API
     async getImages(params?: QueryParams): Promise<ApiResponse<WPSImage[]>> {
         const cleanParams = this.cleanParams(params);
@@ -1003,40 +1079,7 @@ export class WPSApiClient {
         return this.get<WPSInventory[]>('inventory', cleanParams);
     }
 
-    // Cart & Order API (keeping the same)
-    async createCart(cartData: {
-        po_number: string;
-        default_warehouse?: string;
-        ship_via?: string;
-        [key: string]: any;
-    }): Promise<ApiResponse<WPSCart>> {
-        return this.post<WPSCart>('carts', cartData);
-    }
-
-    async getCart(poNumber: string): Promise<ApiResponse<any>> {
-        return this.get<any>(`carts/${poNumber}`);
-    }
-
-    async addItemToCart(poNumber: string, itemData: {
-        item_sku?: string;
-        item_id?: number;
-        quantity: number;
-        note?: string;
-    }): Promise<ApiResponse<any>> {
-        return this.post<any>(`carts/${poNumber}/items`, itemData);
-    }
-
-    async deleteCart(poNumber: string): Promise<ApiResponse<any>> {
-        return this.delete<any>(`carts/${poNumber}`);
-    }
-
-    async createOrder(poNumber: string): Promise<ApiResponse<WPSOrder>> {
-        return this.post<WPSOrder>('orders', { po_number: poNumber });
-    }
-
-    async getOrder(poNumber: string): Promise<ApiResponse<any>> {
-        return this.get<any>(`orders/${poNumber}`);
-    }
+    // Removed duplicate cart/order methods - using the comprehensive ones above
 
     // Utility methods - FIXED
     async searchProducts(query: string, params?: QueryParams): Promise<ApiResponse<WPSProduct[]>> {

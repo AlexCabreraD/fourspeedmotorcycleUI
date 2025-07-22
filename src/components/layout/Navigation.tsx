@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { Search, ShoppingCart, Menu, X, User, LogOut, Heart } from 'lucide-react'
-import { useCartStore, selectTotalItems } from '@/lib/store/cart'
+import { useCartStore } from '@/lib/store/cart'
 import { useWishlistStore } from '@/lib/store/wishlist'
 import { useUser, useClerk, SignedIn, SignedOut } from '@clerk/nextjs'
 
@@ -26,8 +26,8 @@ export default function Navigation() {
   
   const router = useRouter()
   const pathname = usePathname()
-  const toggleCart = useCartStore((state) => state.toggleCart)
-  const totalItems = useCartStore(selectTotalItems)
+  const { toggleCart, getTotalItems } = useCartStore()
+  const totalItems = getTotalItems()
   const wishlistItems = useWishlistStore((state) => state.items)
   const { user } = useUser()
   const { signOut } = useClerk()

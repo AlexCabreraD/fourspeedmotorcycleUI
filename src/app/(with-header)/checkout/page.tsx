@@ -1,20 +1,66 @@
 'use client'
 
-import { useState } from 'react'
-import CheckoutForm from '@/components/checkout/CheckoutForm'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import dynamicImport from 'next/dynamic'
 
-export default function CheckoutPage() {
+// Force dynamic rendering to avoid prerendering issues
+export const dynamic = 'force-dynamic'
+
+// Dynamically import the checkout form to avoid SSR issues with Zustand persist
+const CheckoutForm = dynamicImport(() => import('@/components/checkout/CheckoutForm'), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen bg-steel-50 py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <div className="h-8 bg-steel-200 rounded w-64 mx-auto mb-4 animate-pulse" />
+          <div className="h-4 bg-steel-200 rounded w-96 mx-auto animate-pulse" />
+        </div>
+        <div className="max-w-4xl mx-auto">
+          <div className="h-96 bg-steel-200 rounded animate-pulse" />
+        </div>
+      </div>
+    </div>
+  )
+})
+
+function CheckoutContent() {
+  const router = useRouter()
   const [orderStatus, setOrderStatus] = useState<'form' | 'processing' | 'success' | 'error'>('form')
   const [statusMessage, setStatusMessage] = useState('')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleSuccess = (paymentIntentId: string) => {
     setOrderStatus('success')
     setStatusMessage(`Payment successful! Transaction ID: ${paymentIntentId}`)
+    // Redirect to order confirmation page
+    router.push(`/order-confirmation?payment_intent=${paymentIntentId}`)
   }
 
   const handleError = (error: string) => {
     setOrderStatus('error')
     setStatusMessage(error)
+  }
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-steel-50 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <div className="h-8 bg-steel-200 rounded w-64 mx-auto mb-4 animate-pulse" />
+            <div className="h-4 bg-steel-200 rounded w-96 mx-auto animate-pulse" />
+          </div>
+          <div className="max-w-4xl mx-auto">
+            <div className="h-96 bg-steel-200 rounded animate-pulse" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -56,4 +102,8 @@ export default function CheckoutPage() {
       </div>
     </div>
   )
+}
+
+export default function CheckoutPage() {
+  return <CheckoutContent />
 }

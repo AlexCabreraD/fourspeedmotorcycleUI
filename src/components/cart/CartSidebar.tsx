@@ -3,16 +3,16 @@
 import { useEffect, useState } from 'react'
 import { X, Plus, Minus, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
-import { useCartStore, selectTotalItems, selectTotalPrice, selectShippingTotal, selectGrandTotal } from '@/lib/store/cart'
+import { useCartStore } from '@/lib/store/cart'
 import { ImageUtils } from '@/lib/api/wps-client'
 import ConfirmationModal from '@/components/ui/ConfirmationModal'
 
 export default function CartSidebar() {
-  const { items, isOpen, closeCart, updateQuantity, removeItem, isLoading } = useCartStore()
-  const totalItems = useCartStore(selectTotalItems)
-  const totalPrice = useCartStore(selectTotalPrice)
-  const shippingTotal = useCartStore(selectShippingTotal)
-  const grandTotal = useCartStore(selectGrandTotal)
+  const { items, isOpen, closeCart, updateQuantity, removeItem, isLoading, getTotalItems, getTotalPrice, getShippingTotal, getGrandTotal, selectedShippingRate } = useCartStore()
+  const totalItems = getTotalItems()
+  const totalPrice = getTotalPrice()
+  const shippingTotal = getShippingTotal()
+  const grandTotal = getGrandTotal()
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [itemToRemove, setItemToRemove] = useState<any>(null)
 
@@ -199,10 +199,16 @@ export default function CartSidebar() {
               <div className="flex justify-between text-sm">
                 <span className="text-steel-600">Shipping</span>
                 <span className="font-medium">
-                  {shippingTotal === 0 ? 'FREE' : formatPrice(shippingTotal)}
+                  {!selectedShippingRate ? 'TBD' : 
+                   shippingTotal === 0 ? 'FREE' : formatPrice(shippingTotal)}
                 </span>
               </div>
-              {shippingTotal > 0 && (
+              {!selectedShippingRate && (
+                <p className="text-xs text-steel-500">
+                  Calculated at checkout
+                </p>
+              )}
+              {selectedShippingRate && shippingTotal > 0 && (
                 <p className="text-xs text-steel-500">
                   Free shipping on orders over $99
                 </p>
@@ -211,7 +217,7 @@ export default function CartSidebar() {
                 <div className="flex justify-between">
                   <span className="font-semibold text-steel-900">Total</span>
                   <span className="font-bold text-lg text-primary-600">
-                    {formatPrice(grandTotal)}
+                    {!selectedShippingRate ? 'TBD' : formatPrice(grandTotal)}
                   </span>
                 </div>
               </div>
