@@ -1,7 +1,7 @@
 'use client'
 
-import { Component, ReactNode } from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
+import { Component, ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
@@ -38,29 +38,23 @@ export default class ProductErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="bg-white border border-red-200 rounded-lg p-8 text-center">
-          <div className="text-red-500 mb-4">
-            <AlertTriangle className="h-12 w-12 mx-auto" />
+        <div className='bg-white border border-red-200 rounded-lg p-8 text-center'>
+          <div className='text-red-500 mb-4'>
+            <AlertTriangle className='h-12 w-12 mx-auto' />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Something went wrong
-          </h3>
-          <p className="text-gray-600 mb-6">
-            We couldn't load this product. Please try again.
-          </p>
+          <h3 className='text-lg font-semibold text-gray-900 mb-2'>Something went wrong</h3>
+          <p className='text-gray-600 mb-6'>We couldn't load this product. Please try again.</p>
           {this.state.error && process.env.NODE_ENV === 'development' && (
-            <details className="text-left bg-gray-50 p-4 rounded mb-4">
-              <summary className="cursor-pointer font-medium">Error Details</summary>
-              <pre className="text-sm mt-2 whitespace-pre-wrap">
-                {this.state.error.message}
-              </pre>
+            <details className='text-left bg-gray-50 p-4 rounded mb-4'>
+              <summary className='cursor-pointer font-medium'>Error Details</summary>
+              <pre className='text-sm mt-2 whitespace-pre-wrap'>{this.state.error.message}</pre>
             </details>
           )}
-          <button 
+          <button
             onClick={this.handleRetry}
-            className="inline-flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors"
+            className='inline-flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors'
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className='h-4 w-4' />
             Try Again
           </button>
         </div>

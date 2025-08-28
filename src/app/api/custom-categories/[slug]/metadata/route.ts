@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { CategoryFilterService } from '@/lib/services/category-filter-service'
-import { getCategoryBySlug } from '@/lib/constants/custom-categories'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
-) {
+import { getCategoryBySlug } from '@/lib/constants/custom-categories'
+import { CategoryFilterService } from '@/lib/services/category-filter-service'
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
     const { slug } = await params
     const { searchParams } = new URL(request.url)
-    
+
     // Verify category exists
     const category = getCategoryBySlug(slug)
     if (!category) {
@@ -21,17 +19,16 @@ export async function GET(
 
     const filterService = new CategoryFilterService()
     const include = searchParams.get('include')?.split(',') || ['price_range']
-    
+
     const metadata: any = {
       category: {
         id: category.id,
         name: category.name,
         slug: category.slug,
         description: category.description,
-        productTypeFilters: category.productTypeFilters
-      }
+        productTypeFilters: category.productTypeFilters,
+      },
     }
-
 
     // Get price range if requested
     if (include.includes('price_range')) {
@@ -57,20 +54,20 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: metadata
+      data: metadata,
     })
-
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch category metadata'
+    const errorMessage =
+      error instanceof Error ? error.message : 'Failed to fetch category metadata'
     const errorStatus = (error as any)?.status || 500
-    
+
     console.error('Category Metadata API Error:', error)
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: errorMessage,
-        stack: process.env.NODE_ENV === 'development' ? (error as Error)?.stack : undefined
+        stack: process.env.NODE_ENV === 'development' ? (error as Error)?.stack : undefined,
       },
       { status: errorStatus }
     )

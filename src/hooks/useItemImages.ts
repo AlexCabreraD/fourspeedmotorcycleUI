@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
-import { WPSItem, ImageUtils } from '@/lib/api/wps-client'
+import { useCallback, useEffect, useState } from 'react'
+
+import { ImageUtils, WPSItem } from '@/lib/api/wps-client'
 
 interface ItemImageData {
   item_id: number
@@ -29,96 +30,106 @@ export function useItemImages(): UseItemImagesResult {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const loadImages = useCallback(async (itemIds: number[], style: string = 'card') => {
-    if (itemIds.length === 0) return
+  const loadImages = useCallback(
+    async (itemIds: number[], style: string = 'card') => {
+      if (itemIds.length === 0) {
+        return
+      }
 
-    setLoading(true)
-    setError(null)
+      setLoading(true)
+      setError(null)
 
-    try {
-      // Check cache first
-      const cacheKey = `${itemIds.sort().join(',')}_${style}`
-      const cached = imageCache.get(cacheKey)
-      
-      if (cached) {
+      try {
+        // Check cache first
+        const cacheKey = `${itemIds.sort().join(',')}_${style}`
+        const cached = imageCache.get(cacheKey)
+
+        if (cached) {
+          const newImageData = { ...imageData }
+          cached.forEach((item) => {
+            newImageData[item.item_id] = item
+          })
+          setImageData(newImageData)
+          setLoading(false)
+          return
+        }
+
+        // Filter out items we already have
+        const missingIds = itemIds.filter((id) => !imageData[id])
+
+        if (missingIds.length === 0) {
+          setLoading(false)
+          return
+        }
+
+        // Fetch images in batches of 50
+        const batches = []
+        for (let i = 0; i < missingIds.length; i += 50) {
+          batches.push(missingIds.slice(i, i + 50))
+        }
+
+        const allResults: ItemImageData[] = []
+
+        for (const batch of batches) {
+          const response = await fetch('/api/items/images/bulk', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              item_ids: batch,
+              style,
+            }),
+          })
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+          }
+
+          const data = await response.json()
+
+          if (!data.success) {
+            throw new Error(data.error || 'Failed to fetch images')
+          }
+
+          allResults.push(...data.data)
+        }
+
+        // Cache the results
+        imageCache.set(cacheKey, allResults)
+
+        // Update state
         const newImageData = { ...imageData }
-        cached.forEach(item => {
+        allResults.forEach((item) => {
           newImageData[item.item_id] = item
         })
         setImageData(newImageData)
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load images'
+        setError(errorMessage)
+        console.error('Error loading item images:', err)
+      } finally {
         setLoading(false)
-        return
       }
+    },
+    [imageData]
+  )
 
-      // Filter out items we already have
-      const missingIds = itemIds.filter(id => !imageData[id])
-      
-      if (missingIds.length === 0) {
-        setLoading(false)
-        return
-      }
+  const getImageUrl = useCallback(
+    (itemId: number, fallback: string = '/placeholder-product.svg'): string => {
+      const data = imageData[itemId]
+      return data?.primary_image_url || fallback
+    },
+    [imageData]
+  )
 
-      // Fetch images in batches of 50
-      const batches = []
-      for (let i = 0; i < missingIds.length; i += 50) {
-        batches.push(missingIds.slice(i, i + 50))
-      }
-
-      const allResults: ItemImageData[] = []
-
-      for (const batch of batches) {
-        const response = await fetch('/api/items/images/bulk', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            item_ids: batch,
-            style
-          })
-        })
-
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-        }
-
-        const data = await response.json()
-        
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to fetch images')
-        }
-
-        allResults.push(...data.data)
-      }
-
-      // Cache the results
-      imageCache.set(cacheKey, allResults)
-
-      // Update state
-      const newImageData = { ...imageData }
-      allResults.forEach(item => {
-        newImageData[item.item_id] = item
-      })
-      setImageData(newImageData)
-
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load images'
-      setError(errorMessage)
-      console.error('Error loading item images:', err)
-    } finally {
-      setLoading(false)
-    }
-  }, [imageData])
-
-  const getImageUrl = useCallback((itemId: number, fallback: string = '/placeholder-product.svg'): string => {
-    const data = imageData[itemId]
-    return data?.primary_image_url || fallback
-  }, [imageData])
-
-  const hasImages = useCallback((itemId: number): boolean => {
-    const data = imageData[itemId]
-    return data?.has_images || false
-  }, [imageData])
+  const hasImages = useCallback(
+    (itemId: number): boolean => {
+      const data = imageData[itemId]
+      return data?.has_images || false
+    },
+    [imageData]
+  )
 
   const clearCache = useCallback(() => {
     imageCache.clear()
@@ -132,12 +143,15 @@ export function useItemImages(): UseItemImagesResult {
     loadImages,
     getImageUrl,
     hasImages,
-    clearCache
+    clearCache,
   }
 }
 
 // Hook for single item image loading
-export function useItemImage(item: WPSItem | null, style: 'thumbnail' | 'card' | 'detail' | 'full' = 'card') {
+export function useItemImage(
+  item: WPSItem | null,
+  style: 'thumbnail' | 'card' | 'detail' | 'full' = 'card'
+) {
   const [imageUrl, setImageUrl] = useState<string>('/placeholder-product.svg')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -167,13 +181,13 @@ export function useItemImage(item: WPSItem | null, style: 'thumbnail' | 'card' |
 
       try {
         const response = await fetch(`/api/items/${item.id}/images?style=${style}`)
-        
+
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`)
         }
 
         const data = await response.json()
-        
+
         if (data.success && data.data.primary_image_url) {
           setImageUrl(data.data.primary_image_url)
         } else {
@@ -196,6 +210,6 @@ export function useItemImage(item: WPSItem | null, style: 'thumbnail' | 'card' |
     imageUrl,
     loading,
     error,
-    hasImages: item ? ImageUtils.hasImages(item) : false
+    hasImages: item ? ImageUtils.hasImages(item) : false,
   }
 }

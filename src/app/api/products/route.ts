@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { createWPSClient } from '@/lib/api/wps-client'
 
 export async function GET(request: NextRequest) {
@@ -8,27 +9,45 @@ export async function GET(request: NextRequest) {
 
     // Extract query parameters
     const params: Record<string, any> = {}
-    
+
     // Pagination
-    if (searchParams.get('page')) params['page[size]'] = searchParams.get('page')
-    if (searchParams.get('cursor')) params['page[cursor]'] = searchParams.get('cursor')
-    
+    if (searchParams.get('page')) {
+      params['page[size]'] = searchParams.get('page')
+    }
+    if (searchParams.get('cursor')) {
+      params['page[cursor]'] = searchParams.get('cursor')
+    }
+
     // Filtering
-    if (searchParams.get('brand')) params['filter[brand_id]'] = searchParams.get('brand')
-    if (searchParams.get('category')) params['filter[category_id]'] = searchParams.get('category')
-    if (searchParams.get('search')) params['filter[name][like]'] = `%${searchParams.get('search')}%`
-    if (searchParams.get('sku')) params['filter[sku][pre]'] = searchParams.get('sku')
-    if (searchParams.get('product_type')) params['filter[product_type]'] = searchParams.get('product_type')
-    
+    if (searchParams.get('brand')) {
+      params['filter[brand_id]'] = searchParams.get('brand')
+    }
+    if (searchParams.get('category')) {
+      params['filter[category_id]'] = searchParams.get('category')
+    }
+    if (searchParams.get('search')) {
+      params['filter[name][like]'] = `%${searchParams.get('search')}%`
+    }
+    if (searchParams.get('sku')) {
+      params['filter[sku][pre]'] = searchParams.get('sku')
+    }
+    if (searchParams.get('product_type')) {
+      params['filter[product_type]'] = searchParams.get('product_type')
+    }
+
     // Price range filtering
-    if (searchParams.get('min_price')) params['filter[list_price][gte]'] = searchParams.get('min_price')
-    if (searchParams.get('max_price')) params['filter[list_price][lte]'] = searchParams.get('max_price')
-    
+    if (searchParams.get('min_price')) {
+      params['filter[list_price][gte]'] = searchParams.get('min_price')
+    }
+    if (searchParams.get('max_price')) {
+      params['filter[list_price][lte]'] = searchParams.get('max_price')
+    }
+
     // Stock filtering
     if (searchParams.get('in_stock') === 'true') {
       params['filter[status]'] = 'STK'
     }
-    
+
     // Date filtering
     if (searchParams.get('new_arrivals_days')) {
       const days = parseInt(searchParams.get('new_arrivals_days')!)
@@ -36,32 +55,51 @@ export async function GET(request: NextRequest) {
       dateThreshold.setDate(dateThreshold.getDate() - days)
       params['filter[created_at][gte]'] = dateThreshold.toISOString().split('T')[0]
     }
-    
+
     if (searchParams.get('recently_updated_days')) {
       const days = parseInt(searchParams.get('recently_updated_days')!)
       const dateThreshold = new Date()
       dateThreshold.setDate(dateThreshold.getDate() - days)
       params['filter[updated_at][gte]'] = dateThreshold.toISOString().split('T')[0]
     }
-    
+
     // Weight range filtering
-    if (searchParams.get('min_weight')) params['filter[weight][gte]'] = searchParams.get('min_weight')
-    if (searchParams.get('max_weight')) params['filter[weight][lte]'] = searchParams.get('max_weight')
-    
+    if (searchParams.get('min_weight')) {
+      params['filter[weight][gte]'] = searchParams.get('min_weight')
+    }
+    if (searchParams.get('max_weight')) {
+      params['filter[weight][lte]'] = searchParams.get('max_weight')
+    }
+
     // Dimension filtering
-    if (searchParams.get('min_length')) params['filter[length][gte]'] = searchParams.get('min_length')
-    if (searchParams.get('max_length')) params['filter[length][lte]'] = searchParams.get('max_length')
-    if (searchParams.get('min_width')) params['filter[width][gte]'] = searchParams.get('min_width')
-    if (searchParams.get('max_width')) params['filter[width][lte]'] = searchParams.get('max_width')
-    if (searchParams.get('min_height')) params['filter[height][gte]'] = searchParams.get('min_height')
-    if (searchParams.get('max_height')) params['filter[height][lte]'] = searchParams.get('max_height')
-    
+    if (searchParams.get('min_length')) {
+      params['filter[length][gte]'] = searchParams.get('min_length')
+    }
+    if (searchParams.get('max_length')) {
+      params['filter[length][lte]'] = searchParams.get('max_length')
+    }
+    if (searchParams.get('min_width')) {
+      params['filter[width][gte]'] = searchParams.get('min_width')
+    }
+    if (searchParams.get('max_width')) {
+      params['filter[width][lte]'] = searchParams.get('max_width')
+    }
+    if (searchParams.get('min_height')) {
+      params['filter[height][gte]'] = searchParams.get('min_height')
+    }
+    if (searchParams.get('max_height')) {
+      params['filter[height][lte]'] = searchParams.get('max_height')
+    }
+
     // Note: Brand filtering is handled later after we get brand data
-    
+
     // Handle multiple item types (comma-separated)
     const itemTypes = searchParams.get('item_types')
     if (itemTypes) {
-      const typeArray = itemTypes.split(',').map(t => t.trim()).filter(Boolean)
+      const typeArray = itemTypes
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
       if (typeArray.length === 1) {
         params['filter[product_type]'] = typeArray[0]
       } else if (typeArray.length > 1) {
@@ -69,7 +107,7 @@ export async function GET(request: NextRequest) {
         params['filter[product_type]'] = typeArray.join(',')
       }
     }
-    
+
     // Sorting - only use supported WPS API sort parameters
     const sort = searchParams.get('sort')
     if (sort) {
@@ -124,10 +162,10 @@ export async function GET(request: NextRequest) {
     // This approach gives us better control over image data
     const itemsParams = { ...params }
     itemsParams.include = 'images,product'
-    
+
     // Get brands first to handle brand name filtering
     const brandsResponse = await client.getBrands({ 'page[size]': 1000 })
-    
+
     // Create brand lookup maps
     const brandMap: Record<number, { id: number; name: string }> = {}
     const brandNameToIdMap: Record<string, number> = {}
@@ -137,15 +175,18 @@ export async function GET(request: NextRequest) {
         brandNameToIdMap[brand.name.toUpperCase()] = brand.id
       })
     }
-    
+
     // Handle brand name filtering by converting to IDs
     const brands = searchParams.get('brands')
     if (brands) {
-      const brandNames = brands.split(',').map(b => b.trim().toUpperCase()).filter(Boolean)
+      const brandNames = brands
+        .split(',')
+        .map((b) => b.trim().toUpperCase())
+        .filter(Boolean)
       const brandIds = brandNames
-        .map(name => brandNameToIdMap[name])
-        .filter(id => id !== undefined)
-      
+        .map((name) => brandNameToIdMap[name])
+        .filter((id) => id !== undefined)
+
       if (brandIds.length === 1) {
         itemsParams['filter[brand_id]'] = brandIds[0]
       } else if (brandIds.length > 1) {
@@ -153,26 +194,27 @@ export async function GET(request: NextRequest) {
         itemsParams['filter[brand_id]'] = brandIds.join(',')
       }
     }
-    
+
     // Now get items with all filters applied
     const itemsResponse = await client.getItems(itemsParams)
 
     // Enhance items with brand data
-    const enhancedItems = itemsResponse.data.map(item => ({
+    const enhancedItems = itemsResponse.data.map((item) => ({
       ...item,
-      brand: item.brand_id && brandMap[item.brand_id] ? { data: brandMap[item.brand_id] } : undefined
+      brand:
+        item.brand_id && brandMap[item.brand_id] ? { data: brandMap[item.brand_id] } : undefined,
     }))
 
     // Group items by product to mimic the original structure
     const productsMap = new Map()
-    enhancedItems.forEach(item => {
+    enhancedItems.forEach((item) => {
       if (item.product) {
         const productId = item.product.id || item.product_id
         if (!productsMap.has(productId)) {
           productsMap.set(productId, {
             ...item.product,
             id: productId,
-            items: { data: [] }
+            items: { data: [] },
           })
         }
         productsMap.get(productId).items.data.push(item)
@@ -180,7 +222,7 @@ export async function GET(request: NextRequest) {
     })
 
     const enhancedProducts = Array.from(productsMap.values())
-    
+
     return NextResponse.json({
       success: true,
       data: enhancedProducts,
@@ -193,31 +235,30 @@ export async function GET(request: NextRequest) {
         sku: searchParams.get('sku'),
         priceRange: {
           min: searchParams.get('min_price'),
-          max: searchParams.get('max_price')
+          max: searchParams.get('max_price'),
         },
         newArrivals: searchParams.get('new_arrivals_days'),
         recentlyUpdated: searchParams.get('recently_updated_days'),
         weightRange: {
           min: searchParams.get('min_weight'),
-          max: searchParams.get('max_weight')
+          max: searchParams.get('max_weight'),
         },
         dimensions: {
           length: { min: searchParams.get('min_length'), max: searchParams.get('max_length') },
           width: { min: searchParams.get('min_width'), max: searchParams.get('max_width') },
-          height: { min: searchParams.get('min_height'), max: searchParams.get('max_height') }
-        }
+          height: { min: searchParams.get('min_height'), max: searchParams.get('max_height') },
+        },
       },
-      params: itemsParams // For debugging
+      params: itemsParams, // For debugging
     })
-
   } catch (error: any) {
     console.error('Products API Error:', error)
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: error.message || 'Failed to fetch products',
-        details: error.response || null
+        details: error.response || null,
       },
       { status: error.status || 500 }
     )

@@ -30,7 +30,11 @@
       "Bash(npx eslint:*)",
       "WebFetch(domain:clerk.com)",
       "Bash(cat:*)",
-      "Bash(timeout 30s npm run build:*)"
+      "Bash(timeout 30s npm run build:*)",
+      "Bash(lighthouse:*)",
+      "Bash(npx husky:*)",
+      "Bash(npm run format:*)",
+      "Bash(npm run type-check:*)"
     ],
     "deny": []
   }

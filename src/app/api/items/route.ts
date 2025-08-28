@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { createWPSClient } from '@/lib/api/wps-client'
 
 export async function GET(request: NextRequest) {
@@ -8,7 +9,7 @@ export async function GET(request: NextRequest) {
 
     // Convert Next.js search params to WPS API format
     const wpsParams: Record<string, string> = {}
-    
+
     // Handle pagination
     if (searchParams.get('page[size]')) {
       wpsParams['page[size]'] = searchParams.get('page[size]')!
@@ -53,16 +54,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: response.data,
-      meta: response.meta
+      meta: response.meta,
     })
-
   } catch (error) {
     console.error('Items API error:', error)
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: 'Failed to fetch items',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     )

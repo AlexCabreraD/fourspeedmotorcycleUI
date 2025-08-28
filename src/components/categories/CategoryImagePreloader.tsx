@@ -15,9 +15,7 @@ const CRITICAL_IMAGES = [
 ]
 
 // Above-the-fold images that need priority loading
-const PRIORITY_IMAGES = [
-  '/images/assets/categories-hero-air-filter-dramatic.JPG',
-]
+const PRIORITY_IMAGES = ['/images/assets/categories-hero-air-filter-dramatic.JPG']
 
 // Global cache shared with OptimizedCategoryImage
 const imageCache = new Map<string, boolean>()
@@ -28,7 +26,9 @@ export default function CategoryImagePreloader() {
     const preloadImages = () => {
       CRITICAL_IMAGES.forEach((src, index) => {
         // Skip if already cached
-        if (imageCache.has(src)) return
+        if (imageCache.has(src)) {
+          return
+        }
 
         // Stagger preloading to avoid bandwidth congestion
         setTimeout(() => {

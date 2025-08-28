@@ -3,21 +3,22 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const { userId: currentUserId } = await auth()
-    
+    const { userId } = await params
+
     // Ensure user can only access their own cart
-    if (currentUserId !== params.userId) {
+    if (currentUserId !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     const client = await clerkClient()
-    const user = await client.users.getUser(params.userId)
-    
+    const user = await client.users.getUser(userId)
+
     const cart = user.publicMetadata?.cart || []
-    
+
     return NextResponse.json({ cart })
   } catch (error) {
     console.error('Error fetching user cart:', error)
@@ -27,25 +28,26 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const { userId: currentUserId } = await auth()
-    
+    const { userId } = await params
+
     // Ensure user can only modify their own cart
-    if (currentUserId !== params.userId) {
+    if (currentUserId !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     const { cart } = await request.json()
-    
+
     const client = await clerkClient()
-    await client.users.updateUser(params.userId, {
+    await client.users.updateUser(userId, {
       publicMetadata: {
-        cart: cart
-      }
+        cart: cart,
+      },
     })
-    
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Error saving user cart:', error)

@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
 import { useUser } from '@clerk/nextjs'
+import { useEffect, useRef } from 'react'
+
 import { useWishlistStore } from '@/lib/store/wishlist'
 
 export function useWishlistSync() {
@@ -13,12 +14,16 @@ export function useWishlistSync() {
   const syncedUserRef = useRef<string | null>(null)
 
   useEffect(() => {
-    if (!isLoaded) return
+    if (!isLoaded) {
+      return
+    }
 
     if (user?.id) {
       // Only sync once per user login
-      if (syncedUserRef.current === user.id) return
-      
+      if (syncedUserRef.current === user.id) {
+        return
+      }
+
       const currentState = useWishlistStore.getState()
       const wasGuest = !currentState.userId
       const guestItems = wasGuest ? [...currentState.items] : []

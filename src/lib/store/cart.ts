@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+
 import { WPSItem } from '@/lib/api/wps-client'
 import { type ShippingAddress, type ShippingRate } from '@/lib/services/shipping'
 
@@ -9,7 +10,7 @@ export interface CartItem extends WPSItem {
 }
 
 // Re-export types from shipping service for convenience
-export type { ShippingRate, ShippingAddress } from '@/lib/services/shipping'
+export type { ShippingAddress, ShippingRate } from '@/lib/services/shipping'
 
 interface CartState {
   items: CartItem[]
@@ -51,23 +52,23 @@ interface CartState {
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
-      items: [],
+      items: [] as CartItem[],
       isOpen: false,
-      userId: null,
+      userId: null as string | null,
       isLoading: false,
       // Shipping state
-      shippingAddress: null,
-      availableShippingRates: [],
-      selectedShippingRate: null,
+      shippingAddress: null as ShippingAddress | null,
+      availableShippingRates: [] as ShippingRate[],
+      selectedShippingRate: null as ShippingRate | null,
       shippingCalculating: false,
-      
+
       addItem: (item: WPSItem, quantity = 1) => {
         set((state) => {
-          const existingItem = state.items.find(cartItem => cartItem.id === item.id)
-          
+          const existingItem = state.items.find((cartItem) => cartItem.id === item.id)
+
           if (existingItem) {
             // Update quantity if item exists
-            const newItems = state.items.map(cartItem =>
+            const newItems = state.items.map((cartItem) =>
               cartItem.id === item.id
                 ? { ...cartItem, quantity: cartItem.quantity + quantity }
                 : cartItem
@@ -79,67 +80,65 @@ export const useCartStore = create<CartState>()(
             return { items: newItems }
           }
         })
-        
+
         // Auto-save to user account if logged in
         const state = get()
         if (state.userId) {
           state.saveUserCart(state.userId)
         }
       },
-      
+
       removeItem: (itemId: number) => {
         set((state) => ({
-          items: state.items.filter(item => item.id !== itemId)
+          items: state.items.filter((item) => item.id !== itemId),
         }))
-        
+
         // Auto-save to user account if logged in
         const state = get()
         if (state.userId) {
           state.saveUserCart(state.userId)
         }
       },
-      
+
       updateQuantity: (itemId: number, quantity: number) => {
         if (quantity <= 0) {
           get().removeItem(itemId)
           return
         }
-        
+
         set((state) => ({
-          items: state.items.map(item =>
-            item.id === itemId ? { ...item, quantity } : item
-          )
+          items: state.items.map((item) => (item.id === itemId ? { ...item, quantity } : item)),
         }))
-        
+
         // Auto-save to user account if logged in
         const state = get()
         if (state.userId) {
           state.saveUserCart(state.userId)
         }
       },
-      
+
       clearCart: () => {
         set({ items: [] })
-        
+
         // Auto-save to user account if logged in
         const state = get()
         if (state.userId) {
           state.saveUserCart(state.userId)
         }
       },
-      
+
       toggleCart: () => {
         set((state) => ({ isOpen: !state.isOpen }))
       },
-      
+
       closeCart: () => {
         set({ isOpen: false })
       },
-      
+
       setUser: (userId: string | null) => {
         set({ userId })
       },
-      
+
       loadUserCart: async (userId: string) => {
         set({ isLoading: true })
         try {
@@ -156,36 +155,36 @@ export const useCartStore = create<CartState>()(
           set({ isLoading: false })
         }
       },
-      
+
       saveUserCart: async (userId: string) => {
         const state = get()
         try {
           await fetch(`/api/cart/${userId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cart: state.items })
+            body: JSON.stringify({ cart: state.items }),
           })
         } catch (error) {
           console.error('Failed to save user cart:', error)
         }
       },
-      
+
       mergeGuestCart: (guestItems: CartItem[]) => {
         set((state) => {
           const mergedItems = [...state.items]
-          
-          guestItems.forEach(guestItem => {
-            const existingItem = mergedItems.find(item => item.id === guestItem.id)
+
+          guestItems.forEach((guestItem) => {
+            const existingItem = mergedItems.find((item) => item.id === guestItem.id)
             if (existingItem) {
               existingItem.quantity += guestItem.quantity
             } else {
               mergedItems.push(guestItem)
             }
           })
-          
+
           return { items: mergedItems }
         })
-        
+
         // Auto-save merged cart
         const state = get()
         if (state.userId) {
@@ -202,7 +201,7 @@ export const useCartStore = create<CartState>()(
 
       calculateShippingRates: async () => {
         const state = get()
-        
+
         if (!state.shippingAddress || state.items.length === 0) {
           console.warn('Cannot calculate shipping: missing address or items')
           return
@@ -216,38 +215,38 @@ export const useCartStore = create<CartState>()(
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               address: state.shippingAddress,
-              items: state.items.map(item => ({
+              items: state.items.map((item) => ({
                 id: item.id,
                 sku: item.sku,
                 name: item.name,
                 quantity: item.quantity,
                 list_price: item.list_price,
                 weight: item.weight,
-                product_type: item.product_type
-              }))
-            })
+                product_type: item.product_type,
+              })),
+            }),
           })
 
           const result = await response.json()
 
           if (result.success) {
-            set({ 
+            set({
               availableShippingRates: result.rates,
-              selectedShippingRate: result.rates[0] || null // Auto-select cheapest option
+              selectedShippingRate: result.rates[0] || null, // Auto-select cheapest option
             })
           } else {
             console.error('Shipping calculation failed:', result.error)
             // Set fallback rates
-            set({ 
+            set({
               availableShippingRates: [],
-              selectedShippingRate: null
+              selectedShippingRate: null,
             })
           }
         } catch (error) {
           console.error('Shipping calculation error:', error)
-          set({ 
+          set({
             availableShippingRates: [],
-            selectedShippingRate: null
+            selectedShippingRate: null,
           })
         } finally {
           set({ shippingCalculating: false })
@@ -259,11 +258,11 @@ export const useCartStore = create<CartState>()(
       },
 
       clearShipping: () => {
-        set({ 
+        set({
           shippingAddress: null,
           availableShippingRates: [],
           selectedShippingRate: null,
-          shippingCalculating: false
+          shippingCalculating: false,
         })
       },
 
@@ -272,7 +271,7 @@ export const useCartStore = create<CartState>()(
         const state = get()
         return state.items.reduce((total, item) => {
           const price = parseFloat(item.list_price) || 0
-          return total + (price * item.quantity)
+          return total + price * item.quantity
         }, 0)
       },
 
@@ -283,12 +282,12 @@ export const useCartStore = create<CartState>()(
 
       getShippingTotal: () => {
         const state = get()
-        
+
         // Only return shipping cost if a shipping rate is actually selected
         if (state.selectedShippingRate) {
           return state.selectedShippingRate.rate
         }
-        
+
         // Return 0 until shipping method is selected
         return 0
       },
@@ -297,7 +296,7 @@ export const useCartStore = create<CartState>()(
         const state = get()
         const total = state.items.reduce((total, item) => {
           const price = parseFloat(item.list_price) || 0
-          return total + (price * item.quantity)
+          return total + price * item.quantity
         }, 0)
         return total * 0.085
       },
@@ -306,17 +305,17 @@ export const useCartStore = create<CartState>()(
         const state = get()
         const total = state.items.reduce((total, item) => {
           const price = parseFloat(item.list_price) || 0
-          return total + (price * item.quantity)
+          return total + price * item.quantity
         }, 0)
         const shipping = total > 99 ? 0 : 12.95
         const tax = total * 0.085
         return total + shipping + tax
-      }
+      },
     }),
     {
       name: 'fourspeed-cart',
-      partialize: (state) => ({ 
-        items: state.userId ? [] : state.items // Only persist guest cart items
+      partialize: (state) => ({
+        items: state.userId ? [] : state.items, // Only persist guest cart items
       }),
     }
   )

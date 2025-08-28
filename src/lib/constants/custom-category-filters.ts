@@ -1,8 +1,6 @@
 // Custom category-specific filters for our new category system
 // Following WPS recommendations for smart filtering by product attributes
 
-import { CustomCategory } from './custom-categories'
-
 export interface FilterOption {
   value: string
   label: string
@@ -12,7 +10,14 @@ export interface FilterOption {
 export interface FilterSchema {
   key: string
   label: string
-  type: 'select' | 'checkbox' | 'price-range' | 'multi-select' | 'size-range' | 'weight-range' | 'search'
+  type:
+    | 'select'
+    | 'checkbox'
+    | 'price-range'
+    | 'multi-select'
+    | 'size-range'
+    | 'weight-range'
+    | 'search'
   options?: FilterOption[]
   required?: boolean
   defaultExpanded?: boolean
@@ -34,14 +39,14 @@ export const BASE_FILTERS: FilterSchema[] = [
     type: 'search',
     apiField: 'search',
     placeholder: 'Search by name, brand, or model...',
-    defaultExpanded: true
+    defaultExpanded: true,
   },
   {
     key: 'price_range',
     label: 'Price Range',
     type: 'price-range',
     apiField: 'price_range',
-    defaultExpanded: true
+    defaultExpanded: true,
   },
   {
     key: 'in_stock',
@@ -49,10 +54,8 @@ export const BASE_FILTERS: FilterSchema[] = [
     type: 'checkbox',
     apiField: 'in_stock',
     defaultExpanded: true,
-    options: [
-      { value: 'true', label: 'In Stock Only' }
-    ]
-  }
+    options: [{ value: 'true', label: 'In Stock Only' }],
+  },
 ]
 
 // Category-specific filter configurations
@@ -75,10 +78,10 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'Oil Filters', label: 'Oil Filters' },
           { value: 'Spark Plugs', label: 'Spark Plugs' },
           { value: 'Engine Management', label: 'Engine Management' },
-          { value: 'Clutch', label: 'Clutch Components' }
-        ]
+          { value: 'Clutch', label: 'Clutch Components' },
+        ],
       },
-    ]
+    ],
   },
   {
     categorySlug: 'suspension-handling',
@@ -95,8 +98,8 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'Forks', label: 'Forks' },
           { value: 'Steering', label: 'Steering Components' },
           { value: 'Handlebars', label: 'Handlebars' },
-          { value: 'Risers', label: 'Risers' }
-        ]
+          { value: 'Risers', label: 'Risers' },
+        ],
       },
       {
         key: 'suspension_type',
@@ -107,10 +110,10 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'fork_springs', label: 'Fork Springs' },
           { value: 'shock_absorbers', label: 'Shock Absorbers' },
           { value: 'lowering_kits', label: 'Lowering Kits' },
-          { value: 'raising_kits', label: 'Raising Kits' }
-        ]
-      }
-    ]
+          { value: 'raising_kits', label: 'Raising Kits' },
+        ],
+      },
+    ],
   },
   {
     categorySlug: 'wheels-tires',
@@ -127,8 +130,8 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'Tires', label: 'Tires' },
           { value: 'Tubes', label: 'Tubes' },
           { value: 'Rims', label: 'Rims' },
-          { value: 'Tire/Wheel Accessories', label: 'Accessories' }
-        ]
+          { value: 'Tire/Wheel Accessories', label: 'Accessories' },
+        ],
       },
       {
         key: 'tire_size',
@@ -141,8 +144,8 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: '180_55_17', label: '180/55-17' },
           { value: '110_70_17', label: '110/70-17' },
           { value: '21_7_10', label: '21x7-10' },
-          { value: '20_10_9', label: '20x10-9' }
-        ]
+          { value: '20_10_9', label: '20x10-9' },
+        ],
       },
       {
         key: 'wheel_size',
@@ -155,10 +158,10 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: '19', label: '19"' },
           { value: '21', label: '21"' },
           { value: '16', label: '16"' },
-          { value: '15', label: '15"' }
-        ]
-      }
-    ]
+          { value: '15', label: '15"' },
+        ],
+      },
+    ],
   },
   {
     categorySlug: 'protective-gear',
@@ -175,8 +178,8 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'Protective/Safety', label: 'Body Armor' },
           { value: 'Guards/Braces', label: 'Guards & Braces' },
           { value: 'Handguards', label: 'Hand Guards' },
-          { value: 'Eyewear', label: 'Eye Protection' }
-        ]
+          { value: 'Eyewear', label: 'Eye Protection' },
+        ],
       },
       {
         key: 'size',
@@ -189,8 +192,8 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'M', label: 'Medium' },
           { value: 'L', label: 'Large' },
           { value: 'XL', label: 'Extra Large' },
-          { value: 'XXL', label: '2X Large' }
-        ]
+          { value: 'XXL', label: '2X Large' },
+        ],
       },
       {
         key: 'protection_type',
@@ -202,10 +205,10 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'half helmet', label: 'Half Helmet' },
           { value: 'chest', label: 'Chest Protection' },
           { value: 'back', label: 'Back Protection' },
-          { value: 'knee', label: 'Knee Protection' }
-        ]
-      }
-    ]
+          { value: 'knee', label: 'Knee Protection' },
+        ],
+      },
+    ],
   },
   {
     categorySlug: 'riding-apparel',
@@ -224,8 +227,8 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'Footwear', label: 'Boots & Shoes' },
           { value: 'Shirts', label: 'Shirts' },
           { value: 'Hoodies', label: 'Hoodies' },
-          { value: 'Jerseys', label: 'Jerseys' }
-        ]
+          { value: 'Jerseys', label: 'Jerseys' },
+        ],
       },
       {
         key: 'size',
@@ -239,8 +242,8 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'L', label: 'Large' },
           { value: 'XL', label: 'Extra Large' },
           { value: 'XXL', label: '2X Large' },
-          { value: '3XL', label: '3X Large' }
-        ]
+          { value: '3XL', label: '3X Large' },
+        ],
       },
       {
         key: 'color',
@@ -254,8 +257,8 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'blue', label: 'Blue' },
           { value: 'orange', label: 'Orange' },
           { value: 'yellow', label: 'Yellow' },
-          { value: 'green', label: 'Green' }
-        ]
+          { value: 'green', label: 'Green' },
+        ],
       },
       {
         key: 'gender',
@@ -266,10 +269,10 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'mens', label: "Men's" },
           { value: 'womens', label: "Women's" },
           { value: 'unisex', label: 'Unisex' },
-          { value: 'youth', label: 'Youth' }
-        ]
-      }
-    ]
+          { value: 'youth', label: 'Youth' },
+        ],
+      },
+    ],
   },
   {
     categorySlug: 'brakes-drivetrain',
@@ -286,10 +289,10 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'Chains', label: 'Chains' },
           { value: 'Sprockets', label: 'Sprockets' },
           { value: 'Drive', label: 'Drive Components' },
-          { value: 'Belts', label: 'Belts' }
-        ]
-      }
-    ]
+          { value: 'Belts', label: 'Belts' },
+        ],
+      },
+    ],
   },
   {
     categorySlug: 'electrical-lighting',
@@ -307,10 +310,10 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'Batteries', label: 'Batteries' },
           { value: 'Switches', label: 'Switches' },
           { value: 'Audio/Visual/Communication', label: 'Audio/Video/Comm' },
-          { value: 'GPS', label: 'GPS & Navigation' }
-        ]
-      }
-    ]
+          { value: 'GPS', label: 'GPS & Navigation' },
+        ],
+      },
+    ],
   },
   {
     categorySlug: 'controls-accessories',
@@ -328,10 +331,10 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'Levers', label: 'Levers' },
           { value: 'Grips', label: 'Grips' },
           { value: 'Mirrors', label: 'Mirrors' },
-          { value: 'Accessories', label: 'General Accessories' }
-        ]
-      }
-    ]
+          { value: 'Accessories', label: 'General Accessories' },
+        ],
+      },
+    ],
   },
   {
     categorySlug: 'body-styling',
@@ -348,10 +351,10 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'Windshield/Windscreen', label: 'Windshields' },
           { value: 'Graphics/Decals', label: 'Graphics & Decals' },
           { value: 'Seat', label: 'Seats' },
-          { value: 'Storage Covers', label: 'Storage Covers' }
-        ]
-      }
-    ]
+          { value: 'Storage Covers', label: 'Storage Covers' },
+        ],
+      },
+    ],
   },
   {
     categorySlug: 'maintenance-tools',
@@ -368,10 +371,10 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'Chemicals', label: 'Chemicals & Fluids' },
           { value: 'Stands/Lifts', label: 'Stands & Lifts' },
           { value: 'Utility Containers', label: 'Containers' },
-          { value: 'Fuel Containers', label: 'Fuel Containers' }
-        ]
-      }
-    ]
+          { value: 'Fuel Containers', label: 'Fuel Containers' },
+        ],
+      },
+    ],
   },
   {
     categorySlug: 'storage-transport',
@@ -388,10 +391,10 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'Racks', label: 'Racks' },
           { value: 'Straps/Tie-Downs', label: 'Tie-Downs' },
           { value: 'Trailer/Towing', label: 'Trailer & Towing' },
-          { value: 'Mounts/Brackets', label: 'Mounts & Brackets' }
-        ]
-      }
-    ]
+          { value: 'Mounts/Brackets', label: 'Mounts & Brackets' },
+        ],
+      },
+    ],
   },
   {
     categorySlug: 'specialty-vehicles',
@@ -409,23 +412,23 @@ export const CUSTOM_CATEGORY_FILTERS: CategoryFilterConfig[] = [
           { value: 'Tracks', label: 'Tracks' },
           { value: 'Plow', label: 'Plows' },
           { value: 'Watercraft Towables', label: 'Watercraft' },
-          { value: 'Winch', label: 'Winches' }
-        ]
-      }
-    ]
-  }
+          { value: 'Winch', label: 'Winches' },
+        ],
+      },
+    ],
+  },
 ]
 
 // Helper function to get filters for a specific category
 export const getFiltersForCustomCategory = (categorySlug: string): FilterSchema[] => {
-  const config = CUSTOM_CATEGORY_FILTERS.find(c => c.categorySlug === categorySlug)
+  const config = CUSTOM_CATEGORY_FILTERS.find((c) => c.categorySlug === categorySlug)
   return config?.filters || BASE_FILTERS
 }
 
 // Helper function to get filter options for a specific filter in a category
 export const getFilterOptions = (categorySlug: string, filterKey: string): FilterOption[] => {
   const filters = getFiltersForCustomCategory(categorySlug)
-  const filter = filters.find(f => f.key === filterKey)
+  const filter = filters.find((f) => f.key === filterKey)
   return filter?.options || []
 }
 
@@ -436,5 +439,5 @@ export const PRICE_RANGE_PRESETS = [
   { label: '$50 - $100', min: 50, max: 100 },
   { label: '$100 - $250', min: 100, max: 250 },
   { label: '$250 - $500', min: 250, max: 500 },
-  { label: '$500+', min: 500, max: null }
+  { label: '$500+', min: 500, max: null },
 ]

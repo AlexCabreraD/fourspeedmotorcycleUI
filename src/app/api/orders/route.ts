@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { orderService } from '@/lib/services/order-service'
 
 // GET /api/orders - Get orders (for admin or date range queries)
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
     // If date range provided, get orders from WPS
     if (fromDate && toDate) {
       const orders = await orderService.getOrderStatus('') // This would need to be modified for bulk orders
-      
+
       return NextResponse.json({
         success: true,
         data: orders,
@@ -22,15 +23,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: [],
-      message: 'Order history not implemented yet'
+      message: 'Order history not implemented yet',
     })
-
   } catch (error) {
     console.error('Get orders error:', error)
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to retrieve orders' 
+      {
+        success: false,
+        error: 'Failed to retrieve orders',
       },
       { status: 500 }
     )
@@ -45,9 +45,9 @@ export async function POST(request: NextRequest) {
 
     if (!customerInfo || !items || items.length === 0) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Customer info and items are required' 
+        {
+          success: false,
+          error: 'Customer info and items are required',
         },
         { status: 400 }
       )
@@ -62,24 +62,23 @@ export async function POST(request: NextRequest) {
           poNumber: result.poNumber,
           orderNumber: result.orderNumber,
           wpsOrder: result.wpsOrder,
-        }
+        },
       })
     } else {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: result.error 
+        {
+          success: false,
+          error: result.error,
         },
         { status: 400 }
       )
     }
-
   } catch (error) {
     console.error('Create order error:', error)
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to create order' 
+      {
+        success: false,
+        error: 'Failed to create order',
       },
       { status: 500 }
     )

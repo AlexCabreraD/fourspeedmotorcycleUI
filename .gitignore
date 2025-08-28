@@ -43,3 +43,13 @@ next-env.d.ts
 # scripts
 /scripts/dev-server.*
 /scripts/README.md
+
+# development/testing features (keep locally, exclude from production)
+/src/app/(with-header)/api-test/
+scripts/quick-endpoint-test.js
+
+# claude
+.claude
+
+# md
+.md

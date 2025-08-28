@@ -1,13 +1,8 @@
 'use client'
 
+import { AddressElement, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
+import { CheckCircle, CreditCard, Lock } from 'lucide-react'
 import { useState } from 'react'
-import { 
-  useStripe, 
-  useElements, 
-  PaymentElement,
-  AddressElement 
-} from '@stripe/react-stripe-js'
-import { CreditCard, Lock, CheckCircle } from 'lucide-react'
 
 interface PaymentFormProps {
   onSuccess: (paymentIntentId: string) => void
@@ -20,15 +15,15 @@ interface PaymentFormProps {
   paymentElementOptions?: any
 }
 
-export default function PaymentForm({ 
-  onSuccess, 
-  onError, 
+export default function PaymentForm({
+  onSuccess,
+  onError,
   customerInfo,
-  paymentElementOptions 
+  paymentElementOptions,
 }: PaymentFormProps) {
   const stripe = useStripe()
   const elements = useElements()
-  
+
   const [isProcessing, setIsProcessing] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [paymentType, setPaymentType] = useState<string | null>(null)
@@ -64,7 +59,9 @@ export default function PaymentForm({
       if (error) {
         // Payment failed
         if (error.type === 'card_error' || error.type === 'validation_error') {
-          setMessage(error.message || 'Payment failed. Please check your information and try again.')
+          setMessage(
+            error.message || 'Payment failed. Please check your information and try again.'
+          )
         } else {
           setMessage('An unexpected error occurred. Please try again.')
         }
@@ -86,15 +83,15 @@ export default function PaymentForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className='space-y-6'>
       {/* Payment Element - includes card, Apple Pay, Google Pay */}
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2 mb-4">
-          <CreditCard className="h-5 w-5 text-steel-600" />
-          <span className="font-medium text-steel-900">Payment Method</span>
+      <div className='space-y-4'>
+        <div className='flex items-center space-x-2 mb-4'>
+          <CreditCard className='h-5 w-5 text-steel-600' />
+          <span className='font-medium text-steel-900'>Payment Method</span>
         </div>
-        
-        <PaymentElement 
+
+        <PaymentElement
           options={paymentElementOptions}
           onChange={(event) => {
             if (event.value.type) {
@@ -105,13 +102,13 @@ export default function PaymentForm({
       </div>
 
       {/* Billing Address */}
-      <div className="space-y-4">
-        <div className="flex items-center space-x-2 mb-4">
-          <Lock className="h-5 w-5 text-steel-600" />
-          <span className="font-medium text-steel-900">Billing Address</span>
+      <div className='space-y-4'>
+        <div className='flex items-center space-x-2 mb-4'>
+          <Lock className='h-5 w-5 text-steel-600' />
+          <span className='font-medium text-steel-900'>Billing Address</span>
         </div>
-        
-        <AddressElement 
+
+        <AddressElement
           options={{
             mode: 'billing',
             allowedCountries: ['US', 'CA'],
@@ -129,24 +126,26 @@ export default function PaymentForm({
 
       {/* Error/Success Messages */}
       {message && (
-        <div className={`p-4 rounded-lg ${
-          message.includes('successful') 
-            ? 'bg-green-50 border border-green-200' 
-            : 'bg-red-50 border border-red-200'
-        }`}>
-          <div className="flex items-center">
+        <div
+          className={`p-4 rounded-lg ${
+            message.includes('successful')
+              ? 'bg-green-50 border border-green-200'
+              : 'bg-red-50 border border-red-200'
+          }`}
+        >
+          <div className='flex items-center'>
             {message.includes('successful') ? (
-              <CheckCircle className="h-5 w-5 text-green-400 mr-2" />
+              <CheckCircle className='h-5 w-5 text-green-400 mr-2' />
             ) : (
-              <svg className="h-5 w-5 text-red-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              <svg className='h-5 w-5 text-red-400 mr-2' viewBox='0 0 20 20' fill='currentColor'>
+                <path
+                  fillRule='evenodd'
+                  d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z'
+                  clipRule='evenodd'
+                />
               </svg>
             )}
-            <span className={
-              message.includes('successful') 
-                ? 'text-green-800' 
-                : 'text-red-800'
-            }>
+            <span className={message.includes('successful') ? 'text-green-800' : 'text-red-800'}>
               {message}
             </span>
           </div>
@@ -155,39 +154,39 @@ export default function PaymentForm({
 
       {/* Submit Button */}
       <button
-        type="submit"
+        type='submit'
         disabled={!stripe || !elements || isProcessing}
         className={`w-full btn btn-lg font-semibold transition-all duration-200 ${
-          isProcessing 
-            ? 'btn-outline opacity-75 cursor-not-allowed' 
+          isProcessing
+            ? 'btn-outline opacity-75 cursor-not-allowed'
             : 'btn-primary hover:scale-[1.02] shadow-lg'
         }`}
       >
         {isProcessing ? (
           <>
-            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
+            <div className='animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3'></div>
             Processing Payment...
           </>
         ) : (
           <>
-            <Lock className="h-5 w-5 mr-2" />
+            <Lock className='h-5 w-5 mr-2' />
             Complete Order
           </>
         )}
       </button>
 
       {/* Payment method hints */}
-      <div className="text-center">
-        <p className="text-xs text-steel-500 mb-2">
+      <div className='text-center'>
+        <p className='text-xs text-steel-500 mb-2'>
           We accept all major credit cards, Apple Pay, and Google Pay
         </p>
-        <div className="flex justify-center items-center space-x-3 opacity-60">
-          <div className="text-xs bg-steel-100 px-2 py-1 rounded">Visa</div>
-          <div className="text-xs bg-steel-100 px-2 py-1 rounded">Mastercard</div>
-          <div className="text-xs bg-steel-100 px-2 py-1 rounded">Amex</div>
-          <div className="text-xs bg-steel-100 px-2 py-1 rounded">Discover</div>
-          <div className="text-xs bg-steel-100 px-2 py-1 rounded">Apple Pay</div>
-          <div className="text-xs bg-steel-100 px-2 py-1 rounded">Google Pay</div>
+        <div className='flex justify-center items-center space-x-3 opacity-60'>
+          <div className='text-xs bg-steel-100 px-2 py-1 rounded'>Visa</div>
+          <div className='text-xs bg-steel-100 px-2 py-1 rounded'>Mastercard</div>
+          <div className='text-xs bg-steel-100 px-2 py-1 rounded'>Amex</div>
+          <div className='text-xs bg-steel-100 px-2 py-1 rounded'>Discover</div>
+          <div className='text-xs bg-steel-100 px-2 py-1 rounded'>Apple Pay</div>
+          <div className='text-xs bg-steel-100 px-2 py-1 rounded'>Google Pay</div>
         </div>
       </div>
     </form>

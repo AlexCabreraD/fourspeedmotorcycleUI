@@ -1,32 +1,32 @@
 // Category filtering service - implements WPS-recommended approach
 // Uses /items endpoint with smart filtering instead of taxonomy
 
-import { createWPSClient, WPSItem, WPSApiClient } from '@/lib/api/wps-client'
-import { CustomCategory, getCategoryBySlug, getProductTypesForCategory } from '@/lib/constants/custom-categories'
+import { createWPSClient, WPSApiClient, WPSItem } from '@/lib/api/wps-client'
+import { CustomCategory, getCategoryBySlug } from '@/lib/constants/custom-categories'
 
 export interface CategoryFilterParams {
   // Basic filtering
   productTypes?: string[]
   search?: string
   sku?: string
-  
+
   // Price filtering
   minPrice?: number
   maxPrice?: number
-  
+
   // Availability
   inStock?: boolean
-  
+
   // Brand filtering
   brandNames?: string[]
-  
+
   // Pagination
   pageSize?: number
   cursor?: string
-  
+
   // Sorting
   sortBy?: 'name_asc' | 'name_desc' | 'price_asc' | 'price_desc' | 'newest' | 'oldest'
-  
+
   // Additional filters
   additionalFilters?: Record<string, any>
 }
@@ -48,7 +48,7 @@ export class CategoryFilterService {
   }
 
   async getItemsForCategory(
-    categorySlug: string, 
+    categorySlug: string,
     params: CategoryFilterParams = {}
   ): Promise<CategoryFilterResult> {
     const category = getCategoryBySlug(categorySlug)
@@ -83,7 +83,6 @@ export class CategoryFilterService {
         }
       }
     }
-
 
     // Apply search filtering
     if (params.search) {
@@ -137,16 +136,16 @@ export class CategoryFilterService {
     try {
       // Execute the query
       const response = await this.client.executeQuery('items', query)
-      
+
       let filteredItems = response.data
 
       // Apply client-side brand filtering if brand names are specified
       if (params.brandNames && params.brandNames.length > 0) {
-        filteredItems = filteredItems.filter(item => {
+        filteredItems = filteredItems.filter((item) => {
           // Check if item has brand data and if the brand name matches
           // Brand structure: item.brand.data.name
           const itemBrand = item.brand?.data?.name || item.brand?.name || item.brand_name || ''
-          return params.brandNames!.some(brandName => 
+          return params.brandNames!.some((brandName) =>
             itemBrand.toUpperCase().includes(brandName.toUpperCase())
           )
         })
@@ -154,7 +153,7 @@ export class CategoryFilterService {
 
       // Apply client-side price filtering as backup (in case WPS API filtering didn't work)
       if (params.minPrice !== undefined || params.maxPrice !== undefined) {
-        filteredItems = filteredItems.filter(item => {
+        filteredItems = filteredItems.filter((item) => {
           const price = parseFloat(item.list_price || '0')
           const minCheck = params.minPrice === undefined || price >= params.minPrice
           const maxCheck = params.maxPrice === undefined || price <= params.maxPrice
@@ -168,9 +167,8 @@ export class CategoryFilterService {
         hasMore: !!response.meta?.cursor?.next,
         nextCursor: response.meta?.cursor?.next,
         appliedFilters: params,
-        category
+        category,
       }
-
     } catch (error) {
       console.error(`Error fetching items for category ${categorySlug}:`, error)
       throw error
@@ -202,26 +200,27 @@ export class CategoryFilterService {
     }
   }
 
-
   // Get price range for a category
   async getPriceRangeForCategory(categorySlug: string): Promise<{ min: number; max: number }> {
     const category = getCategoryBySlug(categorySlug)
-    if (!category) return { min: 0, max: 1000 }
+    if (!category) {
+      return { min: 0, max: 1000 }
+    }
 
     try {
       const query = this.client.createQuery()
       query.pageSize(100)
-      
+
       // Apply product type filters
       if (category.productTypeFilters.length > 0) {
         query.filterByProductType(category.productTypeFilters[0])
       }
-      
+
       const response = await this.client.executeQuery('items', query)
-      
+
       let min = Infinity
       let max = 0
-      
+
       response.data.forEach((item: WPSItem) => {
         const price = parseFloat(item.list_price)
         if (!isNaN(price)) {
@@ -229,12 +228,11 @@ export class CategoryFilterService {
           max = Math.max(max, price)
         }
       })
-      
+
       return {
         min: min === Infinity ? 0 : Math.floor(min),
-        max: Math.ceil(max)
+        max: Math.ceil(max),
       }
-      
     } catch (error) {
       console.error(`Error getting price range for category ${categorySlug}:`, error)
       return { min: 0, max: 1000 }
@@ -243,28 +241,25 @@ export class CategoryFilterService {
 
   // Search within a specific category
   async searchInCategory(
-    categorySlug: string, 
-    searchQuery: string, 
+    categorySlug: string,
+    searchQuery: string,
     params: Omit<CategoryFilterParams, 'search'> = {}
   ): Promise<CategoryFilterResult> {
     return this.getItemsForCategory(categorySlug, {
       ...params,
-      search: searchQuery
+      search: searchQuery,
     })
   }
 
   // Get featured items for a category
-  async getFeaturedItemsForCategory(
-    categorySlug: string, 
-    limit: number = 9
-  ): Promise<WPSItem[]> {
+  async getFeaturedItemsForCategory(categorySlug: string, limit: number = 9): Promise<WPSItem[]> {
     try {
       const result = await this.getItemsForCategory(categorySlug, {
         pageSize: limit,
         sortBy: 'newest',
-        inStock: true
+        inStock: true,
       })
-      
+
       return result.items
     } catch (error) {
       console.error(`Error getting featured items for category ${categorySlug}:`, error)
@@ -280,12 +275,14 @@ export const categoryFilterService = new CategoryFilterService()
 export const getItemsForCategory = (categorySlug: string, params?: CategoryFilterParams) =>
   categoryFilterService.getItemsForCategory(categorySlug, params)
 
-
 export const getPriceRangeForCategory = (categorySlug: string) =>
   categoryFilterService.getPriceRangeForCategory(categorySlug)
 
-export const searchInCategory = (categorySlug: string, searchQuery: string, params?: Omit<CategoryFilterParams, 'search'>) =>
-  categoryFilterService.searchInCategory(categorySlug, searchQuery, params)
+export const searchInCategory = (
+  categorySlug: string,
+  searchQuery: string,
+  params?: Omit<CategoryFilterParams, 'search'>
+) => categoryFilterService.searchInCategory(categorySlug, searchQuery, params)
 
 export const getFeaturedItemsForCategory = (categorySlug: string, limit?: number) =>
   categoryFilterService.getFeaturedItemsForCategory(categorySlug, limit)

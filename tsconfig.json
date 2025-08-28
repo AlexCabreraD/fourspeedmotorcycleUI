@@ -13,6 +13,26 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    
+    // Enhanced strict mode options (balanced for production readiness)
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noFallthroughCasesInSwitch": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "alwaysStrict": true,
+    
+    // Balanced strictness - maintaining functionality while improving type safety
+    "strictNullChecks": false,  // TOO DISRUPTIVE - Would require extensive refactoring
+    "strictPropertyInitialization": false,  // Depends on strictNullChecks
+    "noImplicitAny": true,  // ✅ ENABLED - Require explicit types
+    
+    // These are handled by ESLint for better control
+    // "noUnusedLocals": true,
+    // "noUnusedParameters": true,
+    // "exactOptionalPropertyTypes": true,  // Requires strictNullChecks
+    // "noUncheckedIndexedAccess": true,  // TOO DISRUPTIVE - Requires extensive null checking
+    
     "plugins": [
       {
         "name": "next"

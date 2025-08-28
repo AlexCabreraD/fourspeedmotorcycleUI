@@ -1,24 +1,28 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
+import { useCallback, useEffect, useState } from 'react'
+
 import CategoryImagePreloader from '@/components/categories/CategoryImagePreloader'
 
 // OPTIMIZED: Dynamic imports for better performance
-const DesktopCategoriesView = dynamic(() => import('@/components/categories/DesktopCategoriesView'), {
-  loading: () => (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
-    </div>
-  )
-})
+const DesktopCategoriesView = dynamic(
+  () => import('@/components/categories/DesktopCategoriesView'),
+  {
+    loading: () => (
+      <div className='min-h-screen bg-black flex items-center justify-center'>
+        <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500'></div>
+      </div>
+    ),
+  }
+)
 
 const MobileCategoriesView = dynamic(() => import('@/components/categories/MobileCategoriesView'), {
   loading: () => (
-    <div className="min-h-screen bg-black flex items-center justify-center">
-      <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+    <div className='min-h-screen bg-black flex items-center justify-center'>
+      <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500'></div>
     </div>
-  )
+  ),
 })
 
 export default function CategoriesPage() {
@@ -50,8 +54,8 @@ export default function CategoriesPage() {
   // OPTIMIZED: Prevent hydration mismatch
   if (isMobile === null) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+      <div className='min-h-screen bg-black flex items-center justify-center'>
+        <div className='animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500'></div>
       </div>
     )
   }

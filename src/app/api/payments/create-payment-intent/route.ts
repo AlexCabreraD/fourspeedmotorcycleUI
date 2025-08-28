@@ -15,10 +15,7 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!amount || amount <= 0) {
-      return NextResponse.json(
-        { error: 'Invalid amount' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Invalid amount' }, { status: 400 })
     }
 
     // Create payment intent
@@ -27,27 +24,26 @@ export async function POST(request: NextRequest) {
       currency,
       automatic_payment_methods: {
         enabled: true,
-        allow_redirects: 'never' // Keeps the flow on your site
+        allow_redirects: 'never', // Keeps the flow on your site
       },
       metadata: {
         source: 'fourspeed_motorcycle_shop',
-        ...metadata
-      }
+        ...metadata,
+      },
     })
 
     return NextResponse.json({
       success: true,
       clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id
+      paymentIntentId: paymentIntent.id,
     })
-
   } catch (error: any) {
     console.error('Payment Intent Error:', error)
-    
+
     return NextResponse.json(
-      { 
+      {
         success: false,
-        error: error.message || 'Failed to create payment intent' 
+        error: error.message || 'Failed to create payment intent',
       },
       { status: 500 }
     )

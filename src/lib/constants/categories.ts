@@ -1,6 +1,6 @@
 // Custom categories for Four Speed Motorcycle Shop
 // Following WPS recommendations to create our own differentiated structure
-import { CustomCategory, CUSTOM_CATEGORIES } from './custom-categories'
+import { CUSTOM_CATEGORIES } from './custom-categories'
 
 export interface Category {
   id: string
@@ -13,14 +13,14 @@ export interface Category {
 }
 
 // Convert custom categories to legacy format for backward compatibility
-export const WPS_CATEGORIES: Category[] = CUSTOM_CATEGORIES.map(cat => ({
+export const WPS_CATEGORIES: Category[] = CUSTOM_CATEGORIES.map((cat) => ({
   id: cat.id,
   name: cat.name,
   slug: cat.slug,
   description: cat.description,
   itemCount: cat.itemCount,
   icon: cat.icon,
-  gradient: cat.gradient
+  gradient: cat.gradient,
 }))
 
 // Main categories are our custom categories
@@ -38,7 +38,7 @@ export const CATEGORY_VISUALS: Record<string, { icon: string; gradient: string }
   'body-styling': { icon: '🎨', gradient: 'from-rose-500 to-pink-600' },
   'maintenance-tools': { icon: '🔨', gradient: 'from-orange-500 to-red-600' },
   'storage-transport': { icon: '🎒', gradient: 'from-teal-500 to-green-600' },
-  'specialty-vehicles': { icon: '🏔️', gradient: 'from-slate-500 to-gray-600' }
+  'specialty-vehicles': { icon: '🏔️', gradient: 'from-slate-500 to-gray-600' },
 }
 
 // Helper function to get category visual

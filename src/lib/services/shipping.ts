@@ -58,7 +58,7 @@ const SHIPPING_ZONES = {
 }
 
 // Free shipping threshold
-const FREE_SHIPPING_THRESHOLD = 99.00
+const FREE_SHIPPING_THRESHOLD = 99.0
 
 /**
  * Calculate shipping rates based on destination and order value
@@ -74,7 +74,7 @@ export function calculateShippingRates(
       return {
         success: false,
         rates: [],
-        error: 'State and ZIP code are required'
+        error: 'State and ZIP code are required',
       }
     }
 
@@ -82,20 +82,22 @@ export function calculateShippingRates(
     if (orderTotal >= FREE_SHIPPING_THRESHOLD) {
       return {
         success: true,
-        rates: [{
-          id: 'free-shipping',
-          service: 'Free Ground Shipping',
-          carrier: 'Standard',
-          rate: 0,
-          delivery_days: 5,
-          est_delivery_days: 5,
-        }]
+        rates: [
+          {
+            id: 'free-shipping',
+            service: 'Free Ground Shipping',
+            carrier: 'Standard',
+            rate: 0,
+            delivery_days: 5,
+            est_delivery_days: 5,
+          },
+        ],
       }
     }
 
     // Determine shipping zone
     const zone = getShippingZone(address.state)
-    
+
     // Calculate rates for the zone
     const rates: ShippingRate[] = [
       {
@@ -113,13 +115,13 @@ export function calculateShippingRates(
         rate: zone.expeditedRate,
         delivery_days: zone.expeditedDays,
         est_delivery_days: zone.expeditedDays,
-      }
+      },
     ]
 
     // Add weight surcharge for heavy items (over 50 lbs)
     if (orderWeight && orderWeight > 50) {
       const surcharge = Math.floor((orderWeight - 50) / 10) * 5 // $5 per 10 lbs over 50
-      rates.forEach(rate => {
+      rates.forEach((rate) => {
         if (rate.id !== 'free-shipping') {
           rate.rate += surcharge
         }
@@ -128,14 +130,13 @@ export function calculateShippingRates(
 
     return {
       success: true,
-      rates: rates.sort((a, b) => a.rate - b.rate) // Sort by price
+      rates: rates.sort((a, b) => a.rate - b.rate), // Sort by price
     }
-
   } catch (error) {
     return {
       success: false,
       rates: [],
-      error: error instanceof Error ? error.message : 'Failed to calculate shipping'
+      error: error instanceof Error ? error.message : 'Failed to calculate shipping',
     }
   }
 }
@@ -145,15 +146,15 @@ export function calculateShippingRates(
  */
 function getShippingZone(state: string) {
   const normalizedState = state.toUpperCase()
-  
+
   if (SHIPPING_ZONES.local.states.includes(normalizedState)) {
     return { name: 'local', ...SHIPPING_ZONES.local }
   }
-  
+
   if (SHIPPING_ZONES.regional.states.includes(normalizedState)) {
     return { name: 'regional', ...SHIPPING_ZONES.regional }
   }
-  
+
   return { name: 'national', ...SHIPPING_ZONES.national }
 }
 
@@ -162,17 +163,17 @@ function getShippingZone(state: string) {
  */
 export function estimatePackageWeight(items: any[]): number {
   let totalWeight = 0
-  
+
   for (const item of items) {
     // Use item weight if available, otherwise estimate based on product type
     const itemWeight = item.weight || estimateItemWeight(item)
     totalWeight += itemWeight * item.quantity
   }
-  
+
   // Add packaging weight (2-4 lbs depending on order size)
   const packagingWeight = items.length > 5 ? 4 : items.length > 2 ? 3 : 2
   totalWeight += packagingWeight
-  
+
   return Math.max(totalWeight, 1) // Minimum 1 lb
 }
 
@@ -181,39 +182,39 @@ export function estimatePackageWeight(items: any[]): number {
  */
 function estimateItemWeight(item: any): number {
   const productType = item.product_type?.toLowerCase() || ''
-  
+
   // Weight estimates in pounds based on common motorcycle parts
   const weightEstimates: Record<string, number> = {
-    'accessories': 0.5,
+    accessories: 0.5,
     'air filters': 0.25,
-    'batteries': 2.0,
-    'brakes': 1.0,
-    'chains': 1.5,
-    'exhaust': 5.0,
-    'gloves': 0.4,
-    'helmets': 3.0,
-    'oils': 1.0,
+    batteries: 2.0,
+    brakes: 1.0,
+    chains: 1.5,
+    exhaust: 5.0,
+    gloves: 0.4,
+    helmets: 3.0,
+    oils: 1.0,
     'spark plugs': 0.1,
-    'tires': 10.0,
-    'tools': 0.75,
-    'windshield': 1.25,
-    'hardware': 0.1,
-    'graphics': 0.1,
-    'grips': 0.25,
-    'levers': 0.5,
-    'mirrors': 0.75,
-    'footwear': 1.5,
-    'apparel': 0.75,
-    'protective': 1.0,
+    tires: 10.0,
+    tools: 0.75,
+    windshield: 1.25,
+    hardware: 0.1,
+    graphics: 0.1,
+    grips: 0.25,
+    levers: 0.5,
+    mirrors: 0.75,
+    footwear: 1.5,
+    apparel: 0.75,
+    protective: 1.0,
   }
-  
+
   // Check if product type matches any category
   for (const [category, weight] of Object.entries(weightEstimates)) {
     if (productType.includes(category)) {
       return weight
     }
   }
-  
+
   // Default weight for unknown items
   return 0.5
 }
@@ -226,31 +227,31 @@ export function validateShippingAddress(address: ShippingAddress): {
   errors: string[]
 } {
   const errors: string[] = []
-  
+
   if (!address.name?.trim()) {
     errors.push('Name is required')
   }
-  
+
   if (!address.street1?.trim()) {
     errors.push('Street address is required')
   }
-  
+
   if (!address.city?.trim()) {
     errors.push('City is required')
   }
-  
+
   if (!address.state?.trim()) {
     errors.push('State is required')
   }
-  
+
   if (!address.zip?.trim()) {
     errors.push('ZIP code is required')
   } else if (!/^\d{5}(-\d{4})?$/.test(address.zip.trim())) {
     errors.push('Invalid ZIP code format')
   }
-  
+
   return {
     valid: errors.length === 0,
-    errors
+    errors,
   }
 }

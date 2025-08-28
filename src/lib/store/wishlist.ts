@@ -20,15 +20,14 @@ interface WishlistState {
   userId: string | null
   isLoading: boolean
   isSaving: boolean
-  
-  // Actions
+
   addItem: (item: WishlistItem) => void
   removeItem: (itemId: string) => void
   removeItems: (itemIds: string[]) => void
   clearWishlist: () => void
   isInWishlist: (itemId: string) => boolean
   toggleItem: (item: WishlistItem) => void
-  
+
   // User management
   setUserId: (userId: string | null) => void
   loadUserWishlist: () => Promise<void>
@@ -39,23 +38,23 @@ interface WishlistState {
 export const useWishlistStore = create<WishlistState>()(
   persist(
     (set, get) => ({
-      items: [],
-      userId: null,
+      items: [] as WishlistItem[],
+      userId: null as string | null,
       isLoading: false,
       isSaving: false,
 
       addItem: (item: WishlistItem) => {
         const { items, userId } = get()
-        
+
         // Check if item already exists
-        if (items.find(existingItem => existingItem.id === item.id)) {
+        if (items.find((existingItem) => existingItem.id === item.id)) {
           return
         }
 
         // Add current date if not provided
         const itemWithDate = {
           ...item,
-          addedDate: item.addedDate || new Date().toISOString()
+          addedDate: item.addedDate || new Date().toISOString(),
         }
 
         const newItems = [...items, itemWithDate]
@@ -69,7 +68,7 @@ export const useWishlistStore = create<WishlistState>()(
 
       removeItem: (itemId: string) => {
         const { items, userId } = get()
-        const newItems = items.filter(item => item.id !== itemId)
+        const newItems = items.filter((item) => item.id !== itemId)
         set({ items: newItems })
 
         // Save to user metadata if logged in
@@ -80,7 +79,7 @@ export const useWishlistStore = create<WishlistState>()(
 
       removeItems: (itemIds: string[]) => {
         const { items, userId } = get()
-        const newItems = items.filter(item => !itemIds.includes(item.id))
+        const newItems = items.filter((item) => !itemIds.includes(item.id))
         set({ items: newItems })
 
         // Save to user metadata if logged in
@@ -101,13 +100,13 @@ export const useWishlistStore = create<WishlistState>()(
 
       isInWishlist: (itemId: string) => {
         const { items } = get()
-        return items.some(item => item.id === itemId)
+        return items.some((item) => item.id === itemId)
       },
 
       toggleItem: (item: WishlistItem) => {
         const { items, addItem, removeItem } = get()
-        const existingItem = items.find(existingItem => existingItem.id === item.id)
-        
+        const existingItem = items.find((existingItem) => existingItem.id === item.id)
+
         if (existingItem) {
           removeItem(item.id)
         } else {
@@ -144,10 +143,12 @@ export const useWishlistStore = create<WishlistState>()(
 
       saveUserWishlist: async () => {
         const { items, isSaving } = get()
-        
+
         // Prevent concurrent saves
-        if (isSaving) return
-        
+        if (isSaving) {
+          return
+        }
+
         set({ isSaving: true })
         try {
           await fetch('/api/user/wishlist', {
@@ -169,8 +170,8 @@ export const useWishlistStore = create<WishlistState>()(
         const mergedItems = [...items]
 
         // Add guest items that don't already exist
-        guestItems.forEach(guestItem => {
-          if (!mergedItems.find(item => item.id === guestItem.id)) {
+        guestItems.forEach((guestItem) => {
+          if (!mergedItems.find((item) => item.id === guestItem.id)) {
             mergedItems.push(guestItem)
           }
         })
@@ -190,5 +191,5 @@ export const useWishlistStore = create<WishlistState>()(
 // Selectors
 export const selectWishlistItems = (state: WishlistState) => state.items
 export const selectWishlistCount = (state: WishlistState) => state.items.length
-export const selectIsInWishlist = (itemId: string) => (state: WishlistState) => 
-  state.items.some(item => item.id === itemId)
+export const selectIsInWishlist = (itemId: string) => (state: WishlistState) =>
+  state.items.some((item) => item.id === itemId)

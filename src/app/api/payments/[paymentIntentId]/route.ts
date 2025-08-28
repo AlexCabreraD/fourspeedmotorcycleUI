@@ -17,10 +17,7 @@ export async function GET(
     const { paymentIntentId } = await params
 
     if (!paymentIntentId) {
-      return NextResponse.json(
-        { error: 'Payment Intent ID is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Payment Intent ID is required' }, { status: 400 })
     }
 
     // Retrieve payment intent from Stripe
@@ -34,24 +31,20 @@ export async function GET(
         amount: paymentIntent.amount,
         currency: paymentIntent.currency,
         created: paymentIntent.created,
-        metadata: paymentIntent.metadata
-      }
+        metadata: paymentIntent.metadata,
+      },
     })
-
   } catch (error: any) {
     console.error('Payment Retrieval Error:', error)
-    
+
     if (error.code === 'resource_missing') {
-      return NextResponse.json(
-        { error: 'Payment Intent not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Payment Intent not found' }, { status: 404 })
     }
-    
+
     return NextResponse.json(
-      { 
+      {
         success: false,
-        error: error.message || 'Failed to retrieve payment' 
+        error: error.message || 'Failed to retrieve payment',
       },
       { status: 500 }
     )

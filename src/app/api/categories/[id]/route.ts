@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+
 import { TaxonomyNavigationService } from '@/lib/api/taxonomy-service'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const { searchParams } = new URL(request.url)
@@ -16,12 +14,9 @@ export async function GET(
 
     // Get category details
     const category = await taxonomyService.getCategoryWithItems(categoryId, includeItems)
-    
+
     if (!category) {
-      return NextResponse.json(
-        { success: false, error: 'Category not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 })
     }
 
     // Get breadcrumb navigation
@@ -42,18 +37,17 @@ export async function GET(
         category,
         breadcrumb,
         productTypes,
-        filteredItems: filteredData
-      }
+        filteredItems: filteredData,
+      },
     })
-
   } catch (error: any) {
     console.error('Category Detail API Error:', error)
-    
+
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: error.message || 'Failed to fetch category details',
-        details: error.response || null
+        details: error.response || null,
       },
       { status: error.status || 500 }
     )

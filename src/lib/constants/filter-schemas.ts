@@ -30,7 +30,7 @@ export const COMMON_FILTERS: FilterSchema[] = [
     type: 'select',
     apiField: 'product_type',
     defaultExpanded: true,
-    options: [] // Will be populated dynamically
+    options: [], // Will be populated dynamically
   },
   {
     key: 'brand_id',
@@ -38,107 +38,189 @@ export const COMMON_FILTERS: FilterSchema[] = [
     type: 'select',
     apiField: 'brand_id',
     defaultExpanded: true,
-    options: [] // Will be populated dynamically
+    options: [], // Will be populated dynamically
   },
   {
     key: 'price_range',
     label: 'Price Range',
     type: 'price-range',
     apiField: 'list_price',
-    defaultExpanded: true
+    defaultExpanded: true,
   },
   {
     key: 'availability',
     label: 'Availability',
     type: 'checkbox',
     defaultExpanded: false,
-    options: [
-      { value: 'in_stock', label: 'In Stock Only' }
-    ]
-  }
+    options: [{ value: 'in_stock', label: 'In Stock Only' }],
+  },
 ]
 
 // Smart product type mapping based on WPS API data and category context
 export const CATEGORY_PRODUCT_TYPE_MAPPING: Record<string, string[]> = {
   // ATV category - common ATV parts and accessories
-  'atv': [
-    'Suspension', 'Wheels', 'Tires', 'Brakes', 'Engine', 'Exhaust', 'Air Filters',
-    'Drive', 'Electrical', 'Body', 'Protective/Safety', 'Winch', 'Plow', 'Accessories',
-    'Stands/Lifts', 'Tools', 'Chemicals', 'Batteries', 'Lighting', 'Storage Covers'
+  atv: [
+    'Suspension',
+    'Wheels',
+    'Tires',
+    'Brakes',
+    'Engine',
+    'Exhaust',
+    'Air Filters',
+    'Drive',
+    'Electrical',
+    'Body',
+    'Protective/Safety',
+    'Winch',
+    'Plow',
+    'Accessories',
+    'Stands/Lifts',
+    'Tools',
+    'Chemicals',
+    'Batteries',
+    'Lighting',
+    'Storage Covers',
   ],
   // Bicycle category - bike-specific components
-  'bicycle': [
-    'Bicycle Frames', 'Wheels', 'Tires', 'Tubes', 'Brakes', 'Cranks', 'Chains',
-    'Tools', 'Accessories', 'Protective/Safety', 'Helmets', 'Apparel'
+  bicycle: [
+    'Bicycle Frames',
+    'Wheels',
+    'Tires',
+    'Tubes',
+    'Brakes',
+    'Cranks',
+    'Chains',
+    'Tools',
+    'Accessories',
+    'Protective/Safety',
+    'Helmets',
+    'Apparel',
   ],
   // Apparel category - clothing and protective gear
-  'apparel': [
-    'Helmets', 'Jackets', 'Pants', 'Gloves', 'Boots', 'Suits', 'Shirts', 'Shorts',
-    'Hoodies', 'Vests', 'Layers', 'Undergarments', 'Socks', 'Tank Tops', 'Sweaters',
-    'Protective/Safety', 'Eyewear', 'Headgear'
+  apparel: [
+    'Helmets',
+    'Jackets',
+    'Pants',
+    'Gloves',
+    'Boots',
+    'Suits',
+    'Shirts',
+    'Shorts',
+    'Hoodies',
+    'Vests',
+    'Layers',
+    'Undergarments',
+    'Socks',
+    'Tank Tops',
+    'Sweaters',
+    'Protective/Safety',
+    'Eyewear',
+    'Headgear',
   ],
   // Off-road category - dirt bike and motocross parts
-  'offroad': [
-    'Suspension', 'Exhaust', 'Air Filters', 'Brakes', 'Engine', 'Drive', 'Wheels',
-    'Tires', 'Handlebars', 'Grips', 'Foot Controls', 'Levers', 'Guards/Braces',
-    'Protective/Safety', 'Tools', 'Chemicals', 'Accessories'
+  offroad: [
+    'Suspension',
+    'Exhaust',
+    'Air Filters',
+    'Brakes',
+    'Engine',
+    'Drive',
+    'Wheels',
+    'Tires',
+    'Handlebars',
+    'Grips',
+    'Foot Controls',
+    'Levers',
+    'Guards/Braces',
+    'Protective/Safety',
+    'Tools',
+    'Chemicals',
+    'Accessories',
   ],
   // Street category - street bike parts
-  'street': [
-    'Suspension', 'Exhaust', 'Brakes', 'Engine', 'Electrical', 'Wheels', 'Tires',
-    'Handlebars', 'Mirrors', 'Windshield/Windscreen', 'Accessories', 'Tools',
-    'Chemicals', 'Protective/Safety'
+  street: [
+    'Suspension',
+    'Exhaust',
+    'Brakes',
+    'Engine',
+    'Electrical',
+    'Wheels',
+    'Tires',
+    'Handlebars',
+    'Mirrors',
+    'Windshield/Windscreen',
+    'Accessories',
+    'Tools',
+    'Chemicals',
+    'Protective/Safety',
   ],
   // Snow category - snowmobile parts
-  'snow': [
-    'Suspension', 'Engine', 'Drive', 'Electrical', 'Tracks', 'Skis/Carbides/Runners',
-    'Hyfax', 'Ice Scratchers', 'Windshield/Windscreen', 'Accessories', 'Tools',
-    'Chemicals', 'Storage Covers', 'Protective/Safety'
+  snow: [
+    'Suspension',
+    'Engine',
+    'Drive',
+    'Electrical',
+    'Tracks',
+    'Skis/Carbides/Runners',
+    'Hyfax',
+    'Ice Scratchers',
+    'Windshield/Windscreen',
+    'Accessories',
+    'Tools',
+    'Chemicals',
+    'Storage Covers',
+    'Protective/Safety',
   ],
   // Watercraft category - jet ski and PWC parts
-  'watercraft': [
-    'Engine', 'Drive', 'Electrical', 'Batteries', 'Fuel Tank', 'Accessories',
-    'Tools', 'Chemicals', 'Protective/Safety', 'Flotation Vests', 'Storage Covers',
-    'Watercraft Towables'
+  watercraft: [
+    'Engine',
+    'Drive',
+    'Electrical',
+    'Batteries',
+    'Fuel Tank',
+    'Accessories',
+    'Tools',
+    'Chemicals',
+    'Protective/Safety',
+    'Flotation Vests',
+    'Storage Covers',
+    'Watercraft Towables',
   ],
   // Suspension category
-  'suspension': [
-    'Suspension'
-  ],
+  suspension: ['Suspension'],
   // Exhaust category
-  'exhaust': [
-    'Exhaust'
-  ],
+  exhaust: ['Exhaust'],
   // Brakes category
-  'brakes': [
-    'Brakes'
-  ],
+  brakes: ['Brakes'],
   // Tires category
-  'tires': [
-    'Tires', 'Tubes', 'Tire/Wheel Accessories', 'Wheels'
-  ],
+  tires: ['Tires', 'Tubes', 'Tire/Wheel Accessories', 'Wheels'],
   // Tools category
-  'tools': [
-    'Tools'
-  ],
+  tools: ['Tools'],
   // Chemicals category
-  'chemicals': [
-    'Chemicals'
-  ],
+  chemicals: ['Chemicals'],
   // Electronics category
-  'electronics': [
-    'Electrical', 'Batteries', 'Lighting', 'Gauges/Meters', 'Audio/Visual/Communication',
-    'GPS', 'Switches'
+  electronics: [
+    'Electrical',
+    'Batteries',
+    'Lighting',
+    'Gauges/Meters',
+    'Audio/Visual/Communication',
+    'GPS',
+    'Switches',
   ],
   // Engine category
-  'engine': [
-    'Engine', 'Piston kits & Components', 'Gaskets/Seals', 'Oil Filters', 'Air Filters',
-    'Spark Plugs', 'Starters', 'Engine Management'
+  engine: [
+    'Engine',
+    'Piston kits & Components',
+    'Gaskets/Seals',
+    'Oil Filters',
+    'Air Filters',
+    'Spark Plugs',
+    'Starters',
+    'Engine Management',
   ],
   // Hardware category
-  'hardware': [
-    'Hardware/Fasteners/Fittings', 'Clamps', 'Mounts/Brackets'
-  ]
+  hardware: ['Hardware/Fasteners/Fittings', 'Clamps', 'Mounts/Brackets'],
 }
 
 // Category-specific filter configurations
@@ -160,8 +242,8 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: 'shock_absorbers', label: 'Shock Absorbers' },
           { value: 'suspension_kits', label: 'Suspension Kits' },
           { value: 'lowering_kits', label: 'Lowering Kits' },
-          { value: 'raising_kits', label: 'Raising Kits' }
-        ]
+          { value: 'raising_kits', label: 'Raising Kits' },
+        ],
       },
       {
         key: 'diameter',
@@ -175,10 +257,10 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: '41', label: '41mm' },
           { value: '43', label: '43mm' },
           { value: '45', label: '45mm' },
-          { value: '49', label: '49mm' }
-        ]
-      }
-    ]
+          { value: '49', label: '49mm' },
+        ],
+      },
+    ],
   },
   // Exhaust category
   {
@@ -197,8 +279,8 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: 'slip_on', label: 'Slip-On' },
           { value: 'mufflers', label: 'Mufflers' },
           { value: 'headers', label: 'Headers' },
-          { value: 'repack_kits', label: 'Repack Kits' }
-        ]
+          { value: 'repack_kits', label: 'Repack Kits' },
+        ],
       },
       {
         key: 'material',
@@ -210,10 +292,10 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: 'stainless_steel', label: 'Stainless Steel' },
           { value: 'titanium', label: 'Titanium' },
           { value: 'carbon_fiber', label: 'Carbon Fiber' },
-          { value: 'aluminum', label: 'Aluminum' }
-        ]
-      }
-    ]
+          { value: 'aluminum', label: 'Aluminum' },
+        ],
+      },
+    ],
   },
   // Brakes category
   {
@@ -232,8 +314,8 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: 'brake_discs', label: 'Brake Discs' },
           { value: 'brake_lines', label: 'Brake Lines' },
           { value: 'brake_fluid', label: 'Brake Fluid' },
-          { value: 'calipers', label: 'Calipers' }
-        ]
+          { value: 'calipers', label: 'Calipers' },
+        ],
       },
       {
         key: 'rotor_size',
@@ -246,10 +328,10 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: '270', label: '270mm' },
           { value: '280', label: '280mm' },
           { value: '300', label: '300mm' },
-          { value: '320', label: '320mm' }
-        ]
-      }
-    ]
+          { value: '320', label: '320mm' },
+        ],
+      },
+    ],
   },
   // Tires category
   {
@@ -268,8 +350,8 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: 'dirt', label: 'Dirt/Off-Road' },
           { value: 'dual_sport', label: 'Dual Sport' },
           { value: 'track', label: 'Track/Racing' },
-          { value: 'touring', label: 'Touring' }
-        ]
+          { value: 'touring', label: 'Touring' },
+        ],
       },
       {
         key: 'tire_size',
@@ -283,10 +365,10 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: '190_50_17', label: '190/50-17' },
           { value: '200_55_17', label: '200/55-17' },
           { value: '110_80_19', label: '110/80-19' },
-          { value: '140_80_18', label: '140/80-18' }
-        ]
-      }
-    ]
+          { value: '140_80_18', label: '140/80-18' },
+        ],
+      },
+    ],
   },
   // Apparel category
   {
@@ -306,8 +388,8 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: 'pants', label: 'Pants' },
           { value: 'gloves', label: 'Gloves' },
           { value: 'boots', label: 'Boots' },
-          { value: 'suits', label: 'Suits' }
-        ]
+          { value: 'suits', label: 'Suits' },
+        ],
       },
       {
         key: 'size',
@@ -322,8 +404,8 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: 'l', label: 'L' },
           { value: 'xl', label: 'XL' },
           { value: 'xxl', label: '2XL' },
-          { value: 'xxxl', label: '3XL' }
-        ]
+          { value: 'xxxl', label: '3XL' },
+        ],
       },
       {
         key: 'color',
@@ -337,10 +419,10 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: 'red', label: 'Red' },
           { value: 'blue', label: 'Blue' },
           { value: 'yellow', label: 'Yellow' },
-          { value: 'green', label: 'Green' }
-        ]
-      }
-    ]
+          { value: 'green', label: 'Green' },
+        ],
+      },
+    ],
   },
   // Tools category
   {
@@ -359,8 +441,8 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: 'power_tools', label: 'Power Tools' },
           { value: 'specialty_tools', label: 'Specialty Tools' },
           { value: 'measuring_tools', label: 'Measuring Tools' },
-          { value: 'tool_kits', label: 'Tool Kits' }
-        ]
+          { value: 'tool_kits', label: 'Tool Kits' },
+        ],
       },
       {
         key: 'tool_brand',
@@ -372,10 +454,10 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: 'motion_pro', label: 'Motion Pro' },
           { value: 'cruz_tools', label: 'Cruz Tools' },
           { value: 'park_tool', label: 'Park Tool' },
-          { value: 'craftsman', label: 'Craftsman' }
-        ]
-      }
-    ]
+          { value: 'craftsman', label: 'Craftsman' },
+        ],
+      },
+    ],
   },
   // Chemicals category
   {
@@ -395,8 +477,8 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: 'coolant', label: 'Coolant' },
           { value: 'cleaners', label: 'Cleaners' },
           { value: 'lubricants', label: 'Lubricants' },
-          { value: 'fuel_additives', label: 'Fuel Additives' }
-        ]
+          { value: 'fuel_additives', label: 'Fuel Additives' },
+        ],
       },
       {
         key: 'viscosity',
@@ -408,10 +490,10 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: '5w_30', label: '5W-30' },
           { value: '10w_40', label: '10W-40' },
           { value: '15w_50', label: '15W-50' },
-          { value: '20w_50', label: '20W-50' }
-        ]
-      }
-    ]
+          { value: '20w_50', label: '20W-50' },
+        ],
+      },
+    ],
   },
   // Electronics category
   {
@@ -431,8 +513,8 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
           { value: 'ignition', label: 'Ignition' },
           { value: 'charging', label: 'Charging' },
           { value: 'gauges', label: 'Gauges' },
-          { value: 'communication', label: 'Communication' }
-        ]
+          { value: 'communication', label: 'Communication' },
+        ],
       },
       {
         key: 'voltage',
@@ -443,23 +525,23 @@ export const CATEGORY_FILTER_CONFIGS: CategoryFilterConfig[] = [
         options: [
           { value: '12v', label: '12V' },
           { value: '24v', label: '24V' },
-          { value: '6v', label: '6V' }
-        ]
-      }
-    ]
-  }
+          { value: '6v', label: '6V' },
+        ],
+      },
+    ],
+  },
 ]
 
 // Helper function to get filters for a specific category
 export function getFiltersForCategory(categoryId: number, categorySlug: string): FilterSchema[] {
   const categoryConfig = CATEGORY_FILTER_CONFIGS.find(
-    config => config.categoryId === categoryId || config.categorySlug === categorySlug
+    (config) => config.categoryId === categoryId || config.categorySlug === categorySlug
   )
-  
+
   if (categoryConfig) {
     return categoryConfig.filters
   }
-  
+
   // Return common filters if no specific config found
   return COMMON_FILTERS
 }
@@ -470,10 +552,10 @@ export function getSmartProductTypesForCategory(categorySlug: string): string[] 
   if (CATEGORY_PRODUCT_TYPE_MAPPING[categorySlug]) {
     return CATEGORY_PRODUCT_TYPE_MAPPING[categorySlug]
   }
-  
+
   // Try partial matches for related categories
   const lowerSlug = categorySlug.toLowerCase()
-  
+
   // Check for common patterns
   if (lowerSlug.includes('atv') || lowerSlug.includes('quad')) {
     return CATEGORY_PRODUCT_TYPE_MAPPING['atv']
@@ -481,13 +563,21 @@ export function getSmartProductTypesForCategory(categorySlug: string): string[] 
   if (lowerSlug.includes('bike') || lowerSlug.includes('bicycle')) {
     return CATEGORY_PRODUCT_TYPE_MAPPING['bicycle']
   }
-  if (lowerSlug.includes('apparel') || lowerSlug.includes('clothing') || lowerSlug.includes('gear')) {
+  if (
+    lowerSlug.includes('apparel') ||
+    lowerSlug.includes('clothing') ||
+    lowerSlug.includes('gear')
+  ) {
     return CATEGORY_PRODUCT_TYPE_MAPPING['apparel']
   }
   if (lowerSlug.includes('dirt') || lowerSlug.includes('motocross') || lowerSlug.includes('mx')) {
     return CATEGORY_PRODUCT_TYPE_MAPPING['offroad']
   }
-  if (lowerSlug.includes('street') || lowerSlug.includes('sport') || lowerSlug.includes('touring')) {
+  if (
+    lowerSlug.includes('street') ||
+    lowerSlug.includes('sport') ||
+    lowerSlug.includes('touring')
+  ) {
     return CATEGORY_PRODUCT_TYPE_MAPPING['street']
   }
   if (lowerSlug.includes('snow') || lowerSlug.includes('sled')) {
@@ -502,51 +592,69 @@ export function getSmartProductTypesForCategory(categorySlug: string): string[] 
   if (lowerSlug.includes('hardware') || lowerSlug.includes('fastener')) {
     return CATEGORY_PRODUCT_TYPE_MAPPING['hardware']
   }
-  
+
   // Return all common types if no specific mapping found
   return [
-    'Suspension', 'Hardware/Fasteners/Fittings', 'Tire/Wheel Accessories', 'Drive',
-    'Intake/Carb/Fuel System', 'Exhaust', 'Stands/Lifts', 'Accessories', 'Grips',
-    'Gloves', 'Tools', 'Chemicals', 'Protective/Safety', 'Wheels', 'Electrical',
-    'Engine', 'Brakes', 'Handlebars', 'Helmets', 'Apparel', 'Tires', 'Chains'
+    'Suspension',
+    'Hardware/Fasteners/Fittings',
+    'Tire/Wheel Accessories',
+    'Drive',
+    'Intake/Carb/Fuel System',
+    'Exhaust',
+    'Stands/Lifts',
+    'Accessories',
+    'Grips',
+    'Gloves',
+    'Tools',
+    'Chemicals',
+    'Protective/Safety',
+    'Wheels',
+    'Electrical',
+    'Engine',
+    'Brakes',
+    'Handlebars',
+    'Helmets',
+    'Apparel',
+    'Tires',
+    'Chains',
   ]
 }
 
 // Helper function to get filter options by product type
 export function getFilterOptionsByProductType(productType: string): FilterOption[] {
   const typeFilters: Record<string, FilterOption[]> = {
-    'Suspension': [
+    Suspension: [
       { value: 'fork_springs', label: 'Fork Springs' },
       { value: 'shock_absorbers', label: 'Shock Absorbers' },
-      { value: 'suspension_kits', label: 'Suspension Kits' }
+      { value: 'suspension_kits', label: 'Suspension Kits' },
     ],
-    'Exhaust': [
+    Exhaust: [
       { value: 'full_system', label: 'Full System' },
       { value: 'slip_on', label: 'Slip-On' },
-      { value: 'mufflers', label: 'Mufflers' }
+      { value: 'mufflers', label: 'Mufflers' },
     ],
-    'Brakes': [
+    Brakes: [
       { value: 'brake_pads', label: 'Brake Pads' },
       { value: 'brake_discs', label: 'Brake Discs' },
-      { value: 'brake_lines', label: 'Brake Lines' }
+      { value: 'brake_lines', label: 'Brake Lines' },
     ],
-    'Tires': [
+    Tires: [
       { value: 'street', label: 'Street' },
       { value: 'dirt', label: 'Dirt/Off-Road' },
-      { value: 'dual_sport', label: 'Dual Sport' }
+      { value: 'dual_sport', label: 'Dual Sport' },
     ],
-    'Helmets': [
+    Helmets: [
       { value: 'full_face', label: 'Full Face' },
       { value: 'modular', label: 'Modular' },
-      { value: 'half_helmet', label: 'Half Helmet' }
+      { value: 'half_helmet', label: 'Half Helmet' },
     ],
-    'Tools': [
+    Tools: [
       { value: 'hand_tools', label: 'Hand Tools' },
       { value: 'power_tools', label: 'Power Tools' },
-      { value: 'specialty_tools', label: 'Specialty Tools' }
-    ]
+      { value: 'specialty_tools', label: 'Specialty Tools' },
+    ],
   }
-  
+
   return typeFilters[productType] || []
 }
 
@@ -558,7 +666,7 @@ export const PRICE_RANGE_PRESETS = [
   { min: 100, max: 250, label: '$100 - $250' },
   { min: 250, max: 500, label: '$250 - $500' },
   { min: 500, max: 1000, label: '$500 - $1000' },
-  { min: 1000, max: null, label: 'Over $1000' }
+  { min: 1000, max: null, label: 'Over $1000' },
 ]
 
 // Weight range presets (in pounds)
@@ -567,5 +675,5 @@ export const WEIGHT_RANGE_PRESETS = [
   { min: 1, max: 5, label: '1 - 5 lbs' },
   { min: 5, max: 10, label: '5 - 10 lbs' },
   { min: 10, max: 25, label: '10 - 25 lbs' },
-  { min: 25, max: null, label: 'Over 25 lbs' }
+  { min: 25, max: null, label: 'Over 25 lbs' },
 ]
